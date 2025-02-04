@@ -2,8 +2,8 @@
 
 ## Team Members
 
-### Craig Matthew Cartilla
 ### Member3
+### NAME: Craig Matthew Cartilla
 - **Course & Year:** BSIT - 4
 
 ---
