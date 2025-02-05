@@ -14,7 +14,8 @@
 ### NAME: Craig Matthew Cartilla
 - **Course & Year:** BSIT - 3
 
----
+
+## About Me (Team Member 1)
 
 Hello, my name is **Christian Hans Israel E. Paras**, a third-year **Bachelor of Science in Information Technology** student at **Cebu Institute of Technology - University**. I am highly motivated, opportunistic, and determined to excel in my field, always seeking ways to grow and expand my knowledge.
 
@@ -33,9 +34,8 @@ I believe that success is achieved through consistent effort and the right minds
 ## Let's Connect!
 I am always open to networking, collaboration, and discussions related to IT, cybersecurity, and technology in general. Feel free to reach out if you share the same interests or would like to work together!
 
----
 
-## About Me
+## About Me (Team Member 2)
 
 Hello, my name is **Aeron Raye Tigley**, a third-year BSIT student from **Cebu Institute of Technology - University**. I am passionate about technology and aspire to build a career in **cybersecurity**, where I can contribute to protecting digital systems and data. Outside of academics, I am a chill person who enjoys spending time at home, relaxing, and exploring my interests. I also have a deep love for **swimming and free diving**, often taking the opportunity to visit the ocean whenever I can.
 
@@ -52,7 +52,7 @@ Things I Visited:
 ### Let's Connect
 Feel free to reach out if you want to connect or collaborate!
 
----
+## About Me (Team Member 3)
 
 Hello, my name is **Craig Matthew Cartilla**, a third-year BSIT student from **Cebu Institute of Technology - University**. 
 
