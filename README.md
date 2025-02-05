@@ -81,5 +81,5 @@ I have many ambitions and goals I want to achieve in life. This drives me to be 
 
 ---
 
-Feel free to reach out if you want to connect or collaborate!
+Feel free to reach out if you want to connect or collaborate with this Project!
 
