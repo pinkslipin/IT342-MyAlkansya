@@ -1,6 +1,55 @@
-# Branch Name: IT342-MyAlkansya
+# README.md
 
-## Team Members
+## System Name
+**MyAlkansya**
+
+## Product Description
+**MyAlkansya** is a financial management application designed to help users track income, expenses, and budgeting. It provides features such as **data visualization**, **multiple login options**, **currency conversion**, and **export capabilities** to enhance financial planning. The application is available on both **web and mobile platforms**.
+
+## List of Features
+- **User Authentication**
+  - Email & Password Login
+  - Social Media Login (Google, Facebook)
+  - Biometric Login (Mobile)
+- **Dashboard**
+  - Overview of financial health
+  - Total income, total expenses, remaining budget
+- **Expense Tracking**
+  - Categorization of expenses (e.g., Food, Transportation)
+  - Edit, delete, and add new transactions
+- **Income Tracking**
+  - Record and manage income sources
+  - Categorization based on source
+- **Budgeting**
+  - Set monthly budgets
+  - Alerts for overspending
+- **Currency Converter**
+  - Supports multiple currencies
+  - Integrates with ExchangeRate-API
+- **Data Analytics & Visualization**
+  - Charts and insights using Chart.js
+  - Monthly spending reports
+- **Savings Goals**
+  - Set and track savings objectives
+- **Export to Google Sheets**
+  - Automatic data export using Google Sheets API
+- **Data Insights & Tips**
+  - Personalized recommendations based on spending patterns
+
+## Links
+- [Figma Design](#) 'To be added'
+- [System Diagrams](#) 'To be added'
+
+
+## Developer Profiles
+
+### Member1
+### NAME: Christian Hans Israel E. Paras
+- **Course & Year:** BSIT - 3
+
+### Member2
+### NAME: Aeron Raye Tigley
+- **Course & Year:** BSIT - 3
 
 ### Member1
 ### NAME: Christian Hans Israel E. Paras
@@ -13,7 +62,6 @@
 ### Member3
 ### NAME: Craig Matthew Cartilla
 - **Course & Year:** BSIT - 3
-
 
 ## About Me (Team Member 1)
 
