@@ -42,8 +42,11 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    // Redirect to the Google OAuth2 login endpoint
-    window.location.href = "http://localhost:8080/oauth2/authorization/google";
+    // Store the frontend URL for redirection after OAuth
+    localStorage.setItem("frontendRedirectUrl", window.location.origin);
+    
+    // Redirect to the Google OAuth2 login endpoint with the redirect parameter
+    window.location.href = `http://localhost:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
   };
 
   return (
