@@ -29,7 +29,7 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return user.getName(); // or oauth2User.getName();
+        return user.getFirstname() + " " + user.getLastname();
     }
 
     public UserEntity getUser() {

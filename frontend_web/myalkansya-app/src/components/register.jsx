@@ -3,9 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Register = () => {
-  const [name, setName] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [currency, setCurrency] = useState("USD"); // Default currency
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
@@ -17,9 +19,11 @@ const Register = () => {
 
     try {
       await axios.post("http://localhost:8080/api/users/register", {
-        name,
+        firstname,
+        lastname,
         email,
         password,
+        currency,
       });
 
       setSuccess("Registration successful! You can now log in.");
@@ -41,11 +45,20 @@ const Register = () => {
       <h2>Register</h2>
       <form onSubmit={handleRegister}>
         <div>
-          <label>Name:</label>
+          <label>First Name:</label>
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={firstname}
+            onChange={(e) => setFirstname(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label>Last Name:</label>
+          <input
+            type="text"
+            value={lastname}
+            onChange={(e) => setLastname(e.target.value)}
             required
           />
         </div>
@@ -66,6 +79,18 @@ const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+        </div>
+        <div>
+          <label>Currency:</label>
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            required
+          >
+            <option value="USD">USD</option>
+            <option value="PHP">PHP</option>
+            <option value="EUR">EUR</option>
+          </select>
         </div>
         <button type="submit">Register</button>
       </form>

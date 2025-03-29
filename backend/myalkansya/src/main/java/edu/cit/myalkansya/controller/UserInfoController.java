@@ -23,7 +23,8 @@ public class UserInfoController {
             UserEntity user = ((CustomOAuth2User) principal).getUser();
             return Map.of(
                 "userId", user.getUserId(),
-                "name", user.getName(),
+                "firstname", user.getFirstname(),
+                "lastname", user.getLastname(),
                 "email", user.getEmail(),
                 "picture", user.getProfilePicture(),
                 "authProvider", user.getAuthProvider(),
