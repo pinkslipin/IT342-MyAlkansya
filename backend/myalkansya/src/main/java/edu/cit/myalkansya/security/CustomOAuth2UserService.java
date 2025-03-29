@@ -24,42 +24,35 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(request);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        // Extract necessary data from Google's response
         String email = (String) attributes.get("email");
-        String name = (String) attributes.get("name");
+        String firstname = (String) attributes.get("given_name");
+        String lastname = (String) attributes.get("family_name");
         String picture = (String) attributes.get("picture");
-        String providerId = (String) attributes.get("sub"); // Google ID
+        String providerId = (String) attributes.get("sub");
 
-        UserEntity user = processOAuth2User(email, name, picture, providerId);
+        UserEntity user = processOAuth2User(email, firstname, lastname, picture, providerId);
 
-        // Return custom OAuth2User that links to our database entity
         return new CustomOAuth2User(oAuth2User, user);
     }
 
-    private UserEntity processOAuth2User(String email, String name, String picture, String providerId) {
-        // Check if user exists by email
+    private UserEntity processOAuth2User(String email, String firstname, String lastname, String picture, String providerId) {
         Optional<UserEntity> userOptional = userRepo.findByEmail(email);
-        
-        // If user exists, update their OAuth details
+
         if (userOptional.isPresent()) {
             UserEntity existingUser = userOptional.get();
-            
-            // If they initially registered locally but now using Google, update provider info
             if ("LOCAL".equals(existingUser.getAuthProvider())) {
                 existingUser.setAuthProvider("GOOGLE");
                 existingUser.setProviderId(providerId);
             }
-            
-            // Update profile information that might have changed on Google's side
-            existingUser.setName(name);
+            existingUser.setFirstname(firstname);
+            existingUser.setLastname(lastname);
             existingUser.setProfilePicture(picture);
-            
             return userRepo.save(existingUser);
         } else {
-            // Create new user if they don't exist
             UserEntity newUser = new UserEntity();
             newUser.setEmail(email);
-            newUser.setName(name);
+            newUser.setFirstname(firstname);
+            newUser.setLastname(lastname);
             newUser.setProfilePicture(picture);
             newUser.setAuthProvider("GOOGLE");
             newUser.setProviderId(providerId);

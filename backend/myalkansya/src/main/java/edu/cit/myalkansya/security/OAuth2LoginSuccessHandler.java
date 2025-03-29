@@ -3,7 +3,6 @@ package edu.cit.myalkansya.security;
 import edu.cit.myalkansya.entity.UserEntity;
 import edu.cit.myalkansya.repository.UserRepository;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -13,7 +12,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -34,16 +32,10 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
         String email = null;
         
-        if (oAuth2User instanceof CustomOAuth2User) {
-            // If we have our custom OAuth2User, use it directly
-            UserEntity user = ((CustomOAuth2User) oAuth2User).getUser();
-            email = user.getEmail();
-        } else if (oAuth2User instanceof DefaultOidcUser) {
+        if (oAuth2User instanceof DefaultOidcUser) {
             // For Google OIDC authentication
             DefaultOidcUser oidcUser = (DefaultOidcUser) oAuth2User;
             email = oidcUser.getEmail();
-            
-            // Ensure user is saved in database if using OIDC directly
             processOidcUser(oidcUser);
         } else {
             // Fallback for regular OAuth2 providers
@@ -60,15 +52,17 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     
     private void processOidcUser(DefaultOidcUser oidcUser) {
         String email = oidcUser.getEmail();
-        String name = oidcUser.getFullName();
+        String firstname = oidcUser.getGivenName();
+        String lastname = oidcUser.getFamilyName();
         String picture = oidcUser.getAttribute("picture");
-        String providerId = oidcUser.getName(); // Subject ID
-        
+        String providerId = oidcUser.getSubject();
+
         userRepository.findByEmail(email)
             .ifPresentOrElse(
                 user -> {
                     // Update existing user
-                    user.setName(name);
+                    user.setFirstname(firstname);
+                    user.setLastname(lastname);
                     user.setProfilePicture(picture);
                     if (!"GOOGLE".equals(user.getAuthProvider())) {
                         user.setAuthProvider("GOOGLE");
@@ -80,10 +74,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                     // Create new user
                     UserEntity newUser = new UserEntity();
                     newUser.setEmail(email);
-                    newUser.setName(name);
+                    newUser.setFirstname(firstname);
+                    newUser.setLastname(lastname);
                     newUser.setProfilePicture(picture);
                     newUser.setAuthProvider("GOOGLE");
                     newUser.setProviderId(providerId);
+                    newUser.setPassword("oauth2_user"); // Set a default password for OAuth2 users
                     userRepository.save(newUser);
                 }
             );

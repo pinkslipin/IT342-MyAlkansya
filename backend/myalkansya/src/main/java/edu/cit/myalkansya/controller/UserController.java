@@ -31,13 +31,34 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
-        userService.registerLocalUser(request.getName(), request.getEmail(), request.getPassword());
+        userService.registerLocalUser(
+            request.getFirstname(),
+            request.getLastname(),
+            request.getEmail(),
+            request.getPassword(),
+            request.getCurrency()
+        );
         return ResponseEntity.ok("User registered successfully");
     }
 
     @GetMapping("/me")
-    public String getCurrentUser() {
-        return "Authenticated!";
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", "")); // Fixed method name
+        Optional<UserEntity> userOpt = userService.findByEmail(email);
+
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+
+        UserEntity user = userOpt.get();
+        return ResponseEntity.ok(Map.of(
+            "userId", user.getUserId(),
+            "firstname", user.getFirstname(),
+            "lastname", user.getLastname(),
+            "email", user.getEmail(),
+            "currency", user.getCurrency(),
+            "totalSavings", user.getTotalSavings()
+        ));
     }
 
     @PostMapping("/login")
@@ -50,7 +71,7 @@ public class UserController {
 
         UserEntity user = userOpt.get();
 
-        if (!encoder.matches(request.getPassword(), user.getPasswordHash())) {
+        if (!encoder.matches(request.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
         }
 
@@ -60,11 +81,13 @@ public class UserController {
         response.put("token", token);
         response.put("user", Map.of(
             "userId", user.getUserId(),
-            "name", user.getName(),
-            "email", user.getEmail()
+            "firstname", user.getFirstname(),
+            "lastname", user.getLastname(),
+            "email", user.getEmail(),
+            "currency", user.getCurrency(),
+            "totalSavings", user.getTotalSavings()
         ));
 
         return ResponseEntity.ok(response);
     }
-
 }

@@ -11,31 +11,53 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int userId;
 
+    @Column(nullable = false)
+    private String firstname;
+
+    @Column(nullable = false)
+    private String lastname;
+
     @Column(nullable = false, unique = true)
     private String email;
 
-    private String passwordHash; // nullable for OAuth users
+    @Column(nullable = true) // nullable = true is default
+    private String password; // renamed from passwordHash
 
     private String authProvider; // "LOCAL", "GOOGLE"
 
     private String providerId; // Google 'sub' ID
 
-    private String name;
-
     private String profilePicture;
 
     private double totalSavings = 0.0;
 
+    private String currency = "USD"; // Default currency
+
     private LocalDateTime createdAt = LocalDateTime.now();
 
     // Getters and Setters
-
     public int getUserId() {
         return userId;
     }
 
     public void setUserId(int userId) {
         this.userId = userId;
+    }
+
+    public String getFirstname() {
+        return firstname;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
     }
 
     public String getEmail() {
@@ -46,12 +68,12 @@ public class UserEntity {
         this.email = email;
     }
 
-    public String getPasswordHash() {
-        return passwordHash;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public String getAuthProvider() {
@@ -70,14 +92,6 @@ public class UserEntity {
         this.providerId = providerId;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getProfilePicture() {
         return profilePicture;
     }
@@ -92,6 +106,14 @@ public class UserEntity {
 
     public void setTotalSavings(double totalSavings) {
         this.totalSavings = totalSavings;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public LocalDateTime getCreatedAt() {

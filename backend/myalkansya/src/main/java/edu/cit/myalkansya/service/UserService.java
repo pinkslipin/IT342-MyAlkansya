@@ -17,12 +17,14 @@ public class UserService {
     @Autowired
     private PasswordEncoder encoder;
 
-    public UserEntity registerLocalUser(String name, String email, String password) {
+    public UserEntity registerLocalUser(String firstname, String lastname, String email, String password, String currency) {
         UserEntity user = new UserEntity();
-        user.setName(name);
+        user.setFirstname(firstname);
+        user.setLastname(lastname);
         user.setEmail(email);
-        user.setPasswordHash(encoder.encode(password));
+        user.setPassword(encoder.encode(password));
         user.setAuthProvider("LOCAL");
+        user.setCurrency(currency);
         return userRepo.save(user);
     }
 
