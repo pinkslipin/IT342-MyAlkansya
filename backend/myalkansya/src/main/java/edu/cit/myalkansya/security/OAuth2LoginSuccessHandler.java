@@ -12,6 +12,8 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -22,7 +24,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     public OAuth2LoginSuccessHandler(JwtUtil jwtUtil, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
-        setDefaultTargetUrl("/user-info");
+        // No default target URL - we'll handle redirection explicitly
     }
 
     @Override
@@ -44,10 +46,35 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         
         if (email != null) {
             String token = jwtUtil.generateToken(email);
+            
+            // Get the redirect_uri from the request parameter or session attribute
+            String redirectUri = request.getParameter("redirect_uri");
+            
+            // If no redirect_uri in parameters, check if it was stored in session
+            if (redirectUri == null || redirectUri.isEmpty()) {
+                redirectUri = (String) request.getSession().getAttribute("REDIRECT_URI");
+            }
+            
+            // If still no redirect_uri, fallback to default frontend URL
+            if (redirectUri == null || redirectUri.isEmpty()) {
+                redirectUri = "http://localhost:5173"; // Default frontend URL
+            }
+            
+            // Clean up any trailing slashes and add a token parameter
+            if (redirectUri.endsWith("/")) {
+                redirectUri = redirectUri.substring(0, redirectUri.length() - 1);
+            }
+            
+            // Build the final redirect URL with the JWT token
+            String finalRedirectUrl = redirectUri + "/?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+            
+            // Set Authorization header and redirect
             response.setHeader("Authorization", "Bearer " + token);
+            response.sendRedirect(finalRedirectUrl);
+        } else {
+            // If email is null, redirect to login page with error
+            response.sendRedirect("http://localhost:5173/login?error=auth_failed");
         }
-        
-        super.onAuthenticationSuccess(request, response, authentication);
     }
     
     private void processOidcUser(DefaultOidcUser oidcUser) {

@@ -6,6 +6,7 @@ import Login from "./components/login";
 import Register from "./components/register";
 import HomePage from "./components/homepage";
 import Income from "./components/income";
+import Expense from "./components/expense"; // Import the Expense component
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
@@ -16,6 +17,7 @@ root.render(
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/income" element={<Income />} /> {/* Add this line */}
+        <Route path="/expense" element={<Expense />} /> {/* Add this line */}
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

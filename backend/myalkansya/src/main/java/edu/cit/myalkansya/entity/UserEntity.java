@@ -2,6 +2,10 @@ package edu.cit.myalkansya.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "users") // optional, to avoid reserved word conflict
@@ -34,7 +38,14 @@ public class UserEntity {
     private String currency = "USD"; // Default currency
 
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("user") // Prevents infinite recursion in JSON response
+    private List<IncomeEntity> incomes = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("user") // Prevents infinite recursion in JSON response
+    private List<ExpenseEntity> expenses = new ArrayList<>();
     // Getters and Setters
     public int getUserId() {
         return userId;
@@ -122,5 +133,45 @@ public class UserEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public List<IncomeEntity> getIncomes() {
+        return incomes;
+    }
+    
+    public void setIncomes(List<IncomeEntity> incomes) {
+        this.incomes = incomes;
+    }
+    
+    // Helper method to add income
+    public void addIncome(IncomeEntity income) {
+        incomes.add(income);
+        income.setUser(this);
+    }
+    
+    // Helper method to remove income
+    public void removeIncome(IncomeEntity income) {
+        incomes.remove(income);
+        income.setUser(null);
+    }
+    
+    public List<ExpenseEntity> getExpenses() {
+        return expenses;
+    }
+    
+    public void setExpenses(List<ExpenseEntity> expenses) {
+        this.expenses = expenses;
+    }
+    
+    // Helper method to add expense
+    public void addExpense(ExpenseEntity expense) {
+        expenses.add(expense);
+        expense.setUser(this);
+    }
+    
+    // Helper method to remove expense
+    public void removeExpense(ExpenseEntity expense) {
+        expenses.remove(expense);
+        expense.setUser(null);
     }
 }
