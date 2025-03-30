@@ -12,9 +12,36 @@ const Income = () => {
   });
   const [editingIncome, setEditingIncome] = useState(null);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   const apiUrl = "http://localhost:8080/api/incomes";
+
+  // Fetch user data to display total savings
+  const fetchUserInfo = async () => {
+    try {
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) return;
+
+      const config = {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      };
+
+      let response;
+      try {
+        response = await axios.get("http://localhost:8080/api/users/me", config);
+      } catch (innerErr) {
+        response = await axios.get("http://localhost:8080/user-info", config);
+      }
+      
+      setUser(response.data);
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
+  };
 
   // Fetch all incomes
   const fetchIncomes = async () => {
@@ -27,6 +54,7 @@ const Income = () => {
       }
 
       const config = {
+        withCredentials: true, // Add for OAuth cookies
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -57,6 +85,7 @@ const Income = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
+        withCredentials: true, // Add for OAuth cookies
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -65,6 +94,9 @@ const Income = () => {
       const response = await axios.post(`${apiUrl}/postIncome`, formData, config);
       setIncomes([...incomes, response.data]);
       setFormData({ source: "", date: "", amount: "", currency: "" });
+      
+      // Refresh user data to show updated total savings
+      fetchUserInfo();
     } catch (error) {
       console.error("Error adding income:", error);
       if (error.response && error.response.status === 401) {
@@ -80,6 +112,7 @@ const Income = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
+        withCredentials: true, // Add for OAuth cookies
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -97,6 +130,9 @@ const Income = () => {
       );
       setEditingIncome(null);
       setFormData({ source: "", date: "", amount: "", currency: "" });
+      
+      // Refresh user data to show updated total savings
+      fetchUserInfo();
     } catch (error) {
       console.error("Error updating income:", error);
       if (error.response && error.response.status === 401) {
@@ -111,6 +147,7 @@ const Income = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
+        withCredentials: true, // Add for OAuth cookies
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -118,6 +155,9 @@ const Income = () => {
 
       await axios.delete(`${apiUrl}/deleteIncome/${id}`, config);
       setIncomes(incomes.filter((income) => income.id !== id));
+      
+      // Refresh user data to show updated total savings
+      fetchUserInfo();
     } catch (error) {
       console.error("Error deleting income:", error);
       if (error.response && error.response.status === 401) {
@@ -140,6 +180,7 @@ const Income = () => {
 
   useEffect(() => {
     fetchIncomes();
+    fetchUserInfo();
   }, [navigate]);
 
   if (error) {
@@ -151,88 +192,210 @@ const Income = () => {
     );
   }
 
+  // Format total savings if user data is available
+  const formattedSavings = user && user.totalSavings !== undefined ? 
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: user.currency || 'USD',
+      minimumFractionDigits: 2
+    }).format(user.totalSavings) : 'Loading...';
+
   return (
-    <div>
+    <div style={{ padding: "20px" }}>
       <h1>Income Management</h1>
-      <button onClick={() => navigate("/")} style={{ marginBottom: "20px" }}>Back to Home</button>
+      <button 
+        onClick={() => navigate("/")} 
+        style={{ 
+          marginBottom: "20px",
+          padding: "8px 16px",
+          backgroundColor: "#6c757d",
+          color: "white",
+          border: "none",
+          borderRadius: "4px",
+          cursor: "pointer"
+        }}
+      >
+        Back to Home
+      </button>
       
-      <form onSubmit={editingIncome ? updateIncome : addIncome}>
-        <input
-          type="text"
-          name="source"
-          placeholder="Source"
-          value={formData.source}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="date"
-          name="date"
-          value={formData.date}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="number"
-          name="amount"
-          placeholder="Amount"
-          value={formData.amount}
-          onChange={handleInputChange}
-          required
-        />
-        <input
-          type="text"
-          name="currency"
-          placeholder="Currency"
-          value={formData.currency}
-          onChange={handleInputChange}
-          required
-        />
-        <button type="submit">{editingIncome ? "Update" : "Add"} Income</button>
-        {editingIncome && (
-          <button
-            type="button"
-            onClick={() => {
-              setEditingIncome(null);
-              setFormData({ source: "", date: "", amount: "", currency: "" });
+      {/* Display total savings */}
+      {user && (
+        <div style={{ 
+          backgroundColor: '#f0f8ff', 
+          padding: '15px', 
+          borderRadius: '8px', 
+          margin: '20px auto',
+          maxWidth: '300px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+        }}>
+          <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>Total Savings</h3>
+          <p style={{ 
+            fontSize: '24px', 
+            fontWeight: 'bold', 
+            margin: '0',
+            color: user.totalSavings >= 0 ? '#28a745' : '#dc3545'
+          }}>
+            {formattedSavings}
+          </p>
+        </div>
+      )}
+      
+      <form 
+        onSubmit={editingIncome ? updateIncome : addIncome}
+        style={{
+          backgroundColor: "#f8f9fa",
+          padding: "20px",
+          borderRadius: "8px",
+          marginBottom: "20px"
+        }}
+      >
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "5px" }}>Source:</label>
+          <input
+            type="text"
+            name="source"
+            placeholder="Where did your income come from?"
+            value={formData.source}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", padding: "8px" }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "5px" }}>Date:</label>
+          <input
+            type="date"
+            name="date"
+            value={formData.date}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", padding: "8px" }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "5px" }}>Amount:</label>
+          <input
+            type="number"
+            name="amount"
+            placeholder="How much did you receive?"
+            value={formData.amount}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", padding: "8px" }}
+          />
+        </div>
+        
+        <div style={{ marginBottom: "10px" }}>
+          <label style={{ display: "block", marginBottom: "5px" }}>Currency:</label>
+          <input
+            type="text"
+            name="currency"
+            placeholder="PHP, USD, etc."
+            value={formData.currency}
+            onChange={handleInputChange}
+            required
+            style={{ width: "100%", padding: "8px" }}
+          />
+        </div>
+        
+        <div>
+          <button 
+            type="submit"
+            style={{
+              backgroundColor: editingIncome ? "#ffc107" : "#28a745",
+              color: "white",
+              padding: "10px 15px",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginRight: "10px"
             }}
           >
-            Cancel
+            {editingIncome ? "Update" : "Add"} Income
           </button>
-        )}
+          
+          {editingIncome && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingIncome(null);
+                setFormData({ source: "", date: "", amount: "", currency: "" });
+              }}
+              style={{
+                backgroundColor: "#6c757d",
+                color: "white",
+                padding: "10px 15px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer"
+              }}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
 
       <h2>Income List</h2>
       {incomes.length === 0 ? (
         <p>No income records found. Add your first income record above!</p>
       ) : (
-        <table border="1" style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Source</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Currency</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {incomes.map((income) => (
-              <tr key={income.id}>
-                <td>{income.id}</td>
-                <td>{income.source}</td>
-                <td>{income.date}</td>
-                <td>{income.amount}</td>
-                <td>{income.currency}</td>
-                <td>
-                  <button onClick={() => editIncome(income)}>Edit</button>
-                  <button onClick={() => deleteIncome(income.id)}>Delete</button>
-                </td>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "10px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f8f9fa" }}>
+                <th style={{ padding: "10px", textAlign: "left", borderBottom: "1px solid #dee2e6" }}>Source</th>
+                <th style={{ padding: "10px", textAlign: "left", borderBottom: "1px solid #dee2e6" }}>Date</th>
+                <th style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #dee2e6" }}>Amount</th>
+                <th style={{ padding: "10px", textAlign: "left", borderBottom: "1px solid #dee2e6" }}>Currency</th>
+                <th style={{ padding: "10px", textAlign: "center", borderBottom: "1px solid #dee2e6" }}>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {incomes.map((income) => (
+                <tr key={income.id}>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #dee2e6" }}>{income.source}</td>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #dee2e6" }}>{income.date}</td>
+                  <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid #dee2e6" }}>
+                    {typeof income.amount === 'number' ? income.amount.toFixed(2) : income.amount}
+                  </td>
+                  <td style={{ padding: "10px", borderBottom: "1px solid #dee2e6" }}>{income.currency}</td>
+                  <td style={{ padding: "10px", textAlign: "center", borderBottom: "1px solid #dee2e6" }}>
+                    <button
+                      onClick={() => editIncome(income)}
+                      style={{
+                        backgroundColor: "#ffc107",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer",
+                        marginRight: "5px"
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteIncome(income.id)}
+                      style={{
+                        backgroundColor: "#dc3545",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "4px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
