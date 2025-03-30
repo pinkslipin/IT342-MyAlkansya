@@ -1,5 +1,9 @@
 package edu.cit.myalkansya.entity;
 
+import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,9 +11,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "expenses")
@@ -27,8 +28,13 @@ public class ExpenseEntity {
     
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties("expenses") // Prevents infinite recursion in JSON response
+    @JsonIgnoreProperties({"expenses", "incomes", "budgets"}) // Prevents infinite recursion in JSON response
     private UserEntity user;
+    
+    @ManyToOne
+    @JoinColumn(name = "budget_id")
+    @JsonIgnoreProperties({"expenses"}) // Prevents infinite recursion in JSON response
+    private BudgetEntity budget;
 
     public ExpenseEntity() {
         super();
@@ -97,5 +103,13 @@ public class ExpenseEntity {
     
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+    
+    public BudgetEntity getBudget() {
+        return budget;
+    }
+    
+    public void setBudget(BudgetEntity budget) {
+        this.budget = budget;
     }
 }
