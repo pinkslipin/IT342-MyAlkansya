@@ -49,6 +49,14 @@ const Login = () => {
     window.location.href = `http://localhost:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
   };
 
+  const handleFacebookLogin = () => {
+    // Store the frontend URL for redirection after OAuth
+    localStorage.setItem("frontendRedirectUrl", window.location.origin);
+    
+    // Redirect to the Facebook OAuth2 login endpoint with the redirect parameter
+    window.location.href = `http://localhost:8080/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+  };
+
   return (
     <div>
       <h2>Login</h2>
@@ -84,10 +92,29 @@ const Login = () => {
           padding: "10px",
           border: "none",
           cursor: "pointer",
+          marginBottom: "10px",
+          width: "100%",
+          display: "block"
         }}
       >
         Login with Google
       </button>
+      
+      <button
+        onClick={handleFacebookLogin}
+        style={{
+          backgroundColor: "#1877F2", // Facebook blue
+          color: "white",
+          padding: "10px",
+          border: "none",
+          cursor: "pointer",
+          width: "100%",
+          display: "block"
+        }}
+      >
+        Login with Facebook
+      </button>
+      
       <div style={{ marginTop: "15px" }}>
         <p>Don't have an account?</p>
         <button
