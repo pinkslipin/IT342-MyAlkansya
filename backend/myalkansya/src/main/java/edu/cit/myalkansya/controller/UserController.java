@@ -26,7 +26,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final GoogleTokenVerifier googleTokenVerifier;
@@ -80,6 +80,26 @@ public class UserController {
         ));
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", "")); // Fixed method name
+        Optional<UserEntity> userOpt = userService.findByEmail(email);
+ 
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+ 
+        UserEntity user = userOpt.get();
+        return ResponseEntity.ok(Map.of(
+            "userId", user.getUserId(),
+            "firstname", user.getFirstname(),
+            "lastname", user.getLastname(),
+            "email", user.getEmail(),
+            "currency", user.getCurrency(),
+            "totalSavings", user.getTotalSavings()
+        ));
     }
 
     public UserController(
