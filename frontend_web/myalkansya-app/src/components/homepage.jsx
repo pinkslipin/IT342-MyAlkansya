@@ -102,6 +102,10 @@ const HomePage = () => {
   const goToExpensePage = () => {
     navigate("/expense");
   };
+  
+  const goToBudgetPage = () => {
+    navigate("/budget");
+  };
 
   if (loading) {
     return <div style={{ textAlign: 'center', marginTop: '50px' }}>
@@ -131,13 +135,45 @@ const HomePage = () => {
   
   const emailToDisplay = user.email || '';
   
+  // Get total savings and currency
+  const totalSavings = user.totalSavings !== undefined ? user.totalSavings : 0;
+  const currency = user.currency || 'USD';
+  
   // Determine which profile image to show
   const imageToDisplay = profileImage || user.picture || user.profilePicture || defaultProfilePic;
+
+  // Format the savings amount with the currency
+  const formattedSavings = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(totalSavings);
 
   return (
     <div style={{ textAlign: 'center', maxWidth: '600px', margin: '0 auto', padding: '20px' }}>
       <h1 style={{ marginBottom: '10px' }}>Welcome, {displayName}!</h1>
-      <p style={{ marginBottom: '20px' }}>Email: {emailToDisplay}</p>
+      <p style={{ marginBottom: '5px' }}>Email: {emailToDisplay}</p>
+      
+      {/* Display total savings */}
+      <div style={{ 
+        backgroundColor: '#f0f8ff', 
+        padding: '15px', 
+        borderRadius: '8px', 
+        margin: '20px auto',
+        maxWidth: '300px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <h3 style={{ margin: '0 0 10px 0', color: '#28a745' }}>Total Savings</h3>
+        <p style={{ 
+          fontSize: '24px', 
+          fontWeight: 'bold', 
+          margin: '0',
+          color: totalSavings >= 0 ? '#28a745' : '#dc3545'
+        }}>
+          {formattedSavings}
+        </p>
+      </div>
       
       {/* Display profile image with error handling */}
       <div>
@@ -193,6 +229,22 @@ const HomePage = () => {
           }}
         >
           Expense Management
+        </button>
+        
+        <button
+          onClick={goToBudgetPage}
+          style={{
+            backgroundColor: "#007bff", // Blue for budget
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "16px"
+          }}
+        >
+          Budget Management
         </button>
         
         <button

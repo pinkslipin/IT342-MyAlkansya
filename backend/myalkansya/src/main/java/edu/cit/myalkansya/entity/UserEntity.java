@@ -46,6 +46,11 @@ public class UserEntity {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("user") // Prevents infinite recursion in JSON response
     private List<ExpenseEntity> expenses = new ArrayList<>();
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("user") // Prevents infinite recursion in JSON response
+    private List<BudgetEntity> budgets = new ArrayList<>();
+    
     // Getters and Setters
     public int getUserId() {
         return userId;
@@ -173,5 +178,25 @@ public class UserEntity {
     public void removeExpense(ExpenseEntity expense) {
         expenses.remove(expense);
         expense.setUser(null);
+    }
+    
+    public List<BudgetEntity> getBudgets() {
+        return budgets;
+    }
+    
+    public void setBudgets(List<BudgetEntity> budgets) {
+        this.budgets = budgets;
+    }
+    
+    // Helper method to add budget
+    public void addBudget(BudgetEntity budget) {
+        budgets.add(budget);
+        budget.setUser(this);
+    }
+    
+    // Helper method to remove budget
+    public void removeBudget(BudgetEntity budget) {
+        budgets.remove(budget);
+        budget.setUser(null);
     }
 }
