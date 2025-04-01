@@ -178,7 +178,8 @@ public class UserController {
         // Create new user
         UserEntity user = new UserEntity();
         user.setFirstname(googleUser.getFirstname());
-        user.setLastname(googleUser.getLastname());
+        // Handle null lastname gracefully
+        user.setLastname(googleUser.getLastname()); // Can be null now
         user.setEmail(email);
         user.setProfilePicture(googleUser.getProfilePicture());
         user.setProviderId(googleUser.getProviderId());

@@ -7,7 +7,6 @@ const Budget = () => {
   const [formData, setFormData] = useState({
     category: "",
     monthlyBudget: "",
-    totalSpent: "",
     currency: "",
   });
   const [editingBudget, setEditingBudget] = useState(null);
@@ -31,7 +30,7 @@ const Budget = () => {
       }
 
       const config = {
-        withCredentials: true, // Add this for OAuth cookies
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -62,15 +61,22 @@ const Budget = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
-        withCredentials: true, // Add this for OAuth cookies
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${authToken}`
         }
       };
 
-      const response = await axios.post(`${apiUrl}/postBudget`, formData, config);
+      // We don't include totalSpent as it will be calculated from linked expenses
+      const budgetData = {
+        category: formData.category,
+        monthlyBudget: formData.monthlyBudget,
+        currency: formData.currency
+      };
+
+      const response = await axios.post(`${apiUrl}/postBudget`, budgetData, config);
       setBudgets([...budgets, response.data]);
-      setFormData({ category: "", monthlyBudget: "", totalSpent: "0", currency: "" });
+      setFormData({ category: "", monthlyBudget: "", currency: "" });
     } catch (error) {
       console.error("Error adding budget:", error);
       if (error.response && error.response.status === 401) {
@@ -86,15 +92,22 @@ const Budget = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
-        withCredentials: true, // Add this for OAuth cookies
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${authToken}`
         }
       };
 
+      // Only update category and monthlyBudget, totalSpent is managed by expenses
+      const budgetData = {
+        category: formData.category,
+        monthlyBudget: formData.monthlyBudget,
+        currency: formData.currency
+      };
+
       const response = await axios.put(
         `${apiUrl}/putBudget/${editingBudget.id}`,
-        formData,
+        budgetData,
         config
       );
       setBudgets(
@@ -103,7 +116,7 @@ const Budget = () => {
         )
       );
       setEditingBudget(null);
-      setFormData({ category: "", monthlyBudget: "", totalSpent: "", currency: "" });
+      setFormData({ category: "", monthlyBudget: "", currency: "" });
     } catch (error) {
       console.error("Error updating budget:", error);
       if (error.response && error.response.status === 401) {
@@ -118,7 +131,7 @@ const Budget = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = {
-        withCredentials: true, // Add this for OAuth cookies
+        withCredentials: true,
         headers: {
           Authorization: `Bearer ${authToken}`
         }
@@ -141,7 +154,6 @@ const Budget = () => {
     setFormData({
       category: budget.category,
       monthlyBudget: budget.monthlyBudget,
-      totalSpent: budget.totalSpent,
       currency: budget.currency,
     });
   };
@@ -176,6 +188,18 @@ const Budget = () => {
       >
         Back to Home
       </button>
+      
+      <div style={{ 
+        padding: "15px", 
+        backgroundColor: "#e3f2fd", 
+        borderRadius: "8px", 
+        marginBottom: "20px",
+        border: "1px solid #bbdefb" 
+      }}>
+        <p><strong>How budgets work:</strong></p>
+        <p>When you create a budget for a category, it will automatically track any expenses you've already created under that category.</p>
+        <p>The "Total Spent" is calculated from your existing expenses in that category.</p>
+      </div>
       
       <form 
         onSubmit={editingBudget ? updateBudget : addBudget}
@@ -216,19 +240,6 @@ const Budget = () => {
         </div>
         
         <div style={{ marginBottom: "10px" }}>
-          <label style={{ display: "block", marginBottom: "5px" }}>Total Spent:</label>
-          <input
-            type="number"
-            name="totalSpent"
-            placeholder="How much have you spent?"
-            value={formData.totalSpent}
-            onChange={handleInputChange}
-            required
-            style={{ width: "100%", padding: "8px" }}
-          />
-        </div>
-        
-        <div style={{ marginBottom: "10px" }}>
           <label style={{ display: "block", marginBottom: "5px" }}>Currency:</label>
           <input
             type="text"
@@ -262,7 +273,7 @@ const Budget = () => {
               type="button"
               onClick={() => {
                 setEditingBudget(null);
-                setFormData({ category: "", monthlyBudget: "", totalSpent: "", currency: "" });
+                setFormData({ category: "", monthlyBudget: "", currency: "" });
               }}
               style={{
                 backgroundColor: "#6c757d",

@@ -2,7 +2,7 @@ package edu.cit.myalkansya.dto;
 
 public class GoogleUserDTO {
     private String firstname;
-    private String lastname;
+    private String lastname; // Can be null for some providers
     private String email;
     private String profilePicture;
     private String providerId;
@@ -11,7 +11,7 @@ public class GoogleUserDTO {
 
     public GoogleUserDTO(String firstname, String lastname, String email, String profilePicture, String providerId) {
         this.firstname = firstname;
-        this.lastname = lastname;
+        this.lastname = lastname; // This can be null
         this.email = email;
         this.profilePicture = profilePicture;
         this.providerId = providerId;

@@ -33,7 +33,7 @@ public class GoogleTokenVerifier {
 
             GoogleIdToken.Payload payload = googleIdToken.getPayload();
             String firstname = (String) payload.get("given_name");
-            String lastname = (String) payload.get("family_name");
+            String lastname = (String) payload.get("family_name"); // Can be null
             String email = payload.getEmail();
             String profilePicture = (String) payload.get("picture");
             String providerId = payload.getSubject();
