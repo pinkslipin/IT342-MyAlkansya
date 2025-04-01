@@ -126,21 +126,25 @@ class SignInActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == RC_SIGN_IN) {
-            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             try {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
                 val account = task.getResult(ApiException::class.java)
-                account.idToken?.let { token ->
-                    Log.d("GoogleLogin", "ID Token received: $token")
-                    lifecycleScope.launch {
-                        authenticateWithGoogle(token)
-                    }
-                } ?: run {
-                    Log.e("GoogleLogin", "ID Token is null")
-                    Toast.makeText(this, "Google sign-in failed: No ID token", Toast.LENGTH_SHORT).show()
-                }
             } catch (e: ApiException) {
                 Log.e("GoogleLogin", "Google sign-in failed", e)
+                if (e.statusCode == 12502) {
+                    Log.e("GoogleLogin", "Specific handling for error code 12502")
+                }
                 Toast.makeText(this, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                return
+            }
+            val task = GoogleSignIn.getSignedInAccountFromIntent(data)
+            val account = task.getResult(ApiException::class.java)
+            val idToken = account.idToken
+            Log.d("GoogleLogin", "ID Token received: $idToken")
+            if (idToken != null) {
+                lifecycleScope.launch {
+                    authenticateWithGoogle(idToken)
+                }
             }
         }
     }
@@ -162,12 +166,23 @@ class SignInActivity : AppCompatActivity() {
                     sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
                     navigateToHome()
                 }
-
             }
             is Resource.Error -> {
                 showLoading(false)
                 Log.e("GoogleAuth", "Error: ${result.message}")
-                Toast.makeText(this@SignInActivity, "Google authentication failed: ${result.message}", Toast.LENGTH_LONG).show()
+                
+                // Handle case where user hasn't signed up yet
+                if (result.message?.contains("No user found", ignoreCase = true) == true || 
+                    result.message?.contains("not registered", ignoreCase = true) == true) {
+                    Toast.makeText(this, "Please sign up with Google first before attempting to sign in", 
+                        Toast.LENGTH_LONG).show()
+                    
+                    // Optionally navigate to sign up page
+                    startActivity(Intent(this, SignUpActivity::class.java))
+                } else {
+                    Toast.makeText(this@SignInActivity, "Google authentication failed: ${result.message}", 
+                        Toast.LENGTH_LONG).show()
+                }
             }
             is Resource.Loading -> {}
         }
