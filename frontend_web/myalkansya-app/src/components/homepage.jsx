@@ -246,6 +246,22 @@ const HomePage = () => {
         >
           Budget Management
         </button>
+
+        <button
+          onClick={() => navigate("/savingsgoal")}
+          style={{
+            backgroundColor: "#20c997", // Teal for savings goals
+            color: "white",
+            padding: "12px 20px",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "16px"
+          }}
+>
+  Savings Goals
+</button>
         
         <button
           onClick={handleLogout}

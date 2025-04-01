@@ -1,8 +1,12 @@
 package edu.cit.myalkansya.controller;
 
 import edu.cit.myalkansya.entity.SavingsGoalEntity;
+import edu.cit.myalkansya.security.JwtUtil;
 import edu.cit.myalkansya.service.SavingsGoalService;
+import edu.cit.myalkansya.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,34 +18,83 @@ public class SavingsGoalController {
 
     @Autowired
     private SavingsGoalService savingsGoalService;
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // CREATE
     @PostMapping("/postSavingsGoal")
-    public SavingsGoalEntity postSavingsGoal(@RequestBody SavingsGoalEntity savingsGoal) {
-        return savingsGoalService.createSavingsGoal(savingsGoal);
+    public ResponseEntity<?> postSavingsGoal(@RequestBody SavingsGoalEntity savingsGoal, @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            SavingsGoalEntity savedGoal = savingsGoalService.createSavingsGoal(savingsGoal, userId);
+            return ResponseEntity.ok(savedGoal);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     // READ
     @GetMapping("/getSavingsGoals")
-    public List<SavingsGoalEntity> getSavingsGoals() {
-        return savingsGoalService.getAllSavingsGoals();
+    public ResponseEntity<?> getSavingsGoals(@RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            List<SavingsGoalEntity> goals = savingsGoalService.getSavingsGoalsByUserId(userId);
+            return ResponseEntity.ok(goals);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/getSavingsGoal/{goalId}")
-    public Optional<SavingsGoalEntity> getSavingsGoalById(@PathVariable int goalId) {
-        return savingsGoalService.getSavingsGoalById(goalId);
+    public ResponseEntity<?> getSavingsGoalById(@PathVariable int goalId, @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            if (!savingsGoalService.savingsGoalExistsAndBelongsToUser(goalId, userId)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Savings goal not found or does not belong to user");
+            }
+            
+            Optional<SavingsGoalEntity> goal = savingsGoalService.getSavingsGoalById(goalId);
+            return ResponseEntity.ok(goal);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     // UPDATE
     @PutMapping("/putSavingsGoal/{goalId}")
-    public SavingsGoalEntity putSavingsGoal(@PathVariable int goalId, @RequestBody SavingsGoalEntity updatedSavingsGoal) {
-        return savingsGoalService.updateSavingsGoal(goalId, updatedSavingsGoal);
+    public ResponseEntity<?> putSavingsGoal(@PathVariable int goalId, @RequestBody SavingsGoalEntity updatedGoal, @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            SavingsGoalEntity updated = savingsGoalService.updateSavingsGoal(goalId, updatedGoal, userId);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     // DELETE
     @DeleteMapping("/deleteSavingsGoal/{goalId}")
-    public String deleteSavingsGoal(@PathVariable int goalId) {
-        savingsGoalService.deleteSavingsGoal(goalId);
-        return "Savings goal with ID " + goalId + " has been deleted.";
+    public ResponseEntity<?> deleteSavingsGoal(@PathVariable int goalId, @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            String result = savingsGoalService.deleteSavingsGoal(goalId, userId);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }

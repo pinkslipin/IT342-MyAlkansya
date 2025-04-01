@@ -4,8 +4,12 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "savings_goals")
@@ -20,7 +24,11 @@ public class SavingsGoalEntity {
     private double currentAmount;
     private LocalDate targetDate;
     private String currency;
-
+    
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"savingsGoals", "incomes", "expenses", "budgets"}) // Prevents infinite recursion in JSON response
+    private UserEntity user;
 
     public SavingsGoalEntity() {
         super();
@@ -82,6 +90,12 @@ public class SavingsGoalEntity {
     public void setCurrency(String currency) {
         this.currency = currency;
     }
-
     
+    public UserEntity getUser() {
+        return user;
+    }
+    
+    public void setUser(UserEntity user) {
+        this.user = user;
+    }
 }
