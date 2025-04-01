@@ -40,19 +40,8 @@ public class ExpenseService {
             BudgetEntity budget = budgetOpt.get();
             budget.addExpense(expense);
             budgetRepository.save(budget);
-        } else {
-            // Optionally, create a new budget for this category
-            BudgetEntity newBudget = new BudgetEntity();
-            newBudget.setUser(user);
-            newBudget.setCategory(expense.getCategory());
-            newBudget.setMonthlyBudget(expense.getAmount() * 2); // Default budget as twice the first expense
-            newBudget.setTotalSpent(expense.getAmount());
-            newBudget.setCurrency(expense.getCurrency());
-            budgetRepository.save(newBudget);
-            
-            // Set the relationship
-            expense.setBudget(newBudget);
         }
+        // No automatic budget creation - expense will be saved without budget association
         
         // Save the expense
         ExpenseEntity savedExpense = expenseRepository.save(expense);
