@@ -26,14 +26,13 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/users")
 public class UserController {
 
     private final GoogleTokenVerifier googleTokenVerifier;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
      
-    
     @Autowired  
     private UserService userService;
 
@@ -82,6 +81,26 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", "")); // Fixed method name
+        Optional<UserEntity> userOpt = userService.findByEmail(email);
+ 
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not found");
+        }
+ 
+        UserEntity user = userOpt.get();
+        return ResponseEntity.ok(Map.of(
+            "userId", user.getUserId(),
+            "firstname", user.getFirstname(),
+            "lastname", user.getLastname(),
+            "email", user.getEmail(),
+            "currency", user.getCurrency(),
+            "totalSavings", user.getTotalSavings()
+        ));
+    }
+
     public UserController(
             UserService userService,
             JwtUtil jwtUtil,
@@ -95,8 +114,9 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @PostMapping("/google")
-    public ResponseEntity<?> authenticateWithGoogle(@RequestBody Map<String, String> request) {
+    // Google login endpoint - only for existing users
+    @PostMapping("/google/login")
+    public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
         String idToken = request.get("idToken");
         if (idToken == null || idToken.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID Token is required for authentication");
@@ -109,29 +129,75 @@ public class UserController {
     
         String email = googleUser.getEmail();
     
-        // Ensure email is not null
         if (email == null || email.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email is required for authentication");
         }
     
-        // Find or create user
-        UserEntity user = userService.findByEmail(email).orElse(null);
-        if (user == null) {
-            user = new UserEntity();
-            user.setFirstname(googleUser.getFirstname());
-            user.setLastname(googleUser.getLastname());
-            user.setEmail(email);
-            user.setProfilePicture(googleUser.getProfilePicture());
-            user.setProviderId(googleUser.getProviderId());
-            user.setAuthProvider("GOOGLE");
-            user = userService.save(user);
+        // Check if user exists
+        Optional<UserEntity> userOptional = userService.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("No user found with this Google account. Please sign up first.");
         }
+    
+        UserEntity user = userOptional.get();
+        
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user.getEmail());
+    
+        AuthResponse authResponse = new AuthResponse(googleUser, token);
+        return ResponseEntity.ok(authResponse);
+    }
+    
+    // Google registration endpoint - for new users only
+    @PostMapping("/google/register")
+    public ResponseEntity<?> registerWithGoogle(@RequestBody Map<String, String> request) {
+        String idToken = request.get("idToken");
+        if (idToken == null || idToken.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID Token is required for registration");
+        }
+    
+        GoogleUserDTO googleUser = googleTokenVerifier.verifyGoogleToken(idToken);
+        if (googleUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google ID Token");
+        }
+    
+        String email = googleUser.getEmail();
+    
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email is required for registration");
+        }
+    
+        // Check if user already exists
+        Optional<UserEntity> existingUser = userService.findByEmail(email);
+        if (existingUser.isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body("User with this Google account already exists. Please sign in instead.");
+        }
+    
+        // Create new user
+        UserEntity user = new UserEntity();
+        user.setFirstname(googleUser.getFirstname());
+        user.setLastname(googleUser.getLastname());
+        user.setEmail(email);
+        user.setProfilePicture(googleUser.getProfilePicture());
+        user.setProviderId(googleUser.getProviderId());
+        user.setAuthProvider("GOOGLE");
+        user = userService.save(user);
     
         // Generate JWT token
         String token = jwtUtil.generateToken(user.getEmail());
     
         AuthResponse authResponse = new AuthResponse(googleUser, token);
         return ResponseEntity.ok(authResponse);
+    }
+
+    //old endpoint for backward compatibility 
+    @Deprecated
+    @PostMapping("/google")
+    public ResponseEntity<?> authenticateWithGoogle(@RequestBody Map<String, String> request) {
+        // Delegate to the new registration endpoint
+        return registerWithGoogle(request);
     }
     
 }
