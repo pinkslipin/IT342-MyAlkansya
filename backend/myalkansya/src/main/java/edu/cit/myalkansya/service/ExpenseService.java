@@ -27,24 +27,29 @@ public class ExpenseService {
     @Autowired
     private BudgetRepository budgetRepository;
 
-    // CREATE
+    // CREATE - Fixed to prevent duplicate expense creation
     @Transactional
     public ExpenseEntity createExpense(ExpenseEntity expense, int userId) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User with ID " + userId + " not found."));
         expense.setUser(user);
         
+        // Save the expense first to get an ID
+        ExpenseEntity savedExpense = expenseRepository.save(expense);
+        
         // Find if there's an existing budget for this category
         Optional<BudgetEntity> budgetOpt = budgetRepository.findFirstByUserUserIdAndCategory(userId, expense.getCategory());
         if (budgetOpt.isPresent()) {
             BudgetEntity budget = budgetOpt.get();
-            budget.addExpense(expense);
+            
+            // Simply update the budget's total spent and link the expense
+            budget.setTotalSpent(budget.getTotalSpent() + expense.getAmount());
+            savedExpense.setBudget(budget);
+            
+            // Update the budget and expense relationship
             budgetRepository.save(budget);
+            // No need to save expense again as relationship is set
         }
-        // No automatic budget creation - expense will be saved without budget association
-        
-        // Save the expense
-        ExpenseEntity savedExpense = expenseRepository.save(expense);
         
         // Update user's total savings by subtracting the expense amount
         user.setTotalSavings(user.getTotalSavings() - expense.getAmount());
@@ -53,7 +58,7 @@ public class ExpenseService {
         return savedExpense;
     }
 
-    // READ methods remain unchanged
+    // READ methods
     public List<ExpenseEntity> getAllExpenses() {
         return expenseRepository.findAll();
     }
@@ -100,7 +105,8 @@ public class ExpenseService {
             // Handle old budget (remove expense from old budget)
             if (existingExpense.getBudget() != null) {
                 BudgetEntity oldBudget = existingExpense.getBudget();
-                oldBudget.removeExpense(existingExpense);
+                oldBudget.setTotalSpent(oldBudget.getTotalSpent() - oldAmount);
+                existingExpense.setBudget(null);
                 budgetRepository.save(oldBudget);
             }
             
@@ -109,23 +115,16 @@ public class ExpenseService {
             if (newBudgetOpt.isPresent()) {
                 BudgetEntity newBudget = newBudgetOpt.get();
                 existingExpense.setBudget(newBudget);
-                // The amount will be added when we save the expense
-            } else {
-                // Create a new budget for this category
-                BudgetEntity newBudget = new BudgetEntity();
-                newBudget.setUser(user);
-                newBudget.setCategory(newExpenseDetails.getCategory());
-                newBudget.setMonthlyBudget(newExpenseDetails.getAmount() * 2); // Default budget as twice the expense
-                newBudget.setTotalSpent(newExpenseDetails.getAmount());
-                newBudget.setCurrency(newExpenseDetails.getCurrency());
+                newBudget.setTotalSpent(newBudget.getTotalSpent() + newExpenseDetails.getAmount());
                 budgetRepository.save(newBudget);
-                
-                existingExpense.setBudget(newBudget);
+            } else {
+                // No budget exists for this category, leave unassociated
+                existingExpense.setBudget(null);
             }
         } else if (existingExpense.getBudget() != null) {
             // Category didn't change, just update the amount in the existing budget
             BudgetEntity budget = existingExpense.getBudget();
-            budget.updateExpense(existingExpense, oldAmount);
+            budget.setTotalSpent(budget.getTotalSpent() - oldAmount + newExpenseDetails.getAmount());
             budgetRepository.save(budget);
         }
         
@@ -161,7 +160,7 @@ public class ExpenseService {
         // Update budget if associated
         if (expense.getBudget() != null) {
             BudgetEntity budget = expense.getBudget();
-            budget.removeExpense(expense);
+            budget.setTotalSpent(budget.getTotalSpent() - amountToAdd);
             budgetRepository.save(budget);
         }
         

@@ -8,6 +8,7 @@ import HomePage from "./components/homepage";
 import Income from "./components/income";
 import Expense from "./components/expense";
 import Budget from "./components/budget";
+import SavingsGoal from "./components/savingsgoal";
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
@@ -20,6 +21,7 @@ root.render(
         <Route path="/income" element={<Income />} />
         <Route path="/expense" element={<Expense />} />
         <Route path="/budget" element={<Budget />} />
+        <Route path="/savingsgoal" element={<SavingsGoal />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
