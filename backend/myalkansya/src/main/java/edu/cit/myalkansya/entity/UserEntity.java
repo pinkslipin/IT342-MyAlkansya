@@ -31,6 +31,7 @@ public class UserEntity {
 
     private String providerId; // Google 'sub' ID
 
+    @Column(length = 1024)
     private String profilePicture;
 
     private double totalSavings = 0.0;

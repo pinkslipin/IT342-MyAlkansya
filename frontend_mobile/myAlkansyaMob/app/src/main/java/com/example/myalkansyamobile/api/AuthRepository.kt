@@ -2,6 +2,7 @@ package com.example.myalkansyamobile.api
 
 import android.util.Log
 import com.example.myalkansyamobile.model.AuthResponse
+import com.example.myalkansyamobile.model.FacebookAuthRequest
 import com.example.myalkansyamobile.model.GoogleAuthRequest
 import com.example.myalkansyamobile.model.LoginRequest
 import com.example.myalkansyamobile.model.RegisterRequest
@@ -48,6 +49,52 @@ class AuthRepository(private val apiService: AuthApiService) {
                     } ?: Resource.Error("Empty response from server")
                 } else {
                     Resource.Error("Google registration failed: ${response.errorBody()?.string() ?: "Unknown error"}")
+                }
+            } catch (e: HttpException) {
+                Resource.Error("Server Error: ${e.message()}")
+            } catch (e: IOException) {
+                Resource.Error("Network error: Please check your internet connection.")
+            } catch (e: Exception) {
+                Resource.Error("Unexpected error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    suspend fun authenticateWithFacebook(accessToken: String): Resource<AuthResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = FacebookAuthRequest(accessToken)
+                val response = apiService.facebookLogin(request)
+
+                if (response.isSuccessful) {
+                    response.body()?.let {
+                        Resource.Success(it)
+                    } ?: Resource.Error("Empty response from server")
+                } else {
+                    Resource.Error("Facebook login failed: ${response.errorBody()?.string() ?: "Unknown error"}")
+                }
+            } catch (e: HttpException) {
+                Resource.Error("Server Error: ${e.message()}")
+            } catch (e: IOException) {
+                Resource.Error("Network error: Please check your internet connection.")
+            } catch (e: Exception) {
+                Resource.Error("Unexpected error: ${e.localizedMessage}")
+            }
+        }
+    }
+    
+    suspend fun registerWithFacebook(accessToken: String): Resource<AuthResponse> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val request = FacebookAuthRequest(accessToken)
+                val response = apiService.facebookRegister(request)
+
+                if (response.isSuccessful) {
+                    response.body()?.let {
+                        Resource.Success(it)
+                    } ?: Resource.Error("Empty response from server")
+                } else {
+                    Resource.Error("Facebook registration failed: ${response.errorBody()?.string() ?: "Unknown error"}")
                 }
             } catch (e: HttpException) {
                 Resource.Error("Server Error: ${e.message()}")

@@ -6,6 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -15,6 +17,12 @@ import com.example.myalkansyamobile.auth.SessionManager
 import com.example.myalkansyamobile.databinding.ActivitySignupBinding
 import com.example.myalkansyamobile.model.RegisterRequest
 import com.example.myalkansyamobile.utils.Resource
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.FacebookSdk
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -24,12 +32,19 @@ import kotlinx.coroutines.launch
 class SignUpActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySignupBinding
     private lateinit var googleSignInClient: GoogleSignInClient
-    private val RC_SIGN_IN = 9002 // Different request code from SignInActivity
+    private lateinit var callbackManager: CallbackManager
     private lateinit var authRepository: AuthRepository
     private lateinit var sessionManager: SessionManager
+    
+    // Activity Result Launchers
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Initialize Facebook SDK
+        FacebookSdk.sdkInitialize(applicationContext)
+        
         binding = ActivitySignupBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -44,8 +59,34 @@ class SignUpActivity : AppCompatActivity() {
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
+        
+        // Initialize Facebook Login
+        callbackManager = CallbackManager.Factory.create()
+        
+        // Initialize Activity Result Launchers
+        setupActivityResultLaunchers()
 
         setupClickListeners()
+    }
+    
+    private fun setupActivityResultLaunchers() {
+        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                try {
+                    val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                    val account = task.getResult(ApiException::class.java)
+                    account.idToken?.let { token ->
+                        // Register with Google
+                        lifecycleScope.launch {
+                            registerWithGoogle(token)
+                        }
+                    }
+                } catch (e: ApiException) {
+                    Toast.makeText(this, "Google sign up failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("GoogleSignUp", "Google sign up failed", e)
+                }
+            }
+        }
     }
 
     private fun setupClickListeners() {
@@ -68,7 +109,7 @@ class SignUpActivity : AppCompatActivity() {
 
         // Facebook sign up
         binding.btnFacebook.setOnClickListener {
-            Toast.makeText(this, "Facebook sign up will be implemented", Toast.LENGTH_SHORT).show()
+            signUpWithFacebook()
         }
     }
 
@@ -176,28 +217,48 @@ class SignUpActivity : AppCompatActivity() {
     private fun signUpWithGoogle() {
         googleSignInClient.signOut().addOnCompleteListener {
             val signInIntent = googleSignInClient.signInIntent
-            startActivityForResult(signInIntent, RC_SIGN_IN)
+            googleSignInLauncher.launch(signInIntent)
         }
     }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (requestCode == RC_SIGN_IN) {
-            try {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(data)
-                val account = task.getResult(ApiException::class.java)
-                account.idToken?.let { token ->
-                    // Register with Google
-                    lifecycleScope.launch {
-                        registerWithGoogle(token)
-                    }
+    
+    private fun signUpWithFacebook() {
+        // Clear any previous login state
+        LoginManager.getInstance().logOut()
+        
+        // Request permissions and start Facebook login flow
+        LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+            override fun onSuccess(result: LoginResult) {
+                Log.d("FacebookAuth", "Facebook login success")
+                val token = result.accessToken.token
+                
+                lifecycleScope.launch {
+                    registerWithFacebook(token)
                 }
-            } catch (e: ApiException) {
-                Toast.makeText(this, "Google sign up failed: ${e.message}", Toast.LENGTH_SHORT).show()
-                Log.e("GoogleSignUp", "Google sign up failed", e)
             }
-        }
+
+            override fun onCancel() {
+                Log.d("FacebookAuth", "Facebook login canceled")
+                Toast.makeText(this@SignUpActivity, "Facebook signup canceled", Toast.LENGTH_SHORT).show()
+            }
+
+            override fun onError(error: FacebookException) {
+                Log.e("FacebookAuth", "Facebook login error", error)
+                Toast.makeText(this@SignUpActivity, "Facebook signup error: ${error.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+        
+        // Start the Facebook login flow with read permissions
+        LoginManager.getInstance().logInWithReadPermissions(
+            this,
+            callbackManager,
+            listOf("email", "public_profile")
+        )
+    }
+
+    // This is still needed for Facebook SDK compatibility
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        callbackManager.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
     }
 
     private suspend fun registerWithGoogle(idToken: String) {
@@ -223,6 +284,39 @@ class SignUpActivity : AppCompatActivity() {
         } catch (e: Exception) {
             binding.signUpButton.isEnabled = true
             binding.btnGoogle.isEnabled = true
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    private suspend fun registerWithFacebook(accessToken: String) {
+        binding.signUpButton.isEnabled = false
+        binding.btnFacebook.isEnabled = false
+
+        try {
+            Log.d("FacebookAuth", "Starting Facebook registration with token: $accessToken")
+            when (val result = authRepository.registerWithFacebook(accessToken)) {
+                is Resource.Success -> {
+                    result.data?.let { authResponse ->
+                        sessionManager.saveAuthToken(authResponse.token)
+                        sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
+                        showSuccessDialog()
+                    } ?: run {
+                        binding.signUpButton.isEnabled = true
+                        binding.btnFacebook.isEnabled = true
+                        Toast.makeText(this, "Facebook registration failed: Empty response data", Toast.LENGTH_LONG).show()
+                    }
+                }
+                is Resource.Error -> {
+                    binding.signUpButton.isEnabled = true
+                    binding.btnFacebook.isEnabled = true
+                    Toast.makeText(this, "Facebook registration failed: ${result.message}", Toast.LENGTH_LONG).show()
+                }
+                is Resource.Loading -> {}
+            }
+        } catch (e: Exception) {
+            binding.signUpButton.isEnabled = true
+            binding.btnFacebook.isEnabled = true
+            Log.e("FacebookSignUp", "Facebook registration error", e)
             Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }

@@ -4,17 +4,21 @@ import edu.cit.myalkansya.dto.AuthResponse;
 import edu.cit.myalkansya.dto.GoogleUserDTO;
 import edu.cit.myalkansya.dto.LoginRequest;
 import edu.cit.myalkansya.dto.RegisterRequest;
+import edu.cit.myalkansya.dto.FacebookAuthRequest;
+import edu.cit.myalkansya.dto.FacebookUserDTO;
 import edu.cit.myalkansya.entity.UserEntity;
 import edu.cit.myalkansya.repository.UserRepository;
 import edu.cit.myalkansya.service.UserService;
 import edu.cit.myalkansya.security.JwtUtil;
 import edu.cit.myalkansya.security.GoogleTokenVerifier;
+import edu.cit.myalkansya.security.FacebookTokenVerifier;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,7 +33,10 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 @RequestMapping("/api/users")
 public class UserController {
 
+    private static final Logger logger = Logger.getLogger(UserController.class.getName());
+    
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final FacebookTokenVerifier facebookTokenVerifier;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
      
@@ -105,11 +112,13 @@ public class UserController {
             UserService userService,
             JwtUtil jwtUtil,
             GoogleTokenVerifier googleTokenVerifier,
+            FacebookTokenVerifier facebookTokenVerifier,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
         this.googleTokenVerifier = googleTokenVerifier;
+        this.facebookTokenVerifier = facebookTokenVerifier;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -178,8 +187,7 @@ public class UserController {
         // Create new user
         UserEntity user = new UserEntity();
         user.setFirstname(googleUser.getFirstname());
-        // Handle null lastname gracefully
-        user.setLastname(googleUser.getLastname()); // Can be null now
+        user.setLastname(googleUser.getLastname());
         user.setEmail(email);
         user.setProfilePicture(googleUser.getProfilePicture());
         user.setProviderId(googleUser.getProviderId());
@@ -199,6 +207,123 @@ public class UserController {
     public ResponseEntity<?> authenticateWithGoogle(@RequestBody Map<String, String> request) {
         // Delegate to the new registration endpoint
         return registerWithGoogle(request);
+    }
+
+    @PostMapping("/facebook/login")
+    public ResponseEntity<?> facebookLogin(@RequestBody FacebookAuthRequest request) {
+        String accessToken = request.getAccessToken();
+        if (accessToken == null || accessToken.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Facebook access token is required");
+        }
+    
+        // Verify the Facebook token and get user info
+        FacebookUserDTO facebookUser = facebookTokenVerifier.verifyFacebookToken(accessToken);
+        if (facebookUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Facebook access token");
+        }
+        
+        String email = facebookUser.getEmail();
+        
+        if (email == null || email.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body("Email is required for authentication. Please ensure your Facebook account has a valid email.");
+        }
+    
+        // Check if user exists
+        Optional<UserEntity> userOptional = userService.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("No user found with this Facebook account. Please sign up first.");
+        }
+    
+        UserEntity user = userOptional.get();
+        
+        // Generate JWT token
+        String token = jwtUtil.generateToken(user.getEmail());
+    
+        // Create AuthResponse with user info and token
+        Map<String, Object> userMap = new HashMap<>();
+        userMap.put("userId", user.getUserId());
+        userMap.put("firstname", user.getFirstname());
+        userMap.put("lastname", user.getLastname());
+        userMap.put("email", user.getEmail());
+        userMap.put("providerId", facebookUser.getProviderId());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", userMap);
+    
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/facebook/register")
+    public ResponseEntity<?> registerWithFacebook(@RequestBody FacebookAuthRequest request) {
+        String accessToken = request.getAccessToken();
+        if (accessToken == null || accessToken.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Facebook access token is required");
+        }
+    
+        try {
+            // Verify the Facebook token and get user info
+            FacebookUserDTO facebookUser = facebookTokenVerifier.verifyFacebookToken(accessToken);
+            if (facebookUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Facebook access token");
+            }
+            
+            String email = facebookUser.getEmail();
+            String providerId = facebookUser.getProviderId();
+            
+            if (email == null || email.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Email is required for registration. Please ensure your Facebook account has a valid email.");
+            }
+            
+            // Check if user already exists
+            Optional<UserEntity> existingUser = userService.findByEmail(email);
+            if (existingUser.isPresent()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("User with this Facebook account already exists. Please sign in instead.");
+            }
+        
+            // Create new user
+            UserEntity user = new UserEntity();
+            user.setFirstname(facebookUser.getFirstname());
+            user.setLastname(facebookUser.getLastname());
+            user.setEmail(email);
+            user.setProfilePicture(facebookUser.getProfilePicture());
+            user.setProviderId(providerId);
+            user.setAuthProvider("FACEBOOK");
+            
+            try {
+                user = userService.save(user);
+                logger.info("Registered new Facebook user: " + email + ", ProviderId: " + providerId);
+            } catch (Exception e) {
+                logger.severe("Error saving Facebook user: " + e.getMessage());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to create user account: " + e.getMessage());
+            }
+        
+            // Generate JWT token
+            String token = jwtUtil.generateToken(user.getEmail());
+        
+            // Create AuthResponse with user info and token
+            Map<String, Object> userMap = new HashMap<>();
+            userMap.put("userId", user.getUserId());
+            userMap.put("firstname", user.getFirstname());
+            userMap.put("lastname", user.getLastname());
+            userMap.put("email", user.getEmail());
+            userMap.put("providerId", providerId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("token", token);
+            response.put("user", userMap);
+        
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.severe("Unexpected error in Facebook registration: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("An unexpected error occurred: " + e.getMessage());
+        }
     }
     
 }
