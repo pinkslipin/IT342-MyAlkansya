@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">MyAlkansyaMobile</string>
     <string name="server_client_id">275880440953-akhnvpmdmm4hiutcji6mcjtbap9cq7q1.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">953547133647991</string>
+    <string name="fb_login_protocol_scheme">fb953547133647991</string>
+    <string name="facebook_client_token">62a4bdcfd82c0abbb3cd5c5efd11cb65</string>
 </resources>

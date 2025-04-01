@@ -1,6 +1,7 @@
 package com.example.myalkansyamobile.api
 
 import com.example.myalkansyamobile.model.AuthResponse
+import com.example.myalkansyamobile.model.FacebookAuthRequest
 import com.example.myalkansyamobile.model.GoogleAuthRequest
 import com.example.myalkansyamobile.model.LoginRequest
 import com.example.myalkansyamobile.model.RegisterRequest
@@ -16,6 +17,12 @@ interface AuthApiService {
     
     @POST("/api/users/google/register")
     suspend fun googleRegister(@Body request: GoogleAuthRequest): Response<AuthResponse>
+
+    @POST("/api/users/facebook/login")
+    suspend fun facebookLogin(@Body request: FacebookAuthRequest): Response<AuthResponse>
+    
+    @POST("/api/users/facebook/register")
+    suspend fun facebookRegister(@Body request: FacebookAuthRequest): Response<AuthResponse>
 
     @POST("/api/users/login")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>

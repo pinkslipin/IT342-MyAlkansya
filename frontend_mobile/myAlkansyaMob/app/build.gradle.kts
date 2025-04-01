@@ -53,6 +53,10 @@ dependencies {
     // Google Sign-In
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
+    // Facebook SDK
+    implementation("com.facebook.android:facebook-login:16.2.0")
+    implementation("com.facebook.android:facebook-android-sdk:16.2.0")
+
     // Retrofit for API calls
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The debug version of the key hash for development purposes -->
+    <string name="facebook_app_id">953547133647991</string>
+    <string name="fb_login_protocol_scheme">fb953547133647991</string>
+    <string name="facebook_client_token">62a4bdcfd82c0abbb3cd5c5efd11cb65</string>
+    <!-- For debug builds, we'll use a hard-coded key hash to avoid the need to regenerate it -->
+    <string name="facebook_debug_key_hash">Omunm7cbCnhkY3RTbwWrl9xlViE=</string>
+</resources>
