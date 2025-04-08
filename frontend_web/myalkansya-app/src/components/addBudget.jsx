@@ -133,14 +133,14 @@ const AddBudget = () => {
                 </div>
 
                 {/* Month and Year Selection */}
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-[#18864F] font-bold mb-2">Month</label>
+                <div className="mb-4">
+                  <label className="block text-[#18864F] font-bold mb-2">Month and Year</label>
+                  <div className="flex max-w-lg">
                     <select
                       name="budgetMonth"
                       value={formData.budgetMonth}
                       onChange={handleInputChange}
-                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      className="w-1/2 p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                       required
                     >
                       {months.map((month) => (
@@ -149,14 +149,11 @@ const AddBudget = () => {
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label className="block text-[#18864F] font-bold mb-2">Year</label>
                     <select
                       name="budgetYear"
                       value={formData.budgetYear}
                       onChange={handleInputChange}
-                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      className="w-1/2 p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                       required
                     >
                       {years.map((year) => (

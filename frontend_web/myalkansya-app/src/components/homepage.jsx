@@ -163,16 +163,16 @@ const HomePage = () => {
           {/* Summary Cards */}
           <div className="grid grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <h3 className="text-lg font-bold text-[#18864F]">Total Budget</h3>
-              <p className="text-2xl font-bold text-[#18864F]">{formattedBudget}</p>
+              <h3 className="text-lg font-bold text-[#18864F]">Total Savings</h3>
+              <p className="text-2xl font-bold text-[#18864F]">{formattedSavings}</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <h3 className="text-lg font-bold text-[#18864F]">Total Expenses</h3>
               <p className="text-2xl font-bold text-[#18864F]">{formattedExpenses}</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <h3 className="text-lg font-bold text-[#18864F]">Total Savings</h3>
-              <p className="text-2xl font-bold text-[#18864F]">{formattedSavings}</p>
+              <h3 className="text-lg font-bold text-[#18864F]">Total Budget</h3>
+              <p className="text-2xl font-bold text-[#18864F]">{formattedBudget}</p>
             </div>
           </div>
 
