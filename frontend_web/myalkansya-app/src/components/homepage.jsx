@@ -48,8 +48,8 @@ const HomePage = () => {
         const totalExpensesSum = expensesResponse.data.reduce((sum, expense) => sum + expense.amount, 0);
         setTotalExpenses(totalExpensesSum);
 
-        // Fetch total budget
-        const budgetsResponse = await axios.get("http://localhost:8080/api/budgets/getBudgets", config);
+        // Fetch total budget - update to use the new getCurrentMonthBudgets endpoint
+        const budgetsResponse = await axios.get("http://localhost:8080/api/budgets/getCurrentMonthBudgets", config);
         const totalBudgetSum = budgetsResponse.data.reduce((sum, budget) => sum + budget.monthlyBudget, 0);
         setTotalBudget(totalBudgetSum);
 

@@ -9,6 +9,9 @@ const EditBudget = () => {
     category: "",
     monthlyBudget: "",
     currency: "PHP",
+    budgetMonth: new Date().getMonth() + 1,
+    budgetYear: new Date().getFullYear(),
+    totalSpent: 0
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,7 +34,7 @@ const EditBudget = () => {
           },
         };
 
-        const response = await axios.get(`http://localhost:8080/api/budgets/getBudget/${budgetId}`, config);
+        const response = await axios.get(`http://localhost:8080/api/budgets/${budgetId}`, config);
         setFormData(response.data);
         setLoading(false);
       } catch (err) {
@@ -66,16 +69,44 @@ const EditBudget = () => {
         },
       };
 
-      await axios.put(`http://localhost:8080/api/budgets/putBudget/${budgetId}`, formData, config);
+      await axios.put(`http://localhost:8080/api/budgets/update/${budgetId}`, formData, config);
       navigate("/budget"); // Redirect to the Budget page after successful update
     } catch (err) {
       console.error("Error editing budget:", err);
-      setError("Failed to edit budget. Please try again later.");
+      if (err.response && err.response.data) {
+        setError(err.response.data);
+      } else {
+        setError("Failed to edit budget. Please try again later.");
+      }
     }
   };
 
+  // Generate array of months for dropdown
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  // Generate array of years (current year - 1, current year, current year + 1)
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
+
   if (loading) {
-    return <p>Loading budget details...</p>;
+    return (
+      <div className="flex justify-center items-center h-screen bg-[#FEF6EA]">
+        <p className="text-[#18864F] font-bold text-xl">Loading budget details...</p>
+      </div>
+    );
   }
 
   return (
@@ -90,7 +121,7 @@ const EditBudget = () => {
         {/* Main Content */}
         <div className="flex-1 p-8 ml-72 bg-[#FEF6EA] flex justify-center items-center">
           {/* White Container */}
-          <div className="bg-white p-12 rounded-lg shadow-md w-full max-w-7xl flex" style={{ height: "650px" }}>
+          <div className="bg-white p-12 rounded-lg shadow-md w-full max-w-7xl flex" style={{ height: "700px" }}>
             {/* Left Section: Form */}
             <div className="w-2/3 pr-8">
               <div className="flex items-center mb-6">
@@ -141,6 +172,42 @@ const EditBudget = () => {
                   </select>
                 </div>
 
+                {/* Month and Year Selection */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[#18864F] font-bold mb-2">Month</label>
+                    <select
+                      name="budgetMonth"
+                      value={formData.budgetMonth}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      required
+                    >
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#18864F] font-bold mb-2">Year</label>
+                    <select
+                      name="budgetYear"
+                      value={formData.budgetYear}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      required
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="mb-4">
                   <label className="block text-[#18864F] font-bold mb-2">Monthly Budget</label>
                   <div className="flex max-w-lg">
@@ -166,6 +233,17 @@ const EditBudget = () => {
                   </div>
                 </div>
 
+                {/* Display Total Spent (read-only) */}
+                <div className="mb-4">
+                  <label className="block text-[#18864F] font-bold mb-2">Total Spent</label>
+                  <div className="p-3 border rounded-md bg-gray-100 text-gray-700 max-w-lg">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: formData.currency || "PHP",
+                    }).format(formData.totalSpent)}
+                  </div>
+                </div>
+
                 {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
 
                 <div className="flex justify-between max-w-lg">
@@ -186,9 +264,17 @@ const EditBudget = () => {
               </form>
             </div>
 
-            {/* Right Section: Empty for Future Use */}
-            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-4 flex items-center justify-center">
-              <p className="text-gray-500">Future content goes here</p>
+            {/* Right Section */}
+            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-4 flex flex-col items-center justify-center">
+              <div className="mb-4 text-center">
+                <h3 className="font-bold text-[#18864F] text-xl mb-2">Budget Details</h3>
+                <p className="text-gray-700 mb-4">
+                  Edit your budget for this category. Any expenses in this category for the selected month will be tracked against this budget.
+                </p>
+                <p className="text-sm text-gray-500 mt-4">
+                  Note: Changing the month or category may affect which expenses are tracked against this budget.
+                </p>
+              </div>
             </div>
           </div>
         </div>
