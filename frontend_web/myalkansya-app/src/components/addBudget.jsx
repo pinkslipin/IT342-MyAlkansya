@@ -9,6 +9,8 @@ const AddBudget = () => {
     category: "",
     monthlyBudget: "",
     currency: "PHP",
+    budgetMonth: new Date().getMonth() + 1, // Current month (1-12)
+    budgetYear: new Date().getFullYear(), // Current year
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -35,13 +37,37 @@ const AddBudget = () => {
         },
       };
 
-      await axios.post("http://localhost:8080/api/budgets/postBudget", formData, config);
+      await axios.post("http://localhost:8080/api/budgets/create", formData, config);
       navigate("/budget"); // Redirect to the Budget page after successful addition
     } catch (err) {
       console.error("Error adding budget:", err);
-      setError("Failed to add budget. Please try again later.");
+      if (err.response && err.response.data) {
+        setError(err.response.data);
+      } else {
+        setError("Failed to add budget. Please try again later.");
+      }
     }
   };
+
+  // Generate array of months for dropdown
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  // Generate array of years (current year - 1, current year, current year + 1)
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -55,7 +81,7 @@ const AddBudget = () => {
         {/* Main Content */}
         <div className="flex-1 p-8 ml-72 bg-[#FEF6EA] flex justify-center items-center">
           {/* White Container */}
-          <div className="bg-white p-12 rounded-lg shadow-md w-full max-w-7xl flex" style={{ height: "650px" }}>
+          <div className="bg-white p-12 rounded-lg shadow-md w-full max-w-7xl flex" style={{ height: "700px" }}>
             {/* Left Section: Form */}
             <div className="w-2/3 pr-8">
               <div className="flex items-center mb-6">
@@ -106,6 +132,42 @@ const AddBudget = () => {
                   </select>
                 </div>
 
+                {/* Month and Year Selection */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-[#18864F] font-bold mb-2">Month</label>
+                    <select
+                      name="budgetMonth"
+                      value={formData.budgetMonth}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      required
+                    >
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[#18864F] font-bold mb-2">Year</label>
+                    <select
+                      name="budgetYear"
+                      value={formData.budgetYear}
+                      onChange={handleInputChange}
+                      className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      required
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="mb-4">
                   <label className="block text-[#18864F] font-bold mb-2">Monthly Budget</label>
                   <div className="flex max-w-lg">
@@ -151,9 +213,17 @@ const AddBudget = () => {
               </form>
             </div>
 
-            {/* Right Section: Empty for Future Use */}
-            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-4 flex items-center justify-center">
-              <p className="text-gray-500">Future content goes here</p>
+            {/* Right Section */}
+            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-4 flex flex-col items-center justify-center">
+              <div className="mb-4 text-center">
+                <h3 className="font-bold text-[#18864F] text-xl mb-2">Budget Planning</h3>
+                <p className="text-gray-700 mb-4">
+                  Set a monthly budget for each spending category to keep track of your expenses.
+                </p>
+                <p className="text-sm text-gray-500 mt-4">
+                  You can create one budget per category for each month.
+                </p>
+              </div>
             </div>
           </div>
         </div>

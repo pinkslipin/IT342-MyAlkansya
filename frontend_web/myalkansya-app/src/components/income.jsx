@@ -10,11 +10,40 @@ const Income = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Set to 10 items per page
   const [error, setError] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(0); // 0 means all months
+  const [selectedYear, setSelectedYear] = useState(0); // 0 means all years
   const navigate = useNavigate();
 
   const apiUrl = "http://localhost:8080/api/incomes";
 
-  // Fetch all incomes
+  // Generate array of months for dropdown
+  const months = [
+    { value: 0, label: "All Months" },
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  // Generate array of years (current year - 2 to current year + 1)
+  const currentYear = new Date().getFullYear();
+  const years = [
+    { value: 0, label: "All Years" },
+    { value: currentYear - 2, label: (currentYear - 2).toString() },
+    { value: currentYear - 1, label: (currentYear - 1).toString() },
+    { value: currentYear, label: currentYear.toString() },
+    { value: currentYear + 1, label: (currentYear + 1).toString() },
+  ];
+
+  // Fetch all incomes with client-side filtering
   const fetchIncomes = async () => {
     try {
       const authToken = localStorage.getItem("authToken");
@@ -30,9 +59,34 @@ const Income = () => {
           Authorization: `Bearer ${authToken}`,
         },
       };
-
+      
+      // Get all incomes from the backend
       const response = await axios.get(`${apiUrl}/getIncomes`, config);
-      setIncomes(response.data);
+      
+      // Apply client-side filtering
+      let filteredIncomes = response.data;
+      
+      if (selectedMonth > 0 || selectedYear > 0) {
+        filteredIncomes = response.data.filter(income => {
+          // Parse the income date string to a Date object
+          const incomeDate = new Date(income.date);
+          
+          // Get the month (1-12) and year from the date
+          const incomeMonth = incomeDate.getMonth() + 1; // JavaScript months are 0-indexed
+          const incomeYear = incomeDate.getFullYear();
+          
+          // Check if the income matches the selected filters
+          const monthMatches = selectedMonth === 0 || incomeMonth === selectedMonth;
+          const yearMatches = selectedYear === 0 || incomeYear === selectedYear;
+          
+          // Return true only if both month and year match the filters
+          return monthMatches && yearMatches;
+        });
+      }
+      
+      // Update state with filtered incomes
+      setIncomes(filteredIncomes);
+      setCurrentPage(1); // Reset to first page when filters change
     } catch (error) {
       console.error("Error fetching incomes:", error);
       if (error.response && error.response.status === 401) {
@@ -46,7 +100,13 @@ const Income = () => {
 
   useEffect(() => {
     fetchIncomes();
-  }, [navigate]);
+  }, [selectedMonth, selectedYear, navigate]);
+
+  // Reset filters
+  const handleResetFilters = () => {
+    setSelectedMonth(0);
+    setSelectedYear(0);
+  };
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -95,6 +155,66 @@ const Income = () => {
             >
               Add Income
             </button>
+          </div>
+          
+          {/* Month and Year Filter - Updated to match budget.jsx styling */}
+          <div className="mb-6 bg-white p-4 rounded-md shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-center">
+              <div className="flex flex-col sm:flex-row items-center mb-3 sm:mb-0">
+                <h2 className="text-lg font-semibold text-[#18864F] mr-4">Filters</h2>
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex items-center">
+                    <label className="text-[#18864F] mr-2 font-medium">Month:</label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                      className="border border-gray-300 rounded-md py-1 px-3 bg-white text-[#18864F] focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
+                    >
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center">
+                    <label className="text-[#18864F] mr-2 font-medium">Year:</label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      className="border border-gray-300 rounded-md py-1 px-3 bg-white text-[#18864F] focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
+                    >
+                      {years.map((year) => (
+                        <option key={year.value} value={year.value}>
+                          {year.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={handleResetFilters}
+                className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition duration-300"
+              >
+                Reset Filters
+              </button>
+            </div>
+            {(selectedMonth > 0 || selectedYear > 0) && (
+              <div className="mt-3 px-2 py-1 bg-[#EDFBE9] text-[#18864F] rounded-md inline-block">
+                <span className="font-medium">Active filters:</span>
+                {selectedMonth > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-[#FFC107] rounded-md text-sm">
+                    Month: {months.find(m => m.value === selectedMonth)?.label}
+                  </span>
+                )}
+                {selectedYear > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-[#FFC107] rounded-md text-sm">
+                    Year: {selectedYear}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Fixed Header */}

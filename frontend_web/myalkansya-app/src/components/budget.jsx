@@ -10,11 +10,13 @@ const Budget = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Set to 10 items per page
   const [error, setError] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Current month (1-12)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Current year
   const navigate = useNavigate();
 
   const apiUrl = "http://localhost:8080/api/budgets";
 
-  // Fetch all budgets
+  // Fetch budgets for the selected month and year
   const fetchBudgets = async () => {
     try {
       const authToken = localStorage.getItem("authToken");
@@ -31,7 +33,11 @@ const Budget = () => {
         },
       };
 
-      const response = await axios.get(`${apiUrl}/getBudgets`, config);
+      // Use the specific endpoint for month/year filtering
+      const response = await axios.get(
+        `${apiUrl}/getBudgetsByMonth/${selectedMonth}/${selectedYear}`, 
+        config
+      );
       setBudgets(response.data);
     } catch (error) {
       console.error("Error fetching budgets:", error);
@@ -46,7 +52,7 @@ const Budget = () => {
 
   useEffect(() => {
     fetchBudgets();
-  }, [navigate]);
+  }, [selectedMonth, selectedYear, navigate]);
 
   // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -66,6 +72,26 @@ const Budget = () => {
       setCurrentPage(currentPage - 1);
     }
   };
+
+  // Generate array of months for dropdown
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
+  // Generate array of years (current year - 1, current year, current year + 1)
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
 
   if (error) {
     return (
@@ -97,6 +123,39 @@ const Budget = () => {
             </button>
           </div>
 
+          {/* Month and Year Filter */}
+          <div className="mb-6 flex space-x-4 items-center bg-white p-4 rounded-md shadow-sm">
+            <div className="text-[#18864F] font-bold">Filter by:</div>
+            <div className="flex items-center space-x-2">
+              <label className="text-[#18864F]">Month:</label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="p-2 border rounded-md bg-[#FFC107] text-[#18864F] font-bold"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-[#18864F]">Year:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="p-2 border rounded-md bg-[#FFC107] text-[#18864F] font-bold"
+              >
+                {years.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* Fixed Header */}
           <div className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-t-md mb-2">
             <div className="grid grid-cols-6">
@@ -112,7 +171,9 @@ const Budget = () => {
           {/* Budget Data Container */}
           <div className="bg-white rounded-b-md shadow-md" style={{ height: "500px" }}>
             {currentBudgets.length === 0 ? (
-              <p className="text-center text-gray-500 py-4">No budget records found.</p>
+              <p className="text-center text-gray-500 py-4">
+                No budget records found for {months.find(m => m.value === selectedMonth)?.label} {selectedYear}.
+              </p>
             ) : (
               currentBudgets.map((budget) => {
                 const remaining = budget.monthlyBudget - budget.totalSpent;
@@ -202,13 +263,13 @@ const Budget = () => {
               &lt;
             </button>
             <div className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4">
-              {currentPage} out of {totalPages}
+              {currentPage} out of {totalPages || 1}
             </div>
             <button
               onClick={handleNextPage}
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || totalPages === 0}
               className={`bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-r-md ${
-                currentPage === totalPages ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
+                currentPage === totalPages || totalPages === 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
               }`}
             >
               &gt;
