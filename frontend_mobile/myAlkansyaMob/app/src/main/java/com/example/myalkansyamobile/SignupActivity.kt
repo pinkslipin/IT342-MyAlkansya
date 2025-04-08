@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.myalkansyamobile.api.AuthRepository
 import com.example.myalkansyamobile.api.RetrofitClient
-import com.example.myalkansyamobile.auth.SessionManager
+import com.example.myalkansyamobile.utils.SessionManager
 import com.example.myalkansyamobile.databinding.ActivitySignupBinding
 import com.example.myalkansyamobile.model.RegisterRequest
 import com.example.myalkansyamobile.utils.Resource
@@ -70,12 +70,12 @@ class SignUpActivity : AppCompatActivity() {
     }
     
     private fun setupActivityResultLaunchers() {
-        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result -> 
             if (result.resultCode == RESULT_OK) {
                 try {
                     val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
                     val account = task.getResult(ApiException::class.java)
-                    account.idToken?.let { token ->
+                    account.idToken?.let { token -> 
                         // Register with Google
                         lifecycleScope.launch {
                             registerWithGoogle(token)
@@ -269,8 +269,15 @@ class SignUpActivity : AppCompatActivity() {
             when (val result = authRepository.registerWithGoogle(idToken)) {
                 is Resource.Success -> {
                     result.data?.let { authResponse ->
-                        sessionManager.saveAuthToken(authResponse.token)
-                        sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
+                        // Convert userId to Int if possible, or use -1 as default
+                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
+                        
+                        sessionManager.createLoginSession(
+                            token = authResponse.token,
+                            userId = userId, // Use Int
+                            username = authResponse.user.username ?: authResponse.user.email,
+                            email = authResponse.user.email
+                        )
                         showSuccessDialog()
                     }
                 }
@@ -279,7 +286,9 @@ class SignUpActivity : AppCompatActivity() {
                     binding.btnGoogle.isEnabled = true
                     Toast.makeText(this, "Google registration failed: ${result.message}", Toast.LENGTH_LONG).show()
                 }
-                is Resource.Loading -> {}
+                is Resource.Loading -> {
+                    // Handle loading state
+                }
             }
         } catch (e: Exception) {
             binding.signUpButton.isEnabled = true
@@ -297,8 +306,15 @@ class SignUpActivity : AppCompatActivity() {
             when (val result = authRepository.registerWithFacebook(accessToken)) {
                 is Resource.Success -> {
                     result.data?.let { authResponse ->
-                        sessionManager.saveAuthToken(authResponse.token)
-                        sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
+                        // Convert userId to Int if possible, or use -1 as default
+                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
+                        
+                        sessionManager.createLoginSession(
+                            token = authResponse.token,
+                            userId = userId, // Use Int
+                            username = authResponse.user.username ?: authResponse.user.email,
+                            email = authResponse.user.email
+                        )
                         showSuccessDialog()
                     } ?: run {
                         binding.signUpButton.isEnabled = true
@@ -311,7 +327,9 @@ class SignUpActivity : AppCompatActivity() {
                     binding.btnFacebook.isEnabled = true
                     Toast.makeText(this, "Facebook registration failed: ${result.message}", Toast.LENGTH_LONG).show()
                 }
-                is Resource.Loading -> {}
+                is Resource.Loading -> {
+                    // Handle loading state
+                }
             }
         } catch (e: Exception) {
             binding.signUpButton.isEnabled = true

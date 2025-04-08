@@ -32,6 +32,7 @@ object RetrofitClient {
         .build()
 
     val authApiService: AuthApiService = retrofit.create(AuthApiService::class.java)
+    val incomeApiService: IncomeApiService = retrofit.create(IncomeApiService::class.java)
 
     val instance: Retrofit by lazy {
         Retrofit.Builder()

@@ -16,6 +16,12 @@ data class GoogleUserDTO(
     val profilePicture: String?,
 
     @SerializedName("providerId")
-    val providerId: String
+    val providerId: String,
+    
+    @SerializedName("userId")
+    val userId: String?,
+    
+    @SerializedName("username")
+    val username: String?
 )
 

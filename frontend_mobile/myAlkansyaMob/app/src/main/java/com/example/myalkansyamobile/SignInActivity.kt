@@ -9,9 +9,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import com.example.myalkansyamobile.api.AuthApiService
 import com.example.myalkansyamobile.api.RetrofitClient
-import com.example.myalkansyamobile.auth.SessionManager
+import com.example.myalkansyamobile.utils.SessionManager
 import com.example.myalkansyamobile.databinding.ActivitySigninBinding
 import com.example.myalkansyamobile.api.AuthRepository
 import com.example.myalkansyamobile.model.LoginRequest
@@ -48,10 +47,11 @@ class SignInActivity : AppCompatActivity() {
         binding = ActivitySigninBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        authRepository = AuthRepository(RetrofitClient.instance.create(AuthApiService::class.java))
+        // Use the authApiService property directly
+        authRepository = AuthRepository(RetrofitClient.authApiService)
         sessionManager = SessionManager(this)
 
-        if (sessionManager.getAuthToken() != null) {
+        if (sessionManager.fetchAuthToken() != null && sessionManager.isLoggedIn()) {
             navigateToHome()
             return
         }
@@ -128,8 +128,15 @@ class SignInActivity : AppCompatActivity() {
                 is Resource.Success -> {
                     showLoading(false)
                     result.data?.let { authResponse ->
-                        sessionManager.saveAuthToken(authResponse.token)
-                        sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email) // FIXED: Access email inside `user`
+                        // Convert userId to Int if possible, or use -1 as default
+                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
+                        
+                        sessionManager.createLoginSession(
+                            token = authResponse.token,
+                            userId = userId, // Use Int
+                            username = authResponse.user.username ?: authResponse.user.email,
+                            email = authResponse.user.email
+                        )
                         navigateToHome()
                     }
                 }
@@ -138,7 +145,9 @@ class SignInActivity : AppCompatActivity() {
                     Log.e("LoginActivity", "Login Error: ${result.message}")
                     Toast.makeText(this@SignInActivity, "Login failed: ${result.message}", Toast.LENGTH_LONG).show()
                 }
-                is Resource.Loading -> {}
+                is Resource.Loading -> {
+                    // Handle loading state
+                }
             }
         }
     }
@@ -227,8 +236,16 @@ class SignInActivity : AppCompatActivity() {
                             Toast.makeText(this@SignInActivity, "Facebook authentication failed: Email is missing", Toast.LENGTH_LONG).show()
                             return
                         }
-                        sessionManager.saveAuthToken(authResponse.token)
-                        sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
+                        
+                        // Convert userId to Int if possible, or use -1 as default
+                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
+                        
+                        sessionManager.createLoginSession(
+                            token = authResponse.token,
+                            userId = userId, // Use Int
+                            username = authResponse.user.username ?: authResponse.user.email,
+                            email = authResponse.user.email
+                        )
                         navigateToHome()
                     }
                 }
@@ -266,13 +283,21 @@ class SignInActivity : AppCompatActivity() {
             is Resource.Success -> {
                 showLoading(false)
                 result.data?.let { authResponse ->
-                    if (authResponse.user?.email.isNullOrEmpty()) { // FIXED: Properly access `user.email`
+                    if (authResponse.user?.email.isNullOrEmpty()) {
                         Log.e("GoogleAuth", "Email is NULL in AuthResponse!")
                         Toast.makeText(this@SignInActivity, "Google authentication failed: Email is missing", Toast.LENGTH_LONG).show()
                         return
                     }
-                    sessionManager.saveAuthToken(authResponse.token) // FIXED: Use `token`
-                    sessionManager.saveUserDetails(authResponse.user.email, authResponse.user.email)
+                    
+                    // Convert userId to Int if possible, or use -1 as default
+                    val userId = authResponse.user.userId?.toIntOrNull() ?: -1
+                    
+                    sessionManager.createLoginSession(
+                        token = authResponse.token,
+                        userId = userId, // Use Int
+                        username = authResponse.user.username ?: authResponse.user.email,
+                        email = authResponse.user.email
+                    )
                     navigateToHome()
                 }
             }
