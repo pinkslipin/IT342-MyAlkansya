@@ -1,5 +1,7 @@
 package edu.cit.myalkansya.entity;
 
+import java.time.Month;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +30,10 @@ public class BudgetEntity {
     private double totalSpent;
     private String currency;
     
+    // Add these fields to track budget month/year
+    private int budgetMonth; // 1-12 for January-December
+    private int budgetYear;  // e.g., 2025
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"budgets", "expenses", "incomes"}) // Prevents infinite recursion in JSON response
@@ -41,12 +47,17 @@ public class BudgetEntity {
         super();
     }
 
-    public BudgetEntity(int id, String category, double monthlyBudget, double totalSpent, String currency) {
-        this.id = id;
+    public BudgetEntity(String category, double monthlyBudget, double totalSpent, String currency, UserEntity user) {
         this.category = category;
         this.monthlyBudget = monthlyBudget;
         this.totalSpent = totalSpent;
         this.currency = currency;
+        this.user = user;
+        
+        // Default to current month and year
+        YearMonth now = YearMonth.now();
+        this.budgetMonth = now.getMonthValue();
+        this.budgetYear = now.getYear();
     }
 
     public int getId() {
@@ -87,6 +98,33 @@ public class BudgetEntity {
 
     public void setCurrency(String currency) {
         this.currency = currency;
+    }
+    
+    public int getBudgetMonth() {
+        return budgetMonth;
+    }
+
+    public void setBudgetMonth(int budgetMonth) {
+        this.budgetMonth = budgetMonth;
+    }
+
+    public int getBudgetYear() {
+        return budgetYear;
+    }
+
+    public void setBudgetYear(int budgetYear) {
+        this.budgetYear = budgetYear;
+    }
+    
+    // Helper method to get the month name
+    public String getMonthName() {
+        return Month.of(budgetMonth).name();
+    }
+    
+    // Helper method to determine if this is the current month budget
+    public boolean isCurrentMonth() {
+        YearMonth current = YearMonth.now();
+        return current.getYear() == budgetYear && current.getMonthValue() == budgetMonth;
     }
     
     public UserEntity getUser() {
