@@ -1,9 +1,12 @@
 package edu.cit.myalkansya.service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +22,12 @@ public class BudgetService {
 
     @Autowired
     private BudgetRepository budgetRepository;
-    
-    @Autowired
-    private UserRepository userRepository;
-    
+
     @Autowired
     private ExpenseRepository expenseRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // CREATE
     @Transactional
@@ -33,7 +36,25 @@ public class BudgetService {
                 .orElseThrow(() -> new NoSuchElementException("User with ID " + userId + " not found."));
         budget.setUser(user);
         
-        // Save the budget first
+        // If month/year not set, default to current month/year
+        if (budget.getBudgetMonth() == 0) {
+            LocalDate now = LocalDate.now();
+            budget.setBudgetMonth(now.getMonthValue());
+            budget.setBudgetYear(now.getYear());
+        } else if (budget.getBudgetYear() == 0) {
+            // If year is not set but month is, use current year
+            budget.setBudgetYear(LocalDate.now().getYear());
+        }
+        
+        // Check if a budget for this category and month already exists
+        Optional<BudgetEntity> existingBudget = budgetRepository.findByUserUserIdAndCategoryAndBudgetMonthAndBudgetYear(
+            userId, budget.getCategory(), budget.getBudgetMonth(), budget.getBudgetYear());
+        
+        if (existingBudget.isPresent()) {
+            throw new IllegalStateException("A budget for category '" + budget.getCategory() + 
+                "' already exists for month " + budget.getBudgetMonth() + "/" + budget.getBudgetYear());
+        }
+        
         BudgetEntity savedBudget = budgetRepository.save(budget);
         
         // Find all expenses for this category and link them to this budget
@@ -41,8 +62,13 @@ public class BudgetService {
         double totalSpent = 0.0;
         
         for (ExpenseEntity expense : expenses) {
-            if (expense.getBudget() == null) {  // Only link expenses that aren't already linked to a budget
+            // Only link expenses from the same month/year
+            LocalDate expenseDate = expense.getDate();
+            if (expenseDate.getMonthValue() == budget.getBudgetMonth() && 
+                expenseDate.getYear() == budget.getBudgetYear() && 
+                expense.getBudget() == null) {
                 expense.setBudget(savedBudget);
+                expenseRepository.save(expense);
                 totalSpent += expense.getAmount();
             }
         }
@@ -51,48 +77,114 @@ public class BudgetService {
         savedBudget.setTotalSpent(totalSpent);
         return budgetRepository.save(savedBudget);
     }
-
+    
     // READ
     public List<BudgetEntity> getAllBudgets() {
         return budgetRepository.findAll();
     }
-    
+
+    public BudgetEntity getBudgetById(int id) {
+        return budgetRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Budget not found with ID: " + id));
+    }
+
     public List<BudgetEntity> getBudgetsByUserId(int userId) {
         return budgetRepository.findByUserUserId(userId);
     }
 
-    public BudgetEntity getBudgetById(int budgetId) {
-        return budgetRepository.findById(budgetId)
-                .orElseThrow(() -> new NoSuchElementException("Budget with ID " + budgetId + " not found."));
+    // New methods for filtering
+    public List<BudgetEntity> getBudgetsByMonth(int userId, int month, int year) {
+        return budgetRepository.findByUserUserIdAndBudgetMonthAndBudgetYear(userId, month, year);
     }
     
-    // Verify budget belongs to user
-    public boolean budgetExistsAndBelongsToUser(int budgetId, int userId) {
-        BudgetEntity budget = budgetRepository.findById(budgetId).orElse(null);
-        return budget != null && budget.getUser().getUserId() == userId;
+    public List<BudgetEntity> getBudgetsByMonth(int userId, int month) {
+        return budgetRepository.findByUserUserIdAndBudgetMonth(userId, month);
     }
-
+    
     // UPDATE
-    public BudgetEntity updateBudget(int budgetId, BudgetEntity newBudgetDetails, int userId) {
-        if (!budgetExistsAndBelongsToUser(budgetId, userId)) {
-            throw new NoSuchElementException("Budget with ID " + budgetId + " not found for user with ID " + userId);
+    @Transactional
+    public BudgetEntity updateBudget(BudgetEntity budget, int userId) {
+        // Get the existing budget to update
+        BudgetEntity existingBudget = budgetRepository.findById(budget.getId())
+            .orElseThrow(() -> new NoSuchElementException("Budget not found with ID: " + budget.getId()));
+        
+        // Check if this budget belongs to the user
+        if (existingBudget.getUser().getUserId() != userId) {
+            throw new AccessDeniedException("You don't have permission to update this budget");
         }
         
-        BudgetEntity existingBudget = budgetRepository.findById(budgetId).get();
-        existingBudget.setCategory(newBudgetDetails.getCategory());
-        existingBudget.setMonthlyBudget(newBudgetDetails.getMonthlyBudget());
-        existingBudget.setTotalSpent(newBudgetDetails.getTotalSpent());
-        existingBudget.setCurrency(newBudgetDetails.getCurrency());
+        // If the category, month, or year is changing, check for conflicts
+        if (!existingBudget.getCategory().equals(budget.getCategory()) ||
+            existingBudget.getBudgetMonth() != budget.getBudgetMonth() ||
+            existingBudget.getBudgetYear() != budget.getBudgetYear()) {
+                
+            Optional<BudgetEntity> conflictingBudget = budgetRepository.findByUserUserIdAndCategoryAndBudgetMonthAndBudgetYear(
+                userId, budget.getCategory(), budget.getBudgetMonth(), budget.getBudgetYear());
+            
+            if (conflictingBudget.isPresent() && conflictingBudget.get().getId() != budget.getId()) {
+                throw new IllegalStateException("A budget for category '" + budget.getCategory() + 
+                    "' already exists for month " + budget.getBudgetMonth() + "/" + budget.getBudgetYear());
+            }
+        }
+        
+        // Update fields
+        existingBudget.setCategory(budget.getCategory());
+        existingBudget.setMonthlyBudget(budget.getMonthlyBudget());
+        existingBudget.setCurrency(budget.getCurrency());
+        existingBudget.setBudgetMonth(budget.getBudgetMonth());
+        existingBudget.setBudgetYear(budget.getBudgetYear());
+        
+        // Recalculate totalSpent if month/year has changed
+        if (existingBudget.getBudgetMonth() != budget.getBudgetMonth() ||
+            existingBudget.getBudgetYear() != budget.getBudgetYear()) {
+            
+            // Unlink all current expenses
+            List<ExpenseEntity> oldExpenses = expenseRepository.findByBudgetId(existingBudget.getId());
+            for (ExpenseEntity expense : oldExpenses) {
+                expense.setBudget(null);
+                expenseRepository.save(expense);
+            }
+            
+            // Link expenses for the new month/year and category
+            List<ExpenseEntity> newExpenses = expenseRepository.findByUserUserIdAndCategory(
+                userId, existingBudget.getCategory());
+            
+            double totalSpent = 0.0;
+            for (ExpenseEntity expense : newExpenses) {
+                LocalDate expenseDate = expense.getDate();
+                if (expenseDate.getMonthValue() == existingBudget.getBudgetMonth() && 
+                    expenseDate.getYear() == existingBudget.getBudgetYear()) {
+                    expense.setBudget(existingBudget);
+                    expenseRepository.save(expense);
+                    totalSpent += expense.getAmount();
+                }
+            }
+            
+            existingBudget.setTotalSpent(totalSpent);
+        }
+        
         return budgetRepository.save(existingBudget);
     }
-
+    
     // DELETE
-    public String deleteBudget(int budgetId, int userId) {
-        if (!budgetExistsAndBelongsToUser(budgetId, userId)) {
-            return "Budget with ID " + budgetId + " not found for user with ID " + userId;
+    @Transactional
+    public void deleteBudget(int id, int userId) {
+        BudgetEntity budget = budgetRepository.findById(id)
+            .orElseThrow(() -> new NoSuchElementException("Budget not found with ID: " + id));
+        
+        // Check if this budget belongs to the user
+        if (budget.getUser().getUserId() != userId) {
+            throw new AccessDeniedException("You don't have permission to delete this budget");
         }
         
-        budgetRepository.deleteById(budgetId);
-        return "Budget with ID " + budgetId + " successfully deleted.";
+        // Unlink all expenses from this budget
+        List<ExpenseEntity> expenses = expenseRepository.findByBudgetId(id);
+        for (ExpenseEntity expense : expenses) {
+            expense.setBudget(null);
+            expenseRepository.save(expense);
+        }
+        
+        // Delete the budget
+        budgetRepository.deleteById(id);
     }
 }
