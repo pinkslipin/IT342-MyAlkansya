@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import myAlkansyaLogo from "../assets/myAlkansyaLogo.png"; // Import the main logo
+import myAlkansyaTextLogo from "../assets/MyAlkansyaTextLogo.png"; // Import the text logo
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
@@ -52,17 +55,15 @@ const Login = () => {
       <nav className="bg-[#18864F] p-4 w-full">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <div className="text-[#FFC107] text-3xl font-bold mr-1">A</div>
-            <div className="text-white text-2xl font-bold">
-              <span className="text-[#FFC107]">My</span>Alkansya
-            </div>
+            <img src={myAlkansyaLogo} alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
+            <img src={myAlkansyaTextLogo} alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
-            <button className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded">
+            <button className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded">
               SIGN IN
             </button>
             <button
-              className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded"
+              className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded"
               onClick={() => navigate("/register")}
             >
               SIGN UP
@@ -100,7 +101,7 @@ const Login = () => {
             <div className="mb-6">
               <div className="relative">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"} // Toggle between text and password
                   id="password"
                   placeholder="Password"
                   className="w-full p-3 border rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-[#18864F]"
@@ -113,6 +114,21 @@ const Login = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)} // Toggle visibility
+                  className="absolute top-3.5 right-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-5.523 0-10-4.477-10-10 0-1.875.525-3.625 1.425-5.125M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.98 8.223A10.05 10.05 0 012 9c0 5.523 4.477 10 10 10 1.875 0 3.625-.525 5.125-1.425M9 12a3 3 0 116 0 3 3 0 01-6 0z" />
+                    </svg>
+                  )}
+                </button>
               </div>
               <div className="flex justify-end mt-1">
                 <a href="#" className="text-sm text-gray-600 hover:underline">Forgot password?</a>
@@ -170,16 +186,16 @@ const Login = () => {
           </div>
         </div>
 
-          {/* Welcome Side */}
-          <div className="hidden md:flex md:w-1/2 justify-center items-center p-10 min-h-[60px]">
+        {/* Welcome Side */}
+        <div className="hidden md:flex md:w-1/2 justify-center items-center p-10 min-h-[60px]">
           <div className="bg-white/50 p-8 rounded-lg shadow-md w-full max-w-md mx-4 text-center min-h-[560px] min-w-[600px] flex flex-col justify-center">
-              <h1 className="text-5xl font-bold mb-4">Welcome to</h1>
-              <div className="text-5xl font-bold">
-                <span className="text-[#FFC107]">My</span>
-                <span className="text-[#18864F]">Alkansya</span>
-              </div>
+            <h1 className="text-5xl font-bold mb-4">Welcome to</h1>
+            <div className="text-5xl font-bold">
+              <span className="text-[#FFC107]">My</span>
+              <span className="text-[#18864F]">Alkansya</span>
             </div>
           </div>
+        </div>
       </div>
     </div>
   );

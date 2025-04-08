@@ -1,2 +1,13 @@
+/* Import Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Import TailwindCSS */
 @import "tailwindcss";
 
+/* Apply global styles */
+body {
+  background-color: #FEF6EA; 
+  font-family: 'Poppins', sans-serif; /* Use Poppins font for the entire app */
+  margin: 0;
+  padding: 0;
+}

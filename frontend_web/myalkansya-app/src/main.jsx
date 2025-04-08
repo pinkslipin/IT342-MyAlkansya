@@ -9,6 +9,14 @@ import Income from "./components/income";
 import Expense from "./components/expense";
 import Budget from "./components/budget";
 import SavingsGoal from "./components/savingsgoal";
+import AddIncome from "./components/addIncome";
+import EditIncome from "./components/editIncome";
+import AddExpense from "./components/addExpense";
+import EditExpense from "./components/editExpense";
+import AddBudget from "./components/addBudget";
+import EditBudget from "./components/editBudget";
+import AddSavingGoal from "./components/addSavingGoal";
+import EditSavingGoal from "./components/editSavingGoal";
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
@@ -22,6 +30,14 @@ root.render(
         <Route path="/expense" element={<Expense />} />
         <Route path="/budget" element={<Budget />} />
         <Route path="/savingsgoal" element={<SavingsGoal />} />
+        <Route path="/addincome" element={<AddIncome />} />
+        <Route path="/editincome/:incomeId" element={<EditIncome />} />
+        <Route path="/addexpense" element={<AddExpense />} />
+        <Route path="/editexpense/:expenseId" element={<EditExpense />} />
+        <Route path="/addbudget" element={<AddBudget />} />
+        <Route path="/editbudget/:budgetId" element={<EditBudget />} />
+        <Route path="/addsavingsgoal" element={<AddSavingGoal />} />
+        <Route path="/editsavingsgoal/:goalId" element={<EditSavingGoal />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
