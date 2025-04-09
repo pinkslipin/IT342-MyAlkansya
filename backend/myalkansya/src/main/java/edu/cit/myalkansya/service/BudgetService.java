@@ -127,16 +127,22 @@ public class BudgetService {
             }
         }
         
-        // Update fields
+        // Store current totalSpent before updating
+        double currentTotalSpent = existingBudget.getTotalSpent();
+        
+        // Update fields (but maintain the totalSpent value)
         existingBudget.setCategory(budget.getCategory());
         existingBudget.setMonthlyBudget(budget.getMonthlyBudget());
         existingBudget.setCurrency(budget.getCurrency());
-        existingBudget.setBudgetMonth(budget.getBudgetMonth());
-        existingBudget.setBudgetYear(budget.getBudgetYear());
         
-        // Recalculate totalSpent if month/year has changed
-        if (existingBudget.getBudgetMonth() != budget.getBudgetMonth() ||
-            existingBudget.getBudgetYear() != budget.getBudgetYear()) {
+        // Only recalculate expenses if month/year or category changed
+        boolean needsToRecalculateExpenses = existingBudget.getBudgetMonth() != budget.getBudgetMonth() ||
+                                             existingBudget.getBudgetYear() != budget.getBudgetYear() ||
+                                             !existingBudget.getCategory().equals(budget.getCategory());
+        
+        if (needsToRecalculateExpenses) {
+            existingBudget.setBudgetMonth(budget.getBudgetMonth());
+            existingBudget.setBudgetYear(budget.getBudgetYear());
             
             // Unlink all current expenses
             List<ExpenseEntity> oldExpenses = expenseRepository.findByBudgetId(existingBudget.getId());
@@ -161,6 +167,9 @@ public class BudgetService {
             }
             
             existingBudget.setTotalSpent(totalSpent);
+        } else {
+            // If we're not changing category/month/year, keep the existing totalSpent
+            existingBudget.setTotalSpent(currentTotalSpent);
         }
         
         return budgetRepository.save(existingBudget);
