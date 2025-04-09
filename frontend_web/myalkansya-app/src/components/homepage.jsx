@@ -115,11 +115,17 @@ const HomePage = () => {
         const totalIncomeSum = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
         setTotalIncome(totalIncomeSum);
 
-        const budgetsResponse = await axios.get("http://localhost:8080/api/budgets/getCurrentMonthBudgets", config);
+        const budgetsResponse = await axios.get("http://localhost:8080/api/budgets/user", config);
         let filteredBudgets = budgetsResponse.data;
-        if (selectedYear > 0) {
+        if (selectedMonth > 0 || selectedYear > 0) {
           filteredBudgets = filteredBudgets.filter(budget => {
-            return selectedYear === 0 || budget.budgetYear === selectedYear;
+            const budgetMonth = budget.budgetMonth;
+            const budgetYear = budget.budgetYear;
+            
+            const monthMatches = selectedMonth === 0 || budgetMonth === selectedMonth;
+            const yearMatches = selectedYear === 0 || budgetYear === selectedYear;
+            
+            return monthMatches && yearMatches;
           });
         }
         const totalBudgetSum = filteredBudgets.reduce((sum, budget) => sum + budget.monthlyBudget, 0);
