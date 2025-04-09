@@ -124,36 +124,66 @@ const Budget = () => {
           </div>
 
           {/* Month and Year Filter */}
-          <div className="mb-6 flex space-x-4 items-center bg-white p-4 rounded-md shadow-sm">
-            <div className="text-[#18864F] font-bold">Filter by:</div>
-            <div className="flex items-center space-x-2">
-              <label className="text-[#18864F]">Month:</label>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="p-2 border rounded-md bg-[#FFC107] text-[#18864F] font-bold"
+          <div className="mb-6 bg-white p-4 rounded-md shadow-sm">
+            <div className="flex flex-col sm:flex-row justify-between items-center">
+              <div className="flex flex-col sm:flex-row items-center mb-3 sm:mb-0">
+                <h2 className="text-lg font-semibold text-[#18864F] mr-4">Filters</h2>
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex items-center">
+                    <label className="text-[#18864F] mr-2 font-medium">Month:</label>
+                    <select
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                      className="border border-gray-300 rounded-md py-1 px-3 bg-white text-[#18864F] focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
+                    >
+                      {months.map((month) => (
+                        <option key={month.value} value={month.value}>
+                          {month.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center">
+                    <label className="text-[#18864F] mr-2 font-medium">Year:</label>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      className="border border-gray-300 rounded-md py-1 px-3 bg-white text-[#18864F] focus:outline-none focus:ring-2 focus:ring-[#FFC107]"
+                    >
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedMonth(new Date().getMonth() + 1);
+                  setSelectedYear(new Date().getFullYear());
+                }}
+                className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-md hover:bg-yellow-500 transition duration-300"
               >
-                {months.map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </select>
+                Reset Filters
+              </button>
             </div>
-            <div className="flex items-center space-x-2">
-              <label className="text-[#18864F]">Year:</label>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="p-2 border rounded-md bg-[#FFC107] text-[#18864F] font-bold"
-              >
-                {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {(selectedMonth > 0 || selectedYear > 0) && (
+              <div className="mt-3 px-2 py-1 bg-[#EDFBE9] text-[#18864F] rounded-md inline-block">
+                <span className="font-medium">Active filters:</span>
+                {selectedMonth > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-[#FFC107] rounded-md text-sm">
+                    Month: {months.find((m) => m.value === selectedMonth)?.label}
+                  </span>
+                )}
+                {selectedYear > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-[#FFC107] rounded-md text-sm">
+                    Year: {selectedYear}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Fixed Header */}
