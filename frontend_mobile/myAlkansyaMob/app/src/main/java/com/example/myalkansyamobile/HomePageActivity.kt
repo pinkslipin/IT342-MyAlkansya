@@ -30,10 +30,10 @@ class HomePageActivity : AppCompatActivity() {
             navigateTo(IncomeActivity::class.java)
         }
 
-//        binding.btnExpense.setOnClickListener {
-//            navigateTo(ExpenseActivity::class.java)
-//        }
-//
+        binding.btnExpense.setOnClickListener {
+            navigateTo(ExpenseActivity::class.java)
+        }
+
 //        binding.btnBudget.setOnClickListener {
 //            navigateTo(BudgetActivity::class.java)
 //        }

@@ -97,6 +97,39 @@
             android:exported="false"
             android:launchMode="singleTop"/>
 
+        <!-- Expense Activity -->
+        <activity
+            android:name=".ExpenseActivity"
+            android:exported="false"
+            android:launchMode="singleTop"/>
+
+        <!-- Add Expense Activity -->
+        <activity
+            android:name=".AddExpenseActivity"
+            android:exported="false"
+            android:launchMode="singleTop"/>
+
+        <!-- Expense Detail Activity -->
+        <activity
+            android:name=".ExpenseDetailActivity"
+            android:exported="false"
+            android:parentActivityName=".ExpenseActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExpenseActivity" />
+        </activity>
+        
+
+        <!-- Edit Expense Activity -->
+        <activity
+            android:name=".EditExpenseActivity"
+            android:exported="false"
+            android:parentActivityName=".ExpenseDetailActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ExpenseDetailActivity" />
+        </activity>
+
     </application>
 
 </manifest>

@@ -71,12 +71,14 @@
                 android:inputType="numberDecimal"
                 android:hint="Amount"/>
 
-            <TextView
-                android:id="@+id/tvCurrency"
-                android:layout_width="wrap_content"
+            <Spinner
+                android:id="@+id/spinnerCurrency"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
-                android:text="Php"
-                android:paddingStart="8dp"/>
+                android:layout_marginStart="8dp"
+                android:background="#FFD740"
+                android:padding="8dp"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <!-- Buttons -->
