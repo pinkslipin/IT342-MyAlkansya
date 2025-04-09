@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
+import trashIcon from "../assets/trash.png"; // Import the trash icon
 
 const EditBudget = () => {
   const [formData, setFormData] = useState({
@@ -78,6 +79,32 @@ const EditBudget = () => {
       } else {
         setError("Failed to edit budget. Please try again later.");
       }
+    }
+  };
+
+  const handleDeleteBudget = async () => {
+    if (!window.confirm("Are you sure you want to delete this budget?")) {
+      return;
+    }
+
+    try {
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        setError("You must be logged in to delete a budget.");
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      };
+
+      await axios.delete(`http://localhost:8080/api/budgets/delete/${budgetId}`, config);
+      navigate("/budget"); // Redirect to the Budget page after successful deletion
+    } catch (err) {
+      console.error("Error deleting budget:", err);
+      setError("Failed to delete budget. Please try again later.");
     }
   };
 
@@ -256,6 +283,17 @@ const EditBudget = () => {
                     className="bg-[#FEF6EA] text-[#18864F] font-bold py-2 px-4 rounded-md border border-[#18864F] hover:bg-[#EDFBE9] transition duration-300"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteBudget}
+                    className="hover:opacity-80"
+                  >
+                    <img
+                      src={trashIcon}
+                      alt="Delete"
+                      className="h-6 w-6"
+                    />
                   </button>
                 </div>
               </form>

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
+import trashIcon from "../assets/trash.png"; // Import the trash icon
 
 const EditIncome = () => {
   const [formData, setFormData] = useState({
@@ -72,6 +73,32 @@ const EditIncome = () => {
     } catch (err) {
       console.error("Error editing income:", err);
       setError("Failed to edit income. Please try again later.");
+    }
+  };
+
+  const handleDeleteIncome = async () => {
+    if (!window.confirm("Are you sure you want to delete this income?")) {
+      return;
+    }
+
+    try {
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        setError("You must be logged in to delete income.");
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      };
+
+      await axios.delete(`http://localhost:8080/api/incomes/deleteIncome/${incomeId}`, config);
+      navigate("/income"); // Redirect to the Income page after successful deletion
+    } catch (err) {
+      console.error("Error deleting income:", err);
+      setError("Failed to delete income. Please try again later.");
     }
   };
 
@@ -183,6 +210,17 @@ const EditIncome = () => {
                     className="bg-[#FEF6EA] text-[#18864F] font-bold py-2 px-4 rounded-md border border-[#18864F] hover:bg-[#EDFBE9] transition duration-300"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteIncome}
+                    className="hover:opacity-80"
+                  >
+                    <img
+                      src={trashIcon}
+                      alt="Delete"
+                      className="h-6 w-6"
+                    />
                   </button>
                 </div>
               </form>

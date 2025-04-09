@@ -17,6 +17,7 @@ import AddBudget from "./components/addBudget";
 import EditBudget from "./components/editBudget";
 import AddSavingGoal from "./components/addSavingGoal";
 import EditSavingGoal from "./components/editSavingGoal";
+import CurrencyConverter from "./components/currencyConverter";
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
@@ -38,6 +39,7 @@ root.render(
         <Route path="/editbudget/:budgetId" element={<EditBudget />} />
         <Route path="/addsavingsgoal" element={<AddSavingGoal />} />
         <Route path="/editsavingsgoal/:goalId" element={<EditSavingGoal />} />
+        <Route path="/currencyconverter" element={<CurrencyConverter />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
