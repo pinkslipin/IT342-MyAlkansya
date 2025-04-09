@@ -3,9 +3,11 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="cream">#F5F5DC</color>
-    <color name="green">#008000</color>
+    <color name="green">#18864F</color>
     <color name="facebook_light_blue">#276BFF</color>
     <color name="primary_green">#2E8B57</color>
+    <color name="yellow">#FFC107</color>
+    <color name="light_beige">#FEF6EA</color>
 
 
 

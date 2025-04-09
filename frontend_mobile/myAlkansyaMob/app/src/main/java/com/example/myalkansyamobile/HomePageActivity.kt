@@ -34,14 +34,15 @@ class HomePageActivity : AppCompatActivity() {
             navigateTo(ExpenseActivity::class.java)
         }
 
-//        binding.btnBudget.setOnClickListener {
-//            navigateTo(BudgetActivity::class.java)
-//        }
-//
-//        binding.btnSavingsGoal.setOnClickListener {
-//            navigateTo(SavingsGoalActivity::class.java)
-//        }
-//
+        binding.btnBudget.setOnClickListener {
+            navigateTo(BudgetActivity::class.java)
+        }
+
+        binding.btnSavingsGoal.setOnClickListener {
+            // Will be implemented in future
+            Toast.makeText(this, "Coming soon!", Toast.LENGTH_SHORT).show()
+        }
+
         binding.btnLogout.setOnClickListener {
             logoutUser()
         }

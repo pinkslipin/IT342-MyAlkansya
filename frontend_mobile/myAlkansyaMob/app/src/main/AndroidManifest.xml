@@ -130,6 +130,21 @@
                 android:value=".ExpenseDetailActivity" />
         </activity>
 
+        <!-- Budget Activity -->
+        <activity
+            android:name=".BudgetActivity"
+            android:exported="false" />
+        
+        <!-- Add Budget Activity -->
+        <activity
+            android:name=".AddBudgetActivity"
+            android:exported="false" />
+        
+        <!-- Edit Budget Activity -->
+        <activity
+            android:name=".EditBudgetActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

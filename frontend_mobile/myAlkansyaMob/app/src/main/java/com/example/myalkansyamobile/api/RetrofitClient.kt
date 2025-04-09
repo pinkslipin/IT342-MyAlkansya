@@ -50,6 +50,7 @@ object RetrofitClient {
     val incomeApiService: IncomeApiService = retrofit.create(IncomeApiService::class.java)
     val userApiService: UserApiService = retrofit.create(UserApiService::class.java)
     val expenseApiService: ExpenseApiService = retrofit.create(ExpenseApiService::class.java)
+    val budgetApiService: BudgetApiService = retrofit.create(BudgetApiService::class.java)
 
     val instance: Retrofit by lazy {
         Retrofit.Builder()
