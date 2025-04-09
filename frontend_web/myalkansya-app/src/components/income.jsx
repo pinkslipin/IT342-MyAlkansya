@@ -10,8 +10,15 @@ const Income = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Set to 10 items per page
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(0); // 0 means all months
-  const [selectedYear, setSelectedYear] = useState(0); // 0 means all years
+  
+  // Get current month and year
+  const currentDate = new Date();
+  const currentMonthIndex = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
+  const currentYear = currentDate.getFullYear();
+  
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthIndex); // Default to current month
+  const [selectedYear, setSelectedYear] = useState(currentYear); // Default to current year
+  
   const navigate = useNavigate();
 
   const apiUrl = "http://localhost:8080/api/incomes";
@@ -34,7 +41,6 @@ const Income = () => {
   ];
 
   // Generate array of years (current year - 2 to current year + 1)
-  const currentYear = new Date().getFullYear();
   const years = [
     { value: 0, label: "All Years" },
     { value: currentYear - 2, label: (currentYear - 2).toString() },
@@ -102,10 +108,10 @@ const Income = () => {
     fetchIncomes();
   }, [selectedMonth, selectedYear, navigate]);
 
-  // Reset filters
+  // Reset filters to current month and year
   const handleResetFilters = () => {
-    setSelectedMonth(0);
-    setSelectedYear(0);
+    setSelectedMonth(currentMonthIndex);
+    setSelectedYear(currentYear);
   };
 
   // Pagination logic
