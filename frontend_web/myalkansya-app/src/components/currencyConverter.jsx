@@ -2,7 +2,74 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 
+// Add this near the top of your file, outside the component
+const apiCache = {
+  popularCurrencies: null,
+  popularCurrenciesTimestamp: null,
+  cacheDuration: 15 * 60 * 1000 // 15 minutes in milliseconds
+};
+
 const CurrencyConverter = () => {
+  // Define currencyNames at the component level, outside of any function
+  const currencyNames = {
+    AED: "UAE Dirham",
+    ARS: "Argentine Peso",
+    AUD: "Australian Dollar",
+    BGN: "Bulgarian Lev",
+    BRL: "Brazilian Real",
+    BSD: "Bahamian Dollar",
+    CAD: "Canadian Dollar",
+    CHF: "Swiss Franc",
+    CLP: "Chilean Peso",
+    CNY: "Chinese Yuan",
+    COP: "Colombian Peso",
+    CZK: "Czech Koruna",
+    DKK: "Danish Krone",
+    DOP: "Dominican Peso",
+    EGP: "Egyptian Pound",
+    EUR: "Euro",
+    FJD: "Fijian Dollar",
+    GBP: "British Pound",
+    GTQ: "Guatemalan Quetzal",
+    HKD: "Hong Kong Dollar",
+    HRK: "Croatian Kuna",
+    HUF: "Hungarian Forint",
+    IDR: "Indonesian Rupiah",
+    ILS: "Israeli Shekel",
+    INR: "Indian Rupee",
+    ISK: "Icelandic Króna",
+    JPY: "Japanese Yen",
+    KRW: "South Korean Won",
+    KZT: "Kazakhstani Tenge",
+    MXN: "Mexican Peso",
+    MYR: "Malaysian Ringgit",
+    NOK: "Norwegian Krone",
+    NZD: "New Zealand Dollar",
+    PAB: "Panamanian Balboa",
+    PEN: "Peruvian Sol",
+    PHP: "Philippine Peso",
+    PKR: "Pakistani Rupee",
+    PLN: "Polish Złoty",
+    PYG: "Paraguayan Guaraní",
+    RON: "Romanian Leu",
+    RUB: "Russian Ruble",
+    SAR: "Saudi Riyal",
+    SEK: "Swedish Krona",
+    SGD: "Singapore Dollar",
+    THB: "Thai Baht",
+    TRY: "Turkish Lira",
+    TWD: "Taiwan Dollar",
+    UAH: "Ukrainian Hryvnia",
+    USD: "US Dollar",
+    UYU: "Uruguayan Peso",
+    ZAR: "South African Rand",
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    XRP: "Ripple",
+    LTC: "Litecoin",
+    BCH: "Bitcoin Cash"
+  };
+
   const [amount, setAmount] = useState("");
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [toCurrency, setToCurrency] = useState("PHP");
@@ -43,10 +110,13 @@ const CurrencyConverter = () => {
         console.log("Currencies data:", data);
         
         // Create an array of currency objects from the rates
-        const currencies = Object.keys(data).map(code => ({
-          code,
-          name: getCurrencyName(code)
-        }));
+        // Filter to include only currencies that have a name in our list
+        const currencies = Object.keys(data)
+          .filter(code => currencyNames[code]) // Only include currencies with defined names
+          .map(code => ({
+            code,
+            name: getCurrencyName(code)
+          }));
         
         setAvailableCurrencies(currencies);
       } catch (error) {
@@ -68,6 +138,17 @@ const CurrencyConverter = () => {
 
     const fetchPopularCurrencies = async () => {
       try {
+        // Check if we have valid cached data
+        const now = Date.now();
+        if (apiCache.popularCurrencies && 
+            apiCache.popularCurrenciesTimestamp && 
+            now - apiCache.popularCurrenciesTimestamp < apiCache.cacheDuration) {
+          // Use cached data if it's less than cacheDuration old
+          console.log("Using cached popular currencies data");
+          setPopularCurrencies(apiCache.popularCurrencies);
+          return;
+        }
+
         const response = await fetch(`${API_BASE_URL}/api/currency/popular`, {
           headers: {
             'Accept': 'application/json'
@@ -80,18 +161,28 @@ const CurrencyConverter = () => {
         }
         
         const data = await response.json();
+        
+        // Cache the response and timestamp
+        apiCache.popularCurrencies = data;
+        apiCache.popularCurrenciesTimestamp = now;
+        
         setPopularCurrencies(data);
       } catch (error) {
         console.error("Error fetching popular currencies:", error);
         
-        // Use fallback data
-        setPopularCurrencies([
-          { code: "EUR", name: "Euro", rate: 0.93, changePercent: 0.25 },
-          { code: "GBP", name: "British Pound", rate: 0.79, changePercent: -0.15 },
-          { code: "JPY", name: "Japanese Yen", rate: 149.8, changePercent: 0.42 },
-          { code: "AUD", name: "Australian Dollar", rate: 1.52, changePercent: -0.33 },
-          { code: "PHP", name: "Philippine Peso", rate: 56.5, changePercent: 0.18 }
-        ]);
+        // Use fallback data if no cached data available
+        if (!apiCache.popularCurrencies) {
+          const fallbackData = [
+            { code: "EUR", name: "Euro", rate: 0.93, changePercent: 0.25 },
+            { code: "GBP", name: "British Pound", rate: 0.79, changePercent: -0.15 },
+            { code: "JPY", name: "Japanese Yen", rate: 149.8, changePercent: 0.42 },
+            { code: "AUD", name: "Australian Dollar", rate: 1.52, changePercent: -0.33 },
+            { code: "PHP", name: "Philippine Peso", rate: 56.5, changePercent: 0.18 }
+          ];
+          apiCache.popularCurrencies = fallbackData;
+          apiCache.popularCurrenciesTimestamp = now;
+          setPopularCurrencies(fallbackData);
+        }
       }
     };
 
@@ -202,43 +293,79 @@ const CurrencyConverter = () => {
     }
   };
 
-  // Helper function to get currency names
+  // Helper function to get currency names - now just uses the object defined at component level
   const getCurrencyName = (code) => {
-    const currencyNames = {
-      USD: "US Dollar",
-      EUR: "Euro",
-      JPY: "Japanese Yen",
-      GBP: "British Pound",
-      AUD: "Australian Dollar",
-      CAD: "Canadian Dollar",
-      CHF: "Swiss Franc",
-      CNY: "Chinese Yuan",
-      INR: "Indian Rupee",
-      PHP: "Philippine Peso",
-      BTC: "Bitcoin",
-      // Add more as needed
-    };
     return currencyNames[code] || code;
   };
 
-  // Helper function for currency emojis
-  const getCurrencyEmoji = (code) => {
-    const currencyEmojis = {
-      USD: "🇺🇸",
-      EUR: "🇪🇺",
-      GBP: "🇬🇧",
-      JPY: "🇯🇵",
-      AUD: "🇦🇺",
-      CAD: "🇨🇦",
-      CHF: "🇨🇭",
-      CNY: "🇨🇳",
-      INR: "🇮🇳",
-      PHP: "🇵🇭",
-      BTC: "₿",
-      // Add more as needed
-    };
-    return currencyEmojis[code] || "💱";
+  // Helper function for currency emojis - expanded with all supported currencies
+const getCurrencyEmoji = (code) => {
+  const currencyEmojis = {
+    AED: "🇦🇪",
+    ARS: "🇦🇷",
+    AUD: "🇦🇺",
+    BGN: "🇧🇬",
+    BRL: "🇧🇷",
+    BSD: "🇧🇸",
+    CAD: "🇨🇦",
+    CHF: "🇨🇭",
+    CLP: "🇨🇱",
+    CNY: "🇨🇳",
+    COP: "🇨🇴",
+    CZK: "🇨🇿",
+    DKK: "🇩🇰",
+    DOP: "🇩🇴",
+    EGP: "🇪🇬",
+    EUR: "🇪🇺",
+    FJD: "🇫🇯",
+    GBP: "🇬🇧",
+    GTQ: "🇬🇹",
+    HKD: "🇭🇰",
+    HRK: "🇭🇷",
+    HUF: "🇭🇺",
+    IDR: "🇮🇩",
+    ILS: "🇮🇱",
+    INR: "🇮🇳",
+    ISK: "🇮🇸",
+    JPY: "🇯🇵",
+    KRW: "🇰🇷",
+    KZT: "🇰🇿",
+    MXN: "🇲🇽",
+    MYR: "🇲🇾",
+    NOK: "🇳🇴",
+    NZD: "🇳🇿",
+    PAB: "🇵🇦",
+    PEN: "🇵🇪",
+    PHP: "🇵🇭",
+    PKR: "🇵🇰",
+    PLN: "🇵🇱",
+    PYG: "🇵🇾",
+    RON: "🇷🇴",
+    RUB: "🇷🇺",
+    SAR: "🇸🇦",
+    SEK: "🇸🇪",
+    SGD: "🇸🇬",
+    THB: "🇹🇭",
+    TRY: "🇹🇷",
+    TWD: "🇹🇼",
+    UAH: "🇺🇦",
+    USD: "🇺🇸",
+    UYU: "🇺🇾",
+    ZAR: "🇿🇦",
+    BTC: "₿",
+    ETH: "Ξ",
+    XRP: "✕",
+    LTC: "Ł",
+    BCH: "Ƀ"
   };
+  
+  // For debugging - log when emoji isn't found
+  if (!currencyEmojis[code]) {
+    console.log(`No emoji found for currency: ${code}`);
+  }
+  
+  return currencyEmojis[code] || "💱";
+};
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -288,7 +415,9 @@ const CurrencyConverter = () => {
               <div>
                 <label className="block text-[#18864F] font-bold mb-2">From</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getCurrencyEmoji(fromCurrency)}</span>
+                  <span className="text-2xl" style={{ minWidth: '28px', display: 'inline-block' }}>
+                    {getCurrencyEmoji(fromCurrency)}
+                  </span>
                   <select
                     value={fromCurrency}
                     onChange={(e) => setFromCurrency(e.target.value)}
@@ -307,7 +436,9 @@ const CurrencyConverter = () => {
               <div>
                 <label className="block text-[#18864F] font-bold mb-2">To</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">{getCurrencyEmoji(toCurrency)}</span>
+                  <span className="text-2xl" style={{ minWidth: '28px', display: 'inline-block' }}>
+                    {getCurrencyEmoji(toCurrency)}
+                  </span>
                   <select
                     value={toCurrency}
                     onChange={(e) => setToCurrency(e.target.value)}
@@ -484,7 +615,14 @@ const CurrencyConverter = () => {
 
           {/* Popular Currencies Table */}
           <div className="bg-white p-6 rounded-lg shadow-md mt-6">
-            <h2 className="text-2xl font-bold text-[#18864F] mb-4">Popular Currencies</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-[#18864F]">Popular Currencies</h2>
+              {apiCache.popularCurrenciesTimestamp && (
+                <span className="text-xs text-gray-500">
+                  Last updated: {new Date(apiCache.popularCurrenciesTimestamp).toLocaleTimeString()}
+                </span>
+              )}
+            </div>
             <div className="overflow-x-auto">
               <table className="min-w-full bg-white">
                 <thead>
@@ -499,7 +637,7 @@ const CurrencyConverter = () => {
                     <tr key={currency.code} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="flex items-center">
-                          <span className="text-xl mr-2">
+                          <span className="text-xl mr-2" style={{ minWidth: '28px', display: 'inline-block' }}>
                             {getCurrencyEmoji(currency.code)}
                           </span>
                           <div>
