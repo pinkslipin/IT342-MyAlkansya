@@ -215,7 +215,8 @@ public class ExchangeRateService {
             logger.info("Testing API connection with URL: " + safeUrl);
             
             ResponseEntity<String> response = restTemplate.getForEntity(apiUrl, String.class);
-            result.put("statusCode", response.getStatusCodeValue());
+            // Fixed: replaced deprecated getStatusCodeValue() with getStatusCode().value()
+            result.put("statusCode", response.getStatusCode().value());
             
             if (response.getBody() != null) {
                 JsonNode root = objectMapper.readTree(response.getBody());
