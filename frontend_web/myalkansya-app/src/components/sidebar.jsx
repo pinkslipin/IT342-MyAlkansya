@@ -131,6 +131,19 @@ const Sidebar = ({ activePage }) => {
           </svg>
           Savings Goal
         </button>
+
+        {/* New Currency Converter Button */}
+        <button
+          onClick={() => navigate("/currencyconverter")}
+          className={`flex items-center gap-3 font-bold p-2 rounded-md ${
+            activePage === "currencyconverter" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
+          </svg>
+          Currency Converter
+        </button>
       </div>
 
       {/* User Info and Logout */}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
+import trashIcon from "../assets/trash.png"; // Import the trash icon
 
 const EditSavingGoal = () => {
   const [formData, setFormData] = useState({
@@ -227,9 +228,13 @@ const EditSavingGoal = () => {
                   <button
                     type="button"
                     onClick={handleDeleteSavingGoal}
-                    className="bg-[#dc3545] text-white font-bold py-2 px-4 rounded-md hover:bg-red-600 transition duration-300"
+                    className="hover:opacity-80"
                   >
-                    Delete
+                    <img
+                      src={trashIcon}
+                      alt="Delete"
+                      className="h-6 w-6"
+                    />
                   </button>
                 </div>
               </form>

@@ -75,8 +75,8 @@ const Login = () => {
       {/* Main Content */}
       <div className="flex flex-1 flex-col md:flex-row items-center justify-center">
         {/* Sign In Form */}
-        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-4">
-          <h2 className="text-2xl font-bold mb-6">Sign In</h2>
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md mx-4 flex flex-col justify-center min-h-[400px]">
+          <h2 className="text-4xl font-bold mb-6">Sign In</h2>
 
           <form onSubmit={handleLogin}>
             <div className="mb-4">
@@ -188,7 +188,7 @@ const Login = () => {
 
         {/* Welcome Side */}
         <div className="hidden md:flex md:w-1/2 justify-center items-center p-10 min-h-[60px]">
-          <div className="bg-white/50 p-8 rounded-lg shadow-md w-full max-w-md mx-4 text-center min-h-[560px] min-w-[600px] flex flex-col justify-center">
+          <div className="bg-white/50 p-8 rounded-lg shadow-md w-full max-w-md mx-4 text-center min-h-[400px] min-w-[700px] flex flex-col justify-center">
             <h1 className="text-5xl font-bold mb-4">Welcome to</h1>
             <div className="text-5xl font-bold">
               <span className="text-[#FFC107]">My</span>

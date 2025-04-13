@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
+import trashIcon from "../assets/trash.png"; // Import the trash icon
 
 const EditExpense = () => {
   const [formData, setFormData] = useState({
@@ -73,6 +74,32 @@ const EditExpense = () => {
     } catch (err) {
       console.error("Error editing expense:", err);
       setError("Failed to edit expense. Please try again later.");
+    }
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!window.confirm("Are you sure you want to delete this expense?")) {
+      return;
+    }
+
+    try {
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        setError("You must be logged in to delete an expense.");
+        return;
+      }
+
+      const config = {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      };
+
+      await axios.delete(`http://localhost:8080/api/expenses/deleteExpense/${expenseId}`, config);
+      navigate("/expense"); // Redirect to the Expense page after successful deletion
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+      setError("Failed to delete expense. Please try again later.");
     }
   };
 
@@ -208,6 +235,17 @@ const EditExpense = () => {
                     className="bg-[#FEF6EA] text-[#18864F] font-bold py-2 px-4 rounded-md border border-[#18864F] hover:bg-[#EDFBE9] transition duration-300"
                   >
                     Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteExpense}
+                    className="hover:opacity-80"
+                  >
+                    <img
+                      src={trashIcon}
+                      alt="Delete"
+                      className="h-6 w-6"
+                    />
                   </button>
                 </div>
               </form>
