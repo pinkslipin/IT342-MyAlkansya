@@ -1,49 +1,40 @@
 package com.example.myalkansyamobile.api
 
-import com.example.myalkansyamobile.model.Expense
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.*
+import java.time.LocalDate
 
 interface ExpenseApiService {
-    @POST("expenses/postExpense")
-    suspend fun createExpense(
-        @Header("Authorization") token: String,
-        @Body expenseRequest: ExpenseRequest
-    ): Response<Expense>
-
     @GET("expenses/getExpenses")
-    suspend fun getExpenses(
-        @Header("Authorization") token: String
-    ): Response<List<Expense>>
-
-    @GET("expenses/getExpense/{expenseId}")
-    suspend fun getExpenseById(
+    suspend fun getExpenses(@Header("Authorization") token: String): List<ExpenseResponse>
+    
+    @GET("expenses/getExpensesByCategory/{category}")
+    suspend fun getExpensesByCategory(
         @Header("Authorization") token: String,
-        @Path("expenseId") expenseId: Int
-    ): Response<Expense>
-
-    @PUT("expenses/putExpense/{expenseId}")
-    suspend fun updateExpense(
-        @Header("Authorization") token: String,
-        @Path("expenseId") expenseId: Int,
-        @Body expenseRequest: ExpenseRequest
-    ): Response<Expense>
-
-    @DELETE("expenses/deleteExpense/{expenseId}")
-    suspend fun deleteExpense(
-        @Header("Authorization") token: String,
-        @Path("expenseId") expenseId: Int
-    ): Response<String>
+        @Path("category") category: String
+    ): List<ExpenseResponse>
+    
+    @GET("expenses/getExpense/{id}")
+    suspend fun getExpenseById(@Path("id") id: Int, @Header("Authorization") token: String): ExpenseResponse
+    
+    @POST("expenses/postExpense")
+    suspend fun createExpense(@Header("Authorization") token: String, @Body expense: ExpenseRequest): Response<ExpenseResponse>
+    
+    @PUT("expenses/putExpense/{id}")
+    suspend fun updateExpense(@Path("id") id: Int, @Body expense: ExpenseRequest, @Header("Authorization") token: String): Response<ExpenseResponse>
+    
+    @DELETE("expenses/deleteExpense/{id}")
+    suspend fun deleteExpense(@Path("id") id: Int, @Header("Authorization") token: String): Response<String>
 }
 
-// Response DTO to match backend entity structure
 data class ExpenseResponse(
-    val id: Int,
-    val subject: String,
-    val category: String,
-    val date: String,
-    val amount: Double,
-    val currency: String
+    val id: Int = 0,
+    val subject: String = "",
+    val category: String = "",
+    val date: String = "",
+    val amount: Double = 0.0,
+    val currency: String = "PHP"
 )
 
 

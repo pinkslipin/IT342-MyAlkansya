@@ -1,129 +1,449 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
+    android:background="#FEF6EA"
     tools:context=".HomePageActivity">
 
-    <!-- Profile Image -->
-<!--    <ImageView-->
-<!--        android:id="@+id/imgProfile"-->
-<!--        android:layout_width="150dp"-->
-<!--        android:layout_height="150dp"-->
-<!--        android:layout_marginTop="16dp"-->
-<!--        android:layout_marginBottom="16dp"-->
-<!--        android:src="@drawable/ic_default_profile" &lt;!&ndash; Placeholder image &ndash;&gt;-->
-<!--    android:scaleType="centerCrop"-->
-<!--    android:contentDescription="@string/profile_image"-->
-<!--    app:layout_constraintTop_toTopOf="parent"-->
-<!--    app:layout_constraintStart_toStartOf="parent"-->
-<!--    app:layout_constraintEnd_toEndOf="parent" />-->
-
-    <!-- Welcome Message -->
-    <TextView
-        android:id="@+id/txtWelcomeMessage"
-        android:layout_width="wrap_content"
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Welcome, User!"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:padding="16dp">
 
-    <!-- Email -->
-    <TextView
-        android:id="@+id/txtEmail"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="user@example.com"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintTop_toBottomOf="@id/txtWelcomeMessage"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Total Savings Section -->
-    <TextView
-        android:id="@+id/txtTotalSavingsLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Total Savings"
-        android:textSize="18sp"
-        android:textColor="@color/green"
-        android:layout_marginBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@id/txtEmail"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <TextView
-        android:id="@+id/txtTotalSavings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="$0.00"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/green"
-        app:layout_constraintTop_toBottomOf="@id/txtTotalSavingsLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Buttons -->
-    <LinearLayout
-        android:id="@+id/btnContainer"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/txtTotalSavings"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <Button
-            android:id="@+id/btnIncome"
+        <!-- Top Bar -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Income Management"
-            android:backgroundTint="@color/green"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="8dp" />
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/imgProfile"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:src="@drawable/ic_profile"
+                    android:contentDescription="Profile"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="16dp"
+                    app:layout_constraintStart_toEndOf="@id/imgProfile"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/btnLogout">
+
+                    <TextView
+                        android:id="@+id/txtWelcomeMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Welcome, User!"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+
+                    <TextView
+                        android:id="@+id/txtEmail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="user@example.com"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <ImageButton
+                    android:id="@+id/btnLogout"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/ic_logout"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Logout"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Category Selector - Fixed positioning to be after top bar -->
+        <TextView
+            android:id="@+id/txtSelectCategoryLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Budget Category:"
+            android:textStyle="bold"
+            android:textColor="#18864F"
+            app:layout_constraintTop_toBottomOf="@+id/topBar"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp" />
+
+        <Spinner
+            android:id="@+id/spinnerBudgetCategory"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@+id/txtSelectCategoryLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/btn_dropdown"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/txtCategoryLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="All Categories"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="#18864F"
+            app:layout_constraintTop_toBottomOf="@+id/spinnerBudgetCategory"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="16dp" />
+
+        <!-- Header Section - Fixed constraint to be after category label -->
+        <TextView
+            android:id="@+id/txtAnalyticsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Data Analytics"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#18864F"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/txtCategoryLabel"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <Button
-            android:id="@+id/btnExpense"
-            android:layout_width="match_parent"
+            android:id="@+id/btnTimeFrame"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Expense Management"
-            android:backgroundTint="@color/black"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="8dp" />
+            android:text="Weekly"
+            android:textColor="#18864F"
+            android:backgroundTint="#FFC107"
+            app:layout_constraintTop_toTopOf="@id/txtAnalyticsHeader"
+            app:layout_constraintBottom_toBottomOf="@id/txtAnalyticsHeader"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <Button
-            android:id="@+id/btnBudget"
+        <!-- Summary Cards -->
+        <LinearLayout
+            android:id="@+id/summaryCardsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Budget Management"
-            android:backgroundTint="@color/black"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="8dp" />
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@id/txtAnalyticsHeader">
 
-        <Button
-            android:id="@+id/btnSavingsGoal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Savings Goals"
-            android:backgroundTint="@color/black"
-            android:textColor="@android:color/white"
-            android:layout_marginBottom="8dp" />
+            <!-- Budget Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
 
-        <Button
-            android:id="@+id/btnLogout"
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Budget"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+
+                    <TextView
+                        android:id="@+id/txtTotalBudget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₱0.00"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Expenses Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Expenses"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+
+                    <TextView
+                        android:id="@+id/txtTotalExpenses"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₱0.00"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+
+                    <!-- Remaining Budget -->
+                    <TextView
+                        android:id="@+id/txtRemainingBudget"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Remaining: ₱0.00"
+                        android:textColor="#2E7D32"
+                        android:layout_marginTop="8dp" />
+
+                    <!-- Budget Warning -->
+                    <TextView
+                        android:id="@+id/txtBudgetWarning"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="⚠️ Over budget"
+                        android:textColor="#B71C1C"
+                        android:visibility="gone"
+                        android:layout_marginTop="4dp" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Savings Card -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Total Savings"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+
+                    <TextView
+                        android:id="@+id/txtTotalSavings"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="₱0.00"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </LinearLayout>
+
+        <!-- Chart Section -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/chartContainer"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@id/summaryCardsContainer">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Chart will be displayed here"
+                    android:textColor="#757575"/>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Navigation Buttons in Grid Layout -->
+        <GridLayout
+            android:id="@+id/navigationGrid"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Logout"
-            android:backgroundTint="@color/black"
-            android:textColor="@android:color/white" />
-    </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            android:columnCount="2"
+            android:rowCount="2"
+            android:alignmentMode="alignMargins"
+            android:columnOrderPreserved="false"
+            android:layout_marginTop="24dp"
+            app:layout_constraintTop_toBottomOf="@id/chartContainer">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnIncome"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_income"
+                        android:contentDescription="Income" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Income"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnExpense"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_expense"
+                        android:contentDescription="Expense" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Expense"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnBudget"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_budget"
+                        android:contentDescription="Budget" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Budget"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnSavingsGoal"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_savings"
+                        android:contentDescription="Savings Goals" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Savings Goals"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+        </GridLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

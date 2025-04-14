@@ -31,8 +31,13 @@ class EditExpenseActivity : AppCompatActivity() {
     
     private var expenseId: Int = 0
     private var selectedDate = LocalDate.now()
-    private val categories = arrayOf("Food", "Transportation", "Housing", "Utilities", 
-        "Entertainment", "Healthcare", "Education", "Shopping", "Other")
+    
+    // Updated categories list matching with backend and AddExpenseActivity
+    private val categories = arrayOf(
+        "Food", "Transportation", "Housing", "Utilities", 
+        "Entertainment", "Healthcare", "Education", "Shopping", 
+        "Personal Care", "Debt Payment", "Savings", "Other"
+    )
     private val currencies = arrayOf("PHP", "USD", "EUR", "GBP", "JPY")
     private var selectedCurrency = "PHP"
 
@@ -194,39 +199,27 @@ class EditExpenseActivity : AppCompatActivity() {
                     return@launch
                 }
                 
-                val response = RetrofitClient.expenseApiService.getExpenseById("Bearer $token", expenseId)
+                val expense = RetrofitClient.expenseApiService.getExpenseById(expenseId, "Bearer $token")
                 
-                if (response.isSuccessful) {
-                    // Extract the expense body from the response
-                    val expenseBody = response.body()
-                    if (expenseBody != null) {
-                        // Use the expense directly since it's already an Expense object
-                        etSubject.setText(expenseBody.subject)
-                        tvDate.text = expenseBody.date.toString()
-                        selectedDate = expenseBody.date
-                        etAmount.setText(expenseBody.amount.toString())
-                        
-                        val categoryPosition = categories.indexOf(expenseBody.category)
-                        if (categoryPosition >= 0) {
-                            spinnerCategory.setSelection(categoryPosition)
-                        }
-                        
-                        selectedCurrency = expenseBody.currency
-                        try {
-                            val currencyPosition = currencies.indexOf(expenseBody.currency)
-                            if (currencyPosition >= 0) {
-                                spinnerCurrency.setSelection(currencyPosition)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("EditExpenseActivity", "Error setting currency: ${e.message}")
-                        }
-                    } else {
-                        Toast.makeText(this@EditExpenseActivity, "Received empty response", Toast.LENGTH_SHORT).show()
-                        finish()
+                // Parse the response and populate the form
+                etSubject.setText(expense.subject)
+                tvDate.text = expense.date
+                selectedDate = LocalDate.parse(expense.date)
+                etAmount.setText(expense.amount.toString())
+                
+                val categoryPosition = categories.indexOf(expense.category)
+                if (categoryPosition >= 0) {
+                    spinnerCategory.setSelection(categoryPosition)
+                }
+                
+                selectedCurrency = expense.currency
+                try {
+                    val currencyPosition = currencies.indexOf(expense.currency)
+                    if (currencyPosition >= 0) {
+                        spinnerCurrency.setSelection(currencyPosition)
                     }
-                } else {
-                    Toast.makeText(this@EditExpenseActivity, "Failed to load expense: ${response.code()}", Toast.LENGTH_SHORT).show()
-                    finish()
+                } catch (e: Exception) {
+                    Log.e("EditExpenseActivity", "Error setting currency: ${e.message}")
                 }
                 
                 progressBar.visibility = View.GONE
@@ -260,6 +253,7 @@ class EditExpenseActivity : AppCompatActivity() {
             "PHP"  // Default to PHP on error
         }
         
+        // Validation
         if (subject.isEmpty()) {
             etSubject.error = "Subject cannot be empty"
             return
@@ -303,12 +297,22 @@ class EditExpenseActivity : AppCompatActivity() {
                     return@launch
                 }
                 
+                // Convert the Expense to ExpenseRequest for API call
                 val expenseRequest = ExpenseRequest.fromExpense(updatedExpense)
-                RetrofitClient.expenseApiService.updateExpense("Bearer $token", expenseId, expenseRequest)
+                val response = RetrofitClient.expenseApiService.updateExpense(expenseId, expenseRequest, "Bearer $token")
                 
                 progressBar.visibility = View.GONE
-                Toast.makeText(this@EditExpenseActivity, "Expense updated successfully", Toast.LENGTH_SHORT).show()
-                finish()
+                
+                if (response.isSuccessful) {
+                    Toast.makeText(this@EditExpenseActivity, "Expense updated successfully", Toast.LENGTH_SHORT).show()
+                    
+                    // Return updated data to calling activity
+                    setResult(RESULT_OK)
+                    finish()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Toast.makeText(this@EditExpenseActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                }
                 
             } catch (e: HttpException) {
                 progressBar.visibility = View.GONE

@@ -70,6 +70,21 @@ public class ExpenseController {
         }
     }
 
+    @GetMapping("/getExpensesByCategory/{category}")
+    public ResponseEntity<?> getExpensesByCategory(
+            @PathVariable String category,
+            @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            int userId = userService.findByEmail(email).get().getUserId();
+            
+            List<ExpenseEntity> expenses = expenseService.getExpensesByCategoryAndUserId(category, userId);
+            return ResponseEntity.ok(expenses);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
     // UPDATE
     @PutMapping("/putExpense/{expenseId}")
     public ResponseEntity<?> putExpense(

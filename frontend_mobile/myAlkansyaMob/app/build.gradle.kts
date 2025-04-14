@@ -71,4 +71,7 @@ dependencies {
 
     // DataStore (for session management)
     implementation("androidx.datastore:datastore-preferences:1.1.0")
+
+    // Glide for image loading
+    implementation("de.hdodenhof:circleimageview:3.1.0")
 }

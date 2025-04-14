@@ -31,8 +31,13 @@ class AddExpenseActivity : AppCompatActivity() {
     private lateinit var sessionManager: SessionManager
     
     private var selectedDate = LocalDate.now()
-    private val categories = arrayOf("Food", "Transportation", "Housing", "Utilities", 
-        "Entertainment", "Healthcare", "Education", "Shopping", "Other")
+    
+    // Updated categories list matching with backend
+    private val categories = arrayOf(
+        "Food", "Transportation", "Housing", "Utilities", 
+        "Entertainment", "Healthcare", "Education", "Shopping", 
+        "Personal Care", "Debt Payment", "Savings", "Other"
+    )
     private val currencies = arrayOf("PHP", "USD", "EUR", "GBP", "JPY")
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,45 +148,54 @@ class AddExpenseActivity : AppCompatActivity() {
         progressDialog.show()
         
         // Send to API
-         lifecycleScope.launch {
-        try {
-            val token = sessionManager.getToken()
-            if (token == null) {
-                Toast.makeText(this@AddExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
-                finish()
-                return@launch
+        lifecycleScope.launch {
+            try {
+                val token = sessionManager.getToken()
+                if (token == null) {
+                    Toast.makeText(this@AddExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                    finish()
+                    return@launch
+                }
+                
+                Log.d("AddExpenseActivity", "Sending expense with category: ${expense.category}, amount: ${expense.amount}")
+                
+                // Create expense via API using ExpenseRequest for proper serialization
+                val expenseRequest = ExpenseRequest.fromExpense(expense)
+                val response = RetrofitClient.expenseApiService.createExpense("Bearer $token", expenseRequest)
+                
+                progressDialog.dismiss()
+                
+                // Check response body type
+                if (response.isSuccessful) {
+                    Toast.makeText(this@AddExpenseActivity, "Expense added successfully", Toast.LENGTH_SHORT).show()
+                    
+                    // Optionally update budget in UI
+                    val intent = Intent()
+                    intent.putExtra("EXPENSE_ADDED", true)
+                    intent.putExtra("CATEGORY", category)
+                    intent.putExtra("AMOUNT", amount)
+                    setResult(RESULT_OK, intent)
+                    
+                    finish()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Toast.makeText(this@AddExpenseActivity, "Server error: $errorMsg", Toast.LENGTH_LONG).show()
+                    Log.e("AddExpenseActivity", "Server error: $errorMsg")
+                }
+                
+            } catch (e: JsonSyntaxException) {
+                progressDialog.dismiss()
+                Log.e("AddExpenseActivity", "JSON parsing error", e)
+                Toast.makeText(this@AddExpenseActivity, "Error parsing server response", Toast.LENGTH_SHORT).show()
+            } catch (e: HttpException) {
+                progressDialog.dismiss()
+                Log.e("AddExpenseActivity", "HTTP error", e)
+                Toast.makeText(this@AddExpenseActivity, "Server error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                Log.e("AddExpenseActivity", "Exception during API call", e)
+                Toast.makeText(this@AddExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-            
-            Log.d("AddExpenseActivity", "Sending expense with category: ${expense.category}, amount: ${expense.amount}")
-            
-            // Create expense via API using ExpenseRequest for proper serialization
-            val expenseRequest = ExpenseRequest.fromExpense(expense)
-            val response = RetrofitClient.expenseApiService.createExpense("Bearer $token", expenseRequest)
-            
-            progressDialog.dismiss()
-            
-            // Check response body type
-            if (response.isSuccessful) {
-                Toast.makeText(this@AddExpenseActivity, "Expense added successfully", Toast.LENGTH_SHORT).show()
-                finish()
-            } else {
-                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                Toast.makeText(this@AddExpenseActivity, "Server error: $errorMsg", Toast.LENGTH_LONG).show()
-                Log.e("AddExpenseActivity", "Server error: $errorMsg")
-            }
-            
-        } catch (e: JsonSyntaxException) {
-            progressDialog.dismiss()
-            Log.e("AddExpenseActivity", "JSON parsing error", e)
-            Toast.makeText(this@AddExpenseActivity, "Error parsing server response", Toast.LENGTH_SHORT).show()
-        } catch (e: HttpException) {
-            progressDialog.dismiss()
-            // ...existing HttpException handling...
-        } catch (e: Exception) {
-            progressDialog.dismiss()
-            Log.e("AddExpenseActivity", "Exception during API call", e)
-            Toast.makeText(this@AddExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-    }
     }
 }

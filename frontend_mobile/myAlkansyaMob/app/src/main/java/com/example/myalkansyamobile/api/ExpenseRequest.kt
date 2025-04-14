@@ -5,15 +5,14 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 data class ExpenseRequest(
-    val id: Int = 0,
     val subject: String,
     val category: String,
     val date: String,
     val amount: Double,
-    val currency: String
+    val currency: String = "PHP"
 ) {
     companion object {
-        fun fromExpense(expense: Expense): ExpenseRequest {
+        fun fromExpense(expense: com.example.myalkansyamobile.model.Expense): ExpenseRequest {
             return ExpenseRequest(
                 subject = expense.subject,
                 category = expense.category,

@@ -11,7 +11,7 @@
         android:id="@+id/menuButton"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:background="@drawable/ic_menu"
+        android:background="@drawable/ic_arrow_back"
         android:contentDescription="Menu"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -81,6 +81,13 @@
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:contentDescription="Select Year"/>
+
+        <Spinner
+            android:id="@+id/categorySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="8dp"
+            android:hint="Select Category" />
 
         <Button
             android:id="@+id/filterButton"

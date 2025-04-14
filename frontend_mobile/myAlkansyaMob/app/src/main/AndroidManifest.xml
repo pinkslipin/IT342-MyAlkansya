@@ -145,6 +145,22 @@
             android:name=".EditBudgetActivity"
             android:exported="false" />
 
+        <!-- Savings Goal Activities -->
+        <activity
+            android:name=".SavingsGoalsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+            
+        <activity
+            android:name=".AddSavingsGoalActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+            
+        <activity
+            android:name=".EditSavingsGoalActivity"
+            android:exported="false" 
+            android:screenOrientation="portrait" />
+
     </application>
 
 </manifest>

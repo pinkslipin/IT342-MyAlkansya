@@ -12,8 +12,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.myalkansyamobile.adapters.ExpenseAdapter
 import com.example.myalkansyamobile.model.Expense
 import com.example.myalkansyamobile.api.RetrofitClient
+import com.example.myalkansyamobile.api.ExpenseResponse
 import com.example.myalkansyamobile.utils.SessionManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.time.LocalDate
 import java.time.Month
@@ -30,6 +33,15 @@ class ExpenseActivity : AppCompatActivity() {
     private lateinit var monthSpinner: Spinner
     private lateinit var yearSpinner: Spinner
     private lateinit var filterButton: Button
+    private lateinit var categorySpinner: Spinner
+    
+    // Updated categories list matching with backend
+    private val categories = arrayOf(
+        "All Categories",
+        "Food", "Transportation", "Housing", "Utilities", 
+        "Entertainment", "Healthcare", "Education", "Shopping", 
+        "Personal Care", "Debt Payment", "Savings", "Other"
+    )
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +60,8 @@ class ExpenseActivity : AppCompatActivity() {
         monthSpinner = findViewById(R.id.monthSpinner)
         yearSpinner = findViewById(R.id.yearSpinner)
         filterButton = findViewById(R.id.filterButton)
+        // This might need to be added to your layout if it doesn't exist yet
+        categorySpinner = findViewById(R.id.categorySpinner)
 
         // Setup filter spinners
         setupFilterSpinners()
@@ -70,7 +84,7 @@ class ExpenseActivity : AppCompatActivity() {
         // Setup button click listeners
         addExpenseButton.setOnClickListener {
             val intent = Intent(this, AddExpenseActivity::class.java)
-            startActivity(intent)
+            startActivityForResult(intent, ADD_EXPENSE_REQUEST_CODE)
         }
 
         menuButton.setOnClickListener {
@@ -104,12 +118,18 @@ class ExpenseActivity : AppCompatActivity() {
         val yearAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, years)
         yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         yearSpinner.adapter = yearAdapter
+        
+        // Setup category spinner
+        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
+        categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        categorySpinner.adapter = categoryAdapter
     }
     
     @RequiresApi(Build.VERSION_CODES.O)
     private fun applyFilter() {
         val selectedMonth = monthSpinner.selectedItemPosition
         val selectedYear = yearSpinner.selectedItem.toString()
+        val selectedCategory = categorySpinner.selectedItem.toString()
         
         // Reset to show all expenses
         expenseList.clear()
@@ -126,6 +146,13 @@ class ExpenseActivity : AppCompatActivity() {
         if (selectedYear != "All Years") {
             expenseList.retainAll { expense ->
                 expense.date.year == selectedYear.toInt()
+            }
+        }
+        
+        // Apply category filter if not "All Categories"
+        if (selectedCategory != "All Categories") {
+            expenseList.retainAll { expense ->
+                expense.category == selectedCategory
             }
         }
         
@@ -149,26 +176,40 @@ class ExpenseActivity : AppCompatActivity() {
                     return@launch
                 }
 
-                // Get expenses from API
-                val response = RetrofitClient.expenseApiService.getExpenses("Bearer $token")
-                
-                if (response.isSuccessful) {
-                    val expensesList = response.body()
-                    if (expensesList != null) {
-                        // Clear existing list and add new items
-                        expenseList.clear()
-                        allExpenseList.clear()
-                        expenseList.addAll(expensesList)
-                        allExpenseList.addAll(expensesList)
-                        expenseAdapter.notifyDataSetChanged()
-                    } else {
-                        Toast.makeText(this@ExpenseActivity, "Received empty response", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Toast.makeText(this@ExpenseActivity, "Failed to load expenses: ${response.code()}", Toast.LENGTH_SHORT).show()
+                // Show loading indicator
+                // progressBar.visibility = View.VISIBLE
+
+                // Get expenses from API with proper error handling
+                val responseList = withContext(Dispatchers.IO) {
+                    RetrofitClient.expenseApiService.getExpenses("Bearer $token")
                 }
                 
+                // Map API responses to our Expense model
+                val expenses = responseList.map { response ->
+                    Expense(
+                        id = response.id,
+                        subject = response.subject,
+                        category = response.category,
+                        date = LocalDate.parse(response.date),
+                        amount = response.amount,
+                        currency = response.currency
+                    )
+                }
+                
+                // Clear existing list and add new items
+                expenseList.clear()
+                allExpenseList.clear()
+                expenseList.addAll(expenses)
+                allExpenseList.addAll(expenses)
+                expenseAdapter.notifyDataSetChanged()
+                
+                // Hide loading indicator
+                // progressBar.visibility = View.GONE
+                
             } catch (e: HttpException) {
+                // Hide loading indicator
+                // progressBar.visibility = View.GONE
+                
                 if (e.code() == 401) {
                     Toast.makeText(this@ExpenseActivity, "Session expired. Please login again.", Toast.LENGTH_SHORT).show()
                     sessionManager.clearSession()
@@ -179,6 +220,9 @@ class ExpenseActivity : AppCompatActivity() {
                     Toast.makeText(this@ExpenseActivity, "Failed to load expenses: ${e.message()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
+                // Hide loading indicator
+                // progressBar.visibility = View.GONE
+                
                 Toast.makeText(this@ExpenseActivity, "Error loading expenses: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
@@ -188,5 +232,18 @@ class ExpenseActivity : AppCompatActivity() {
         super.onResume()
         // Refresh the expense list when coming back to this activity
         loadExpenses()
+    }
+    
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        
+        if (requestCode == ADD_EXPENSE_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Reload expenses after adding a new one
+            loadExpenses()
+        }
+    }
+    
+    companion object {
+        const val ADD_EXPENSE_REQUEST_CODE = 101
     }
 }

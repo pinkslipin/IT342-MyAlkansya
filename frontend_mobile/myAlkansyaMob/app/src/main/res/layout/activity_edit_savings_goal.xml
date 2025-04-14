@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FEF6EA"
+    android:fillViewport="true"
+    tools:context=".EditSavingsGoalActivity">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp">
+
+        <!-- Top Bar with back button and title -->
+        <LinearLayout
+            android:id="@+id/topBarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent">
+
+            <ImageButton
+                android:id="@+id/btnBack"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/ic_arrow_back"
+                android:contentDescription="Back" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Savings Goal"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:layout_marginStart="12dp" />
+        </LinearLayout>
+
+        <!-- Form Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="3dp"
+            app:layout_constraintTop_toBottomOf="@id/topBarLayout">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- Goal Name -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Goal Name"
+                    android:textColor="#18864F"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextGoalName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Enter your savings goal"
+                    android:inputType="text"
+                    android:padding="14dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#757575"
+                    android:background="@drawable/edit_text_background"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Target Amount -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Target Amount"
+                    android:textColor="#18864F"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp">
+
+                    <EditText
+                        android:id="@+id/editTextTargetAmount"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="0.00"
+                        android:inputType="numberDecimal"
+                        android:padding="14dp"
+                        android:textColor="#333333"
+                        android:textColorHint="#757575"
+                        android:background="@drawable/edit_text_background" />
+
+                    <Spinner
+                        android:id="@+id/spinnerCurrency"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/spinner_background"
+                        android:entries="@array/currency_options"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp" />
+                </LinearLayout>
+
+                <!-- Current Amount -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Current Amount"
+                    android:textColor="#18864F"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextCurrentAmount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="0.00"
+                    android:inputType="numberDecimal"
+                    android:padding="14dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#757575"
+                    android:background="@drawable/edit_text_background"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Target Date -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Target Date"
+                    android:textColor="#18864F"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextTargetDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Select a date"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:padding="14dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#757575"
+                    android:background="@drawable/edit_text_background"
+                    android:drawableEnd="@drawable/ic_calendar"
+                    android:drawablePadding="8dp"
+                    android:layout_marginBottom="28dp" />
+
+                <!-- Buttons Container -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2">
+
+                    <!-- Save Button -->
+                    <Button
+                        android:id="@+id/btnSaveGoal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Save Changes"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#18864F"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:layout_marginEnd="4dp"
+                        android:elevation="2dp" />
+
+                    <!-- Delete Button -->
+                    <Button
+                        android:id="@+id/btnDeleteGoal"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Delete Goal"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#DC3545"
+                        android:padding="12dp"
+                        android:textSize="14sp"
+                        android:layout_marginStart="4dp"
+                        android:elevation="2dp" />
+                </LinearLayout>
+
+                <!-- Cancel Button -->
+                <Button
+                    android:id="@+id/btnCancel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    android:textColor="#18864F"
+                    android:backgroundTint="#FEF6EA"
+                    android:padding="12dp"
+                    android:layout_marginTop="12dp"
+                    android:textSize="16sp"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>
