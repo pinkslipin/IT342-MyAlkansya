@@ -6,6 +6,7 @@
     android:padding="16dp">
 
     <LinearLayout
+        android:id="@+id/editExpenseLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
@@ -66,12 +67,14 @@
                 android:inputType="numberDecimal"
                 android:hint="Amount"/>
 
-            <TextView
-                android:id="@+id/tvCurrencyEdit"
-                android:layout_width="wrap_content"
+            <Spinner
+                android:id="@+id/spinnerCurrencyEdit"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
-                android:text="Php"
-                android:paddingStart="8dp"/>
+                android:layout_marginStart="8dp"
+                android:background="#FFD740"
+                android:padding="8dp"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <Button

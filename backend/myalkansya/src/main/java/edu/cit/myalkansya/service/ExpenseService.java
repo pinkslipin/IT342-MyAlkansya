@@ -67,6 +67,11 @@ public class ExpenseService {
         return expenseRepository.findByUserUserId(userId);
     }
 
+    // New method to get expenses by category and user ID
+    public List<ExpenseEntity> getExpensesByCategoryAndUserId(String category, int userId) {
+        return expenseRepository.findByUserUserIdAndCategory(userId, category);
+    }
+
     public ExpenseEntity getExpenseById(int expenseId) {
         return expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new NoSuchElementException("Expense with ID " + expenseId + " not found."));
