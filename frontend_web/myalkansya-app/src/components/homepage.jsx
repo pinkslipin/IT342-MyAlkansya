@@ -3,6 +3,35 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
+// Import Chart.js components
+import { 
+  Chart as ChartJS, 
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  BarElement, 
+  ArcElement,
+  Title, 
+  Tooltip, 
+  Legend, 
+  Filler 
+} from 'chart.js';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  BarElement,
+  ArcElement,
+  Title, 
+  Tooltip, 
+  Legend,
+  Filler
+);
 
 const HomePage = () => {
   const [user, setUser] = useState(null);
@@ -13,6 +42,7 @@ const HomePage = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState(null);
+  const [savingsGoalsData, setSavingsGoalsData] = useState([]);
 
   const navigate = useNavigate();
 
@@ -133,16 +163,18 @@ const HomePage = () => {
 
         setTotalSavings(userResponse.data.totalSavings || 0);
 
+        // Generate monthly data for chart from raw expenses and income data
+        generateMonthlyChartData(expensesResponse.data, incomesResponse.data, selectedYear);
+        
+        // Generate category data from expenses
+        generateCategoryChartData(filteredExpenses);
+
+        // Rest of your profile picture code
         const userData = userResponse.data;
         if (userData) {
           const possiblePictureFields = [
-            "picture",
-            "profilePicture",
-            "profile_picture",
-            "avatar",
-            "photo",
-            "image",
-            "imageUrl",
+            "picture", "profilePicture", "profile_picture", 
+            "avatar", "photo", "image", "imageUrl",
           ];
 
           for (const field of possiblePictureFields) {
@@ -152,6 +184,10 @@ const HomePage = () => {
             }
           }
         }
+
+        // Add this in your first useEffect where you fetch data, after the budget data fetching
+        const savingsGoalsResponse = await axios.get("http://localhost:8080/api/savings-goals/getSavingsGoals", config);
+        setSavingsGoalsData(savingsGoalsResponse.data);
 
         setLoading(false);
       } catch (err) {
@@ -166,6 +202,175 @@ const HomePage = () => {
 
     fetchData();
   }, [navigate, selectedMonth, selectedYear]);
+
+  // Add new state variables for chart data
+  const [monthlyData, setMonthlyData] = useState({
+    labels: [],
+    income: [],
+    expenses: []
+  });
+  const [categoryData, setCategoryData] = useState({
+    labels: [],
+    data: []
+  });
+
+  // Add a new useEffect to prepare chart data
+  useEffect(() => {
+    const prepareChartData = async () => {
+      try {
+        const authToken = localStorage.getItem("authToken");
+        if (!authToken) return;
+        
+        const config = {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        };
+        
+        // Get monthly data for the selected year
+        const monthlyResponse = await axios.get(
+          `http://localhost:8080/api/analytics/monthly-summary?year=${selectedYear}`,
+          config
+        );
+        
+        if (monthlyResponse.data && monthlyResponse.data.length > 0) {
+          const labels = [];
+          const incomeData = [];
+          const expenseData = [];
+          
+          monthlyResponse.data.forEach(item => {
+            labels.push(item.month);
+            incomeData.push(item.income);
+            expenseData.push(item.expenses);
+          });
+          
+          setMonthlyData({
+            labels,
+            income: incomeData,
+            expenses: expenseData
+          });
+          
+          console.log("Monthly data processed:", { labels, incomeData, expenseData });
+        } else {
+          console.warn("No monthly data returned from API");
+        }
+        
+        // Get expense categories data
+        const categoriesResponse = await axios.get(
+          `http://localhost:8080/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`,
+          config
+        );
+        
+        if (categoriesResponse.data && categoriesResponse.data.length > 0) {
+          const labels = [];
+          const data = [];
+          
+          categoriesResponse.data.forEach(item => {
+            labels.push(item.category);
+            data.push(item.amount);
+          });
+          
+          setCategoryData({
+            labels,
+            data
+          });
+          
+          console.log("Category data processed:", { labels, data });
+        } else {
+          console.warn("No category data returned from API");
+        }
+
+        // Inside your prepareChartData function
+        console.log("API URLs:", {
+          monthlyUrl: `http://localhost:8080/api/analytics/monthly-summary?year=${selectedYear}`,
+          categoriesUrl: `http://localhost:8080/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`
+        });
+
+        // After your API calls
+        console.log("Monthly response:", monthlyResponse);
+        console.log("Categories response:", categoriesResponse);
+      } catch (error) {
+        console.error("Error fetching chart data:", error);
+        if (error.response) {
+          console.error("Response status:", error.response.status);
+          console.error("Response data:", error.response.data);
+        }
+      }
+    };
+    
+    if (!loading && user) {
+      prepareChartData();
+    }
+  }, [selectedMonth, selectedYear, loading, user]);
+
+  // Function to generate monthly chart data
+  const generateMonthlyChartData = (expenses, incomes, year) => {
+    const monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const incomeData = Array(12).fill(0);
+    const expenseData = Array(12).fill(0);
+    
+    // Process income data
+    incomes.forEach(income => {
+      const incomeDate = new Date(income.date);
+      const incomeYear = incomeDate.getFullYear();
+      
+      if (incomeYear === year || year === 0) {
+        const month = incomeDate.getMonth(); // 0-based index
+        incomeData[month] += income.amount;
+      }
+    });
+    
+    // Process expense data
+    expenses.forEach(expense => {
+      const expenseDate = new Date(expense.date);
+      const expenseYear = expenseDate.getFullYear();
+      
+      if (expenseYear === year || year === 0) {
+        const month = expenseDate.getMonth(); // 0-based index
+        expenseData[month] += expense.amount;
+      }
+    });
+    
+    setMonthlyData({
+      labels: monthLabels,
+      income: incomeData,
+      expenses: expenseData
+    });
+    
+    console.log("Generated monthly data:", { 
+      labels: monthLabels, 
+      income: incomeData, 
+      expenses: expenseData 
+    });
+  };
+
+  // Function to generate category chart data
+  const generateCategoryChartData = (expenses) => {
+    // Group expenses by category
+    const categoryMap = {};
+    
+    expenses.forEach(expense => {
+      const category = expense.category || 'Uncategorized';
+      if (!categoryMap[category]) {
+        categoryMap[category] = 0;
+      }
+      categoryMap[category] += expense.amount;
+    });
+    
+    // Convert to arrays for chart
+    const categories = Object.keys(categoryMap);
+    const amounts = categories.map(category => categoryMap[category]);
+    
+    setCategoryData({
+      labels: categories,
+      data: amounts
+    });
+    
+    console.log("Generated category data:", { 
+      labels: categories, 
+      data: amounts 
+    });
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("authToken");
@@ -215,6 +420,190 @@ const HomePage = () => {
   }).format(totalSavings);
 
   const imageToDisplay = profileImage || user.picture || user.profilePicture || defaultProfilePic;
+
+  // Prepare chart configurations
+  const barChartData = {
+    labels: monthlyData.labels,
+    datasets: [
+      {
+        label: 'Income',
+        data: monthlyData.income,
+        backgroundColor: 'rgba(24, 134, 79, 0.7)',
+        borderColor: '#18864F',
+        borderWidth: 1,
+      },
+      {
+        label: 'Expenses',
+        data: monthlyData.expenses,
+        backgroundColor: 'rgba(255, 193, 7, 0.7)',
+        borderColor: '#FFC107',
+        borderWidth: 1,
+      },
+    ],
+  };
+  
+  const barChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Monthly Income vs Expenses',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Amount (PHP)'
+        }
+      }
+    }
+  };
+  
+  const pieChartData = {
+    labels: categoryData.labels,
+    datasets: [
+      {
+        data: categoryData.data,
+        backgroundColor: [
+          '#18864F',
+          '#FFC107', 
+          '#4CAF50', 
+          '#A5D6B7',
+          '#EDFBE9', 
+          '#2E7D32', 
+          '#FEF6EA'
+        ],
+        borderColor: '#FFFFFF',
+        borderWidth: 1,
+      },
+    ],
+  };
+  
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right',
+      },
+      title: {
+        display: true,
+        text: 'Expense Distribution',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+    },
+  };
+
+  // Add this after your pieChartOptions configuration
+  const savingsGoalsChartData = {
+    labels: savingsGoalsData.map(goal => goal.goal),
+    datasets: [
+      {
+        label: 'Progress',
+        data: savingsGoalsData.map(goal => Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)),
+        backgroundColor: savingsGoalsData.map(goal => {
+          const progress = (goal.currentAmount / goal.targetAmount) * 100;
+          return progress > 90 ? 'rgba(40, 167, 69, 0.7)' : // green for almost complete
+                 progress > 50 ? 'rgba(255, 193, 7, 0.7)' : // yellow for halfway
+                 'rgba(220, 53, 69, 0.7)'; // red for just started
+        }),
+        borderColor: '#FFFFFF',
+        borderWidth: 1,
+        barThickness: 20,
+      }
+    ]
+  };
+
+  const savingsGoalsChartOptions = {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      title: {
+        display: true,
+        text: 'Savings Goals Progress',
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const goal = savingsGoalsData[context.dataIndex];
+            const formattedCurrent = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: goal.currency || 'PHP'
+            }).format(goal.currentAmount);
+            
+            const formattedTarget = new Intl.NumberFormat('en-US', {
+              style: 'currency',
+              currency: goal.currency || 'PHP'
+            }).format(goal.targetAmount);
+            
+            const percentage = Math.round((goal.currentAmount / goal.targetAmount) * 100);
+            return [`Progress: ${percentage}%`, `${formattedCurrent} of ${formattedTarget}`];
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        max: 100,
+        title: {
+          display: true,
+          text: 'Completion Percentage'
+        },
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      }
+    }
+  };
+
+  // Before rendering charts
+  console.log("Bar chart data:", barChartData);
+  console.log("Pie chart data:", pieChartData);
+
+  // First, add this function before the return statement to get top 5 closest goals to completion
+  // Modify the getTopFiveClosestGoals function to exclude completed goals
+const getTopFiveClosestGoals = () => {
+  if (!savingsGoalsData || savingsGoalsData.length === 0) return [];
+  
+  // Only include goals with valid target and current amounts
+  // AND exclude already completed goals (where currentAmount >= targetAmount)
+  const validGoals = savingsGoalsData.filter(goal => 
+    goal.targetAmount && 
+    goal.targetAmount > 0 && 
+    goal.currentAmount != null && 
+    goal.currentAmount < goal.targetAmount
+  );
+  
+  // Sort goals by completion percentage (highest first)
+  return [...validGoals]
+    .sort((a, b) => {
+      const percentA = (a.currentAmount / a.targetAmount) * 100;
+      const percentB = (b.currentAmount / b.targetAmount) * 100;
+      return percentB - percentA;
+    })
+    .slice(0, 5); // Take only top 5
+};
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -311,8 +700,135 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="bg-white p-8 rounded-lg shadow-md flex items-center justify-center" style={{ height: "400px" }}>
-            <p className="text-gray-500">Chart will be displayed here</p>
+          <div className="grid grid-cols-2 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-lg shadow-md flex flex-col">
+              <Bar data={barChartData} options={barChartOptions} className="mb-4" />
+              
+              {/* Add savings goals chart below the monthly chart */}
+              <div className="mt-4 border-t pt-4">
+  <div className="flex justify-between items-center mb-2">
+    <h4 className="text-sm font-bold text-[#18864F]">Almost There: Goals Nearing Completion</h4>
+    <button
+      onClick={() => navigate("/savingsgoal")}
+      className="text-xs bg-[#FFC107] text-[#18864F] py-1 px-2 rounded-md hover:bg-yellow-500 transition duration-300"
+    >
+      View All
+    </button>
+  </div>
+  
+  {savingsGoalsData.length === 0 ? (
+    <div className="text-center py-2 text-gray-500 text-sm">
+      <p>No savings goals found.</p>
+    </div>
+  ) : (
+    <div style={{ height: "180px" }}> {/* Increased height for better visibility */}
+      <Bar 
+        data={{
+          labels: getTopFiveClosestGoals().map(goal => {
+            // Shorten goal names if too long
+            const name = goal.goal;
+            return name.length > 15 ? name.substring(0, 15) + '...' : name;
+          }),
+          datasets: [{
+            ...savingsGoalsChartData.datasets[0],
+            data: getTopFiveClosestGoals().map(goal => Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)),
+            backgroundColor: getTopFiveClosestGoals().map(goal => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              return progress > 90 ? 'rgba(40, 167, 69, 0.7)' : 
+                     progress > 50 ? 'rgba(255, 193, 7, 0.7)' : 
+                     'rgba(220, 53, 69, 0.7)';
+            }),
+            barThickness: 15 // Made bars slightly thicker for better visibility
+          }]
+        }} 
+        options={{
+          ...savingsGoalsChartOptions,
+          maintainAspectRatio: false,
+          plugins: {
+            ...savingsGoalsChartOptions.plugins,
+            title: {
+              display: false
+            },
+            tooltip: {
+              ...savingsGoalsChartOptions.plugins.tooltip,
+              displayColors: false
+            }
+          },
+          scales: {
+            y: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                font: {
+                  size: 11 // Slightly larger font for y-axis labels
+                }
+              }
+            },
+            x: {
+              beginAtZero: true,
+              max: 100,
+              grid: {
+                display: false
+              },
+              ticks: {
+                callback: function(value) {
+                  return value + '%';
+                },
+                maxRotation: 0,
+                font: {
+                  size: 10 // Adjusted font size for x-axis
+                }
+              }
+            }
+          }
+        }}
+      />
+    </div>
+  )}
+</div>
+            </div>
+            
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <Pie data={pieChartData} options={pieChartOptions} />
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-[#18864F]">Financial Summary</h3>
+              <div className="text-sm text-gray-500">
+                {selectedMonth > 0 
+                  ? `${months.find(m => m.value === selectedMonth)?.label} ${selectedYear}` 
+                  : `Year ${selectedYear}`}
+              </div>
+            </div>
+            <div className="flex space-x-4">
+              <div className="flex-1 p-4 border rounded-md">
+                <h4 className="text-sm font-semibold text-gray-600">Income vs Expenses</h4>
+                <p className="text-xl font-bold" style={{ color: totalIncome > totalExpenses ? '#18864F' : '#dc3545' }}>
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "PHP",
+                  }).format(totalIncome - totalExpenses)}
+                </p>
+                <div className="text-sm">{totalIncome > totalExpenses ? 'Surplus' : 'Deficit'}</div>
+              </div>
+              <div className="flex-1 p-4 border rounded-md">
+                <h4 className="text-sm font-semibold text-gray-600">Budget Utilization</h4>
+                <p className="text-xl font-bold" style={{ color: totalExpenses <= totalBudget ? '#18864F' : '#dc3545' }}>
+                  {totalBudget > 0 ? Math.round((totalExpenses / totalBudget) * 100) : 0}%
+                </p>
+                <div className="text-sm">{totalExpenses <= totalBudget ? 'Under budget' : 'Over budget'}</div>
+              </div>
+              <div className="flex-1 p-4 border rounded-md">
+                <h4 className="text-sm font-semibold text-gray-600">Savings Rate</h4>
+                <p className="text-xl font-bold text-[#18864F]">
+                  {totalIncome > 0 ? Math.round(((totalIncome - totalExpenses) / totalIncome) * 100) : 0}%
+                </p>
+                <div className="text-sm">of income saved</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -6,6 +6,8 @@
 ## Product Description
 **MyAlkansya** is a financial management application designed to help users track income, expenses, and budgeting. It provides features such as **data visualization**, **multiple login options**, **currency conversion**, and **export capabilities** to enhance financial planning. The application is available on both **web and mobile platforms**.
 
+---
+
 ## List of Features
 - **User Authentication**
   - Email & Password Login
@@ -36,10 +38,105 @@
 - **Data Insights & Tips**
   - Personalized recommendations based on spending patterns
 
+---
+
+## Setup Instructions
+
+### Prerequisites
+Ensure you have the following installed on your system:
+- **Node.js** (v16 or later)
+- **npm** (v7 or later)
+- **Java** (JDK 11 or later)
+- **Maven** (for backend)
+- **MySQL** (or any compatible database)
+- **Android Studio** (for mobile development)
+- **Git** (for version control)
+
+### Backend Setup
+1. Navigate to the backend directory:
+   ```bash
+   cd backend/myalkansya
+   ```
+2. Install Maven dependencies:
+   ```bash
+   mvn clean install
+   ```
+3. Configure database connection in `src/main/resources/application.properties`
+4. Run the Spring Boot application:
+   ```bash
+   mvn spring-boot:run
+   ```
+   The backend API will be available at `http://localhost:8080`
+
+### Frontend Web Setup
+1. Navigate to the frontend web directory:
+   ```bash
+   cd frontend_web/myalkansya-app
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm start
+   ```
+   The web application will be available at `http://localhost:3000`
+
+### Frontend Mobile Setup
+1. Open Android Studio
+2. Open the project from `frontend_mobile/myAlkansyaMob`
+3. Sync Gradle files and install dependencies
+4. Connect an Android device or start an emulator
+5. Build and run the application
+
+## Usage Guide
+
+### Getting Started
+1. Register a new account or log in with existing credentials
+2. Complete your profile setup to personalize the experience
+
+### Managing Finances
+1. **Adding Income**:
+   - Navigate to the Income section
+   - Click on "Add Income"
+   - Fill in the required details (amount, source, date)
+   - Save your entry
+
+2. **Tracking Expenses**:
+   - Go to the Expenses section
+   - Click on "Add Expense"
+   - Select a category, enter the amount and date
+   - Add optional notes for reference
+
+3. **Setting Budgets**:
+   - Access the Budget section
+   - Set monthly limits for different expense categories
+   - The system will alert you when approaching budget limits
+
+### Using Analytics
+1. View your spending patterns through visual charts on the Dashboard
+2. Generate monthly/yearly reports to analyze your financial habits
+3. Export data to Google Sheets for further analysis
+
+### Managing Savings Goals
+1. Create a new savings goal with target amount and deadline
+2. Track progress and make contributions
+3. Receive notifications upon reaching milestones
+
+## Troubleshooting
+
+### Common Issues
+- **Database Connection Errors**: Ensure MySQL is running and credentials are correct
+- **Login Problems**: Clear browser cache or verify account credentials
+- **Mobile App Crashes**: Check for app updates or reinstall the application
+
+### Getting Support
+For technical assistance, contact the development team through GitHub issues or email.
+
 ## Links
 - [Figma Design](#) 'To be added'
 - [System Diagrams](#) 'To be added'
-
 
 ## Developer Profiles
 
