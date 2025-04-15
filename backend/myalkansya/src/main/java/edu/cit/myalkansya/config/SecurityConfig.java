@@ -59,7 +59,10 @@ public class SecurityConfig {
     @Bean
     public GoogleIdTokenVerifier googleIdTokenVerifier() {
         return new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
-                .setAudience(List.of("275880440953-akhnvpmdmm4hiutcji6mcjtbap9cq7q1.apps.googleusercontent.com"))
+                .setAudience(List.of(
+                    "275880440953-akhnvpmdmm4hiutcji6mcjtbap9cq7q1.apps.googleusercontent.com", // Web client ID
+                    "1002381152451-vnvb9324bmvonje971dtsr2gq6dk90kk.apps.googleusercontent.com" // Android client ID
+                ))
                 .build();
     }
 

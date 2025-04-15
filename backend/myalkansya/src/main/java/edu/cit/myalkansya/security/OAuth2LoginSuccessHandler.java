@@ -158,6 +158,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     
     private void processOidcUser(DefaultOidcUser oidcUser) {
         String email = oidcUser.getEmail();
+        logger.info("Processing Google OIDC user: Email=" + email);
         String firstname = oidcUser.getGivenName();
         String lastname = oidcUser.getFamilyName();
         String picture = oidcUser.getAttribute("picture");

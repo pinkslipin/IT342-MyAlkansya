@@ -17,21 +17,22 @@ class AuthRepository(private val apiService: AuthApiService) {
     suspend fun authenticateWithGoogle(idToken: String): Resource<AuthResponse> {
         return withContext(Dispatchers.IO) {
             try {
+                Log.d("AuthRepository", "Sending ID Token to backend: ${idToken.take(10)}...")
                 val request = GoogleAuthRequest(idToken)
                 val response = apiService.googleLogin(request)
-
+                Log.d("AuthRepository", "Backend response code: ${response.code()}")
                 if (response.isSuccessful) {
+                    Log.d("AuthRepository", "Google login successful")
                     response.body()?.let {
                         Resource.Success(it)
                     } ?: Resource.Error("Empty response from server")
                 } else {
-                    Resource.Error("Google login failed: ${response.errorBody()?.string() ?: "Unknown error"}")
+                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    Log.e("AuthRepository", "Google login failed: $errorBody")
+                    Resource.Error("Google login failed: $errorBody")
                 }
-            } catch (e: HttpException) {
-                Resource.Error("Server Error: ${e.message()}")
-            } catch (e: IOException) {
-                Resource.Error("Network error: Please check your internet connection.")
             } catch (e: Exception) {
+                Log.e("AuthRepository", "Error during Google login", e)
                 Resource.Error("Unexpected error: ${e.localizedMessage}")
             }
         }

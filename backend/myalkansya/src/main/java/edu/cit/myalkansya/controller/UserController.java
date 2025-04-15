@@ -127,14 +127,17 @@ public class UserController {
     @PostMapping("/google/login")
     public ResponseEntity<?> googleLogin(@RequestBody Map<String, String> request) {
         String idToken = request.get("idToken");
+        logger.info("Received Google login request with ID Token: " + (idToken != null ? idToken.substring(0, 10) : "null"));
         if (idToken == null || idToken.isEmpty()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("ID Token is required for authentication");
         }
     
         GoogleUserDTO googleUser = googleTokenVerifier.verifyGoogleToken(idToken);
         if (googleUser == null) {
+            logger.warning("Invalid Google ID Token");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google ID Token");
         }
+        logger.info("Google user verified: Email=" + googleUser.getEmail());
     
         String email = googleUser.getEmail();
     

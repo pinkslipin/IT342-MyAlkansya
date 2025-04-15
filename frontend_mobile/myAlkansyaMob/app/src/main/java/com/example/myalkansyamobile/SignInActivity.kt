@@ -81,18 +81,20 @@ class SignInActivity : AppCompatActivity() {
                     val account = task.getResult(ApiException::class.java)
                     val idToken = account.idToken
                     if (idToken != null) {
+                        Log.d("GoogleSignIn", "ID Token retrieved: ${idToken.take(10)}...")
                         lifecycleScope.launch {
                             authenticateWithGoogle(idToken)
                         }
+                    } else {
+                        Log.e("GoogleSignIn", "ID Token is null")
+                        Toast.makeText(this, "Failed to retrieve ID Token", Toast.LENGTH_SHORT).show()
                     }
                 } catch (e: ApiException) {
-                    showLoading(false)
-                    Log.e("GoogleLogin", "Google sign-in failed", e)
+                    Log.e("GoogleSignIn", "Google sign-in failed", e)
                     Toast.makeText(this, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                showLoading(false)
-                Log.d("GoogleLogin", "Sign in canceled or failed")
+                Log.d("GoogleSignIn", "Sign-in canceled or failed")
             }
         }
     }
@@ -276,6 +278,7 @@ class SignInActivity : AppCompatActivity() {
     }
 
     private suspend fun authenticateWithGoogle(idToken: String) {
+        Log.d("GoogleAuth", "Authenticating with Google ID Token: $idToken")
         showLoading(true)
         Log.d("GoogleAuth", "Authenticating with Google...")
 
