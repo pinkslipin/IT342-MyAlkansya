@@ -6,10 +6,10 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface IncomeApiService {
-    @GET("/api/incomes/getIncomes")
+    @GET("api/incomes/getIncomes")
     suspend fun getIncomes(@Header("Authorization") token: String): Response<List<Income>>
 
-    @GET("/api/incomes/getIncome/{incomeId}")
+    @GET("api/incomes/getIncome/{incomeId}")
     suspend fun getIncomeById(
         @Path("incomeId") incomeId: Int,
         @Header("Authorization") token: String
