@@ -12,6 +12,10 @@ class SessionManager(context: Context) {
         const val USER_ID = "user_id"
         const val USERNAME = "username"
         const val USER_EMAIL = "user_email"
+        const val USER_FIRSTNAME = "user_firstname"
+        const val USER_LASTNAME = "user_lastname"
+        const val USER_CURRENCY = "user_currency"
+        const val USER_PROFILE_PIC = "user_profile_pic"
         const val IS_LOGGED_IN = "is_logged_in"
     }
 
@@ -87,6 +91,54 @@ class SessionManager(context: Context) {
     // Alternative name for fetchUserId (for compatibility)
     fun getUserId(): Int {
         return fetchUserId()
+    }
+    
+    // Save user first name
+    fun saveFirstName(firstName: String) {
+        val editor = prefs.edit()
+        editor.putString(USER_FIRSTNAME, firstName)
+        editor.apply()
+    }
+    
+    // Fetch user first name
+    fun getFirstName(): String? {
+        return prefs.getString(USER_FIRSTNAME, null)
+    }
+    
+    // Save user last name
+    fun saveLastName(lastName: String) {
+        val editor = prefs.edit()
+        editor.putString(USER_LASTNAME, lastName)
+        editor.apply()
+    }
+    
+    // Fetch user last name
+    fun getLastName(): String? {
+        return prefs.getString(USER_LASTNAME, null)
+    }
+    
+    // Save user currency
+    fun saveCurrency(currency: String) {
+        val editor = prefs.edit()
+        editor.putString(USER_CURRENCY, currency)
+        editor.apply()
+    }
+    
+    // Fetch user currency
+    fun getCurrency(): String? {
+        return prefs.getString(USER_CURRENCY, "USD")
+    }
+    
+    // Save profile picture URL
+    fun saveProfilePicture(pictureUrl: String) {
+        val editor = prefs.edit()
+        editor.putString(USER_PROFILE_PIC, pictureUrl)
+        editor.apply()
+    }
+    
+    // Fetch profile picture URL
+    fun getProfilePicture(): String? {
+        return prefs.getString(USER_PROFILE_PIC, null)
     }
     
     // Check if user is logged in

@@ -5,29 +5,29 @@ import retrofit2.http.*
 import java.time.LocalDate
 
 interface SavingsGoalApiService {
-    @GET("savings-goals/getSavingsGoals")
+    @GET("api/savings-goals/getSavingsGoals")
     suspend fun getAllSavingsGoals(@Header("Authorization") token: String): List<SavingsGoalResponse>
     
-    @GET("savings-goals/getSavingsGoal/{goalId}")
+    @GET("api/savings-goals/getSavingsGoal/{goalId}")
     suspend fun getSavingsGoalById(
         @Path("goalId") goalId: Int,
         @Header("Authorization") token: String
     ): SavingsGoalResponse
     
-    @POST("savings-goals/postSavingsGoal")
+    @POST("api/savings-goals/postSavingsGoal")
     suspend fun createSavingsGoal(
         @Body savingsGoal: SavingsGoalRequest,
         @Header("Authorization") token: String
     ): SavingsGoalResponse
     
-    @PUT("savings-goals/putSavingsGoal/{goalId}")
+    @PUT("api/savings-goals/putSavingsGoal/{goalId}")
     suspend fun updateSavingsGoal(
         @Path("goalId") goalId: Int,
         @Body savingsGoal: SavingsGoalRequest,
         @Header("Authorization") token: String
     ): SavingsGoalResponse
     
-    @DELETE("savings-goals/deleteSavingsGoal/{goalId}")
+    @DELETE("api/savings-goals/deleteSavingsGoal/{goalId}")
     suspend fun deleteSavingsGoal(
         @Path("goalId") goalId: Int,
         @Header("Authorization") token: String

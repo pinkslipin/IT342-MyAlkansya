@@ -161,6 +161,19 @@
             android:exported="false" 
             android:screenOrientation="portrait" />
 
+        <!-- Profile Activity -->
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"
+            android:label="My Profile"
+            android:theme="@style/Theme.MyAlkansyaMobile.NoActionBar" />
+
+        <!-- Currency Converter Activity -->
+        <activity
+            android:name=".CurrencyConverterActivity"
+            android:exported="false"
+            android:label="Currency Converter" />
+
     </application>
 
 </manifest>

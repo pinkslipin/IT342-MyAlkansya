@@ -7,7 +7,7 @@ data class AuthResponse(
     val token: String,
 
     @SerializedName("user")
-    val user: GoogleUserDTO
+    val user: UserDTO? // Changed to nullable and using UserDTO instead of GoogleUserDTO
 )
 
 

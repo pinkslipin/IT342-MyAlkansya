@@ -158,7 +158,7 @@ class AddSavingsGoalActivity : AppCompatActivity() {
 
                 val bearerToken = "Bearer $token"
                 withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.create(com.example.myalkansyamobile.api.SavingsGoalApiService::class.java)
+                    RetrofitClient.savingsGoalApiService
                         .createSavingsGoal(savingsGoalRequest, bearerToken)
                 }
 
