@@ -379,9 +379,9 @@ const HomePage = () => {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", marginTop: "50px" }}>
-        <h2>Loading your profile...</h2>
-        <div style={{ marginTop: "20px" }}>Please wait while we retrieve your information</div>
+      <div className="flex flex-col items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#18864F]"></div>
+        <p className="mt-4 text-[#18864F] font-semibold">Loading dashboard...</p>
       </div>
     );
   }

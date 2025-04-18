@@ -92,6 +92,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new CustomOAuth2User(oAuth2User, user);
     }
 
+    // Modify the processOAuth2User method to use the same profile picture logic
     private UserEntity processOAuth2User(String email, String firstname, String lastname, String picture, String providerId, String provider) {
         // Ensure we have non-null values for required fields
         firstname = (firstname != null && !firstname.trim().isEmpty()) ? firstname : "User";
@@ -110,7 +111,16 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             }
             existingUser.setFirstname(firstname);
             existingUser.setLastname(lastname);
-            existingUser.setProfilePicture(picture);
+            
+            // IMPORTANT: Only set profile picture if the user doesn't already have one
+            // or if their current one is from the same OAuth provider
+            if (existingUser.getProfilePicture() == null || 
+                existingUser.getProfilePicture().isEmpty() || 
+                (existingUser.getProfilePicture().contains("graph.facebook.com") && provider.equals("FACEBOOK")) ||
+                (existingUser.getProfilePicture().contains("googleusercontent.com") && provider.equals("GOOGLE"))) {
+                existingUser.setProfilePicture(picture);
+            }
+            
             return userRepo.save(existingUser);
         } else {
             UserEntity newUser = new UserEntity();

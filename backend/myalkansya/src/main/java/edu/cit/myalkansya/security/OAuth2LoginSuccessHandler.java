@@ -86,7 +86,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
             
             // Build the final redirect URL with the JWT token
-            String finalRedirectUrl = redirectUri + "/?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
+            String finalRedirectUrl = redirectUri + "/home?token=" + URLEncoder.encode(token, StandardCharsets.UTF_8);
             
             // Set Authorization header and redirect
             response.setHeader("Authorization", "Bearer " + token);
@@ -176,6 +176,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         saveOrUpdateUser(email, firstname, lastname, picture, providerId, "GOOGLE");
     }
     
+    // In the saveOrUpdateUser method, modify it to NOT update profile picture if user already exists
     private void saveOrUpdateUser(String email, String firstname, String lastname, String picture, String providerId, String provider) {
         // Ensure we have non-null values for required fields
         firstname = (firstname != null && !firstname.trim().isEmpty()) ? firstname : "User";
@@ -191,10 +192,20 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             }
             existingUser.setFirstname(firstname);
             existingUser.setLastname(lastname);
-            existingUser.setProfilePicture(picture);
+            
+            // IMPORTANT: Only set profile picture if the user doesn't already have one
+            // or if their current one is from the same OAuth provider
+            if (existingUser.getProfilePicture() == null || 
+                existingUser.getProfilePicture().isEmpty() || 
+                (existingUser.getProfilePicture().contains("graph.facebook.com") && provider.equals("FACEBOOK")) ||
+                (existingUser.getProfilePicture().contains("googleusercontent.com") && provider.equals("GOOGLE"))) {
+                existingUser.setProfilePicture(picture);
+            }
+            
             userRepository.save(existingUser);
             logger.info("Updated user: " + email);
         } else {
+            // Create new user
             UserEntity newUser = new UserEntity();
             newUser.setEmail(email);
             newUser.setFirstname(firstname);
