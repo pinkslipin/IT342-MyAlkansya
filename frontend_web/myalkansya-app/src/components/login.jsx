@@ -28,7 +28,7 @@ const Login = () => {
       setSuccess(`Welcome, ${user.firstname} ${user.lastname}!`);
 
       setTimeout(() => {
-        navigate("/");
+        navigate("/home"); // Changed from "/" to "/home"
       }, 2000);
     } catch (err) {
       if (err.response && err.response.status === 401) {

@@ -27,27 +27,26 @@ const Sidebar = ({ activePage }) => {
         const response = await axios.get("http://localhost:8080/api/users/me", config);
         setUser(response.data);
 
-        // Determine profile picture
-        const possiblePictureFields = [
-          "picture",
-          "profilePicture",
-          "profile_picture",
-          "avatar",
-          "photo",
-          "image",
-          "imageUrl",
-        ];
-
-        for (const field of possiblePictureFields) {
-          if (response.data[field] && typeof response.data[field] === "string") {
-            setProfileImage(response.data[field]);
-            break;
+        // Universal profile picture handling - works with both uploaded and OAuth pictures
+        if (response.data.profilePicture) {
+          // If it's already a full URL (like from Google/Facebook)
+          if (response.data.profilePicture.startsWith('http')) {
+            console.log("Sidebar: Using external provider profile picture");
+            setProfileImage(response.data.profilePicture);
+          } 
+          // If it's a path to our own API (uploaded pictures)
+          else {
+            const baseUrl = "http://localhost:8080";
+            const path = response.data.profilePicture.startsWith('/') 
+              ? response.data.profilePicture 
+              : `/${response.data.profilePicture}`;
+            
+            const finalUrl = `${baseUrl}${path}?t=${new Date().getTime()}`;
+            console.log("Sidebar: Using uploaded profile picture");
+            setProfileImage(finalUrl);
           }
-        }
-
-        if (!profileImage && response.data.authProvider === "GOOGLE" && response.data.providerId) {
-          const googleId = response.data.providerId;
-          setProfileImage(`https://lh3.googleusercontent.com/a/${googleId}`);
+        } else {
+          setProfileImage(defaultProfilePic);
         }
       } catch (err) {
         console.error("Error fetching user info:", err);
@@ -56,7 +55,7 @@ const Sidebar = ({ activePage }) => {
     };
 
     fetchUserInfo();
-  }, [navigate, profileImage]);
+  }, [navigate]);
 
   return (
     <div className="fixed top-16 left-0 h-[calc(100%-4rem)] w-72 bg-white shadow-md flex flex-col z-40">
@@ -73,7 +72,7 @@ const Sidebar = ({ activePage }) => {
       {/* Navigation Links */}
       <div className="flex flex-col gap-3 px-6 mt-4 flex-grow">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/home")}
           className={`flex items-center gap-3 font-bold p-2 rounded-md ${
             activePage === "dashboard" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
@@ -147,7 +146,12 @@ const Sidebar = ({ activePage }) => {
       </div>
 
       {/* User Info and Logout */}
-      <div className="p-4 border-t">
+      <div 
+        className={`p-4 border-t cursor-pointer ${
+          activePage === "profile" ? "bg-[#EDFBE9]" : ""
+        }`} 
+        onClick={() => navigate("/profile")}
+      >
         <div className="flex items-center gap-3">
           <img
             src={profileImage || defaultProfilePic}
@@ -159,14 +163,17 @@ const Sidebar = ({ activePage }) => {
             }}
           />
           <div>
-            <p className="font-bold text-[#18864F]">{user ? `${user.firstname} ${user.lastname}` : "Loading..."}</p>
+            <p className={`font-bold ${activePage === "profile" ? "text-[#18864F]" : "text-gray-700"}`}>
+              {user ? `${user.firstname} ${user.lastname}` : "Loading..."}
+            </p>
             <p className="text-sm text-gray-500" style={{ fontSize: "12px" }}>
               {user ? user.email : ""}
             </p>
           </div>
         </div>
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation(); // Prevent triggering the parent div's onClick
             localStorage.removeItem("authToken");
             navigate("/login");
           }}

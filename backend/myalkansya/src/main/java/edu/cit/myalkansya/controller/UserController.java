@@ -12,6 +12,13 @@ import edu.cit.myalkansya.service.UserService;
 import edu.cit.myalkansya.security.JwtUtil;
 import edu.cit.myalkansya.security.GoogleTokenVerifier;
 import edu.cit.myalkansya.security.FacebookTokenVerifier;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.multipart.MultipartFile;
+import edu.cit.myalkansya.dto.UserUpdateDTO;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -19,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.NoSuchElementException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +36,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+
+// Add this import with your other imports
+import edu.cit.myalkansya.dto.PasswordChangeRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -90,7 +101,7 @@ public class UserController {
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String token) {
-        String email = jwtUtil.extractEmail(token.replace("Bearer ", "")); // Fixed method name
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
         Optional<UserEntity> userOpt = userService.findByEmail(email);
  
         if (userOpt.isEmpty()) {
@@ -98,14 +109,17 @@ public class UserController {
         }
  
         UserEntity user = userOpt.get();
-        return ResponseEntity.ok(Map.of(
-            "userId", user.getUserId(),
-            "firstname", user.getFirstname(),
-            "lastname", user.getLastname(),
-            "email", user.getEmail(),
-            "currency", user.getCurrency(),
-            "totalSavings", user.getTotalSavings()
-        ));
+        // Include the profilePicture in the response
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put("userId", user.getUserId());
+        responseMap.put("firstname", user.getFirstname());
+        responseMap.put("lastname", user.getLastname());
+        responseMap.put("email", user.getEmail());
+        responseMap.put("currency", user.getCurrency());
+        responseMap.put("totalSavings", user.getTotalSavings());
+        responseMap.put("profilePicture", user.getProfilePicture());
+        
+        return ResponseEntity.ok(responseMap);
     }
 
     public UserController(
@@ -326,4 +340,126 @@ public class UserController {
         }
     }
     
+    @PutMapping("/update")
+    public ResponseEntity<?> updateUser(@RequestBody UserUpdateDTO updateData, 
+                                       @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            UserEntity updatedUser = userService.updateUser(email, updateData);
+            
+            // Return updated user data
+            return ResponseEntity.ok(Map.of(
+                "userId", updatedUser.getUserId(),
+                "firstname", updatedUser.getFirstname(),
+                "lastname", updatedUser.getLastname(),
+                "email", updatedUser.getEmail(),
+                "currency", updatedUser.getCurrency(),
+                "totalSavings", updatedUser.getTotalSavings(),
+                "profilePicture", updatedUser.getProfilePicture()
+            ));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            logger.severe("Error updating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update user: " + e.getMessage());
+        }
+    }
+    
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request,
+                                      @RequestHeader("Authorization") String token) {
+        try {
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            boolean success = userService.changePassword(email, request.getCurrentPassword(), request.getNewPassword());
+            
+            if (success) {
+                return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Current password is incorrect"));
+            }
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("message", "User not found"));
+        } catch (Exception e) {
+            logger.severe("Error changing password: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Failed to change password: " + e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/uploadProfilePicture")
+    public ResponseEntity<?> uploadProfilePicture(@RequestParam("profilePicture") MultipartFile file,
+                                                 @RequestHeader("Authorization") String token) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please upload a file");
+            }
+            
+            String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            String profilePictureUrl = userService.uploadProfilePicture(email, file);
+            
+            // Get the updated user to return all necessary info
+            UserEntity user = userService.findByEmail(email).orElseThrow(() -> new NoSuchElementException("User not found"));
+            
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("message", "Profile picture uploaded successfully");
+            responseData.put("profilePicture", profilePictureUrl);
+            responseData.put("userId", user.getUserId());
+            
+            return ResponseEntity.ok(responseData);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (IOException e) {
+            logger.severe("Error uploading profile picture: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to upload profile picture: " + e.getMessage());
+        } catch (Exception e) {
+            logger.severe("Unexpected error uploading profile picture: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred: " + e.getMessage());
+        }
+    }
+    
+    @GetMapping("/profile-pictures/{filename:.+}")
+    public ResponseEntity<?> serveProfilePicture(@PathVariable String filename) {
+        try {
+            Path filePath = Paths.get("user-profile-pictures").resolve(filename).normalize();
+            logger.info("Attempting to serve profile picture from: " + filePath.toAbsolutePath());
+            
+            Resource resource = new UrlResource(filePath.toUri());
+            
+            if (resource.exists()) {
+                // Determine content type
+                String contentType = determineContentType(filename);
+                
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, contentType)
+                        .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
+                        .header(HttpHeaders.PRAGMA, "no-cache")
+                        .header(HttpHeaders.EXPIRES, "0")
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                logger.warning("Profile picture file not found: " + filePath.toAbsolutePath());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("File not found");
+            }
+        } catch (Exception e) {
+            logger.severe("Error serving profile picture: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to serve profile picture: " + e.getMessage());
+        }
+    }
+
+    private String determineContentType(String filename) {
+        if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".gif")) return "image/gif";
+        if (filename.endsWith(".svg")) return "image/svg+xml";
+        if (filename.endsWith(".webp")) return "image/webp";
+        return "application/octet-stream"; // Default
+    }
 }
