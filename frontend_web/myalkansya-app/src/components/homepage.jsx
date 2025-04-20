@@ -377,6 +377,62 @@ const HomePage = () => {
     navigate("/login");
   };
 
+  // Place this before the return statement, near other handler functions
+
+  const handleExportDashboard = async () => {
+    try {
+      const authToken = localStorage.getItem("authToken");
+      
+      // Show loading indicator if you have one
+      // setIsExporting(true);
+  
+      const response = await axios.get(`http://localhost:8080/api/export/dashboard`, {
+        params: {
+          month: selectedMonth,
+          year: selectedYear
+        },
+        responseType: "blob",
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      });
+  
+      // Explicitly check that we received valid data
+      if (!response.data || response.data.size === 0) {
+        throw new Error("Received empty file data");
+      }
+  
+      // Create the correct MIME type
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+  
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `MyAlkansya_DashboardExport_${selectedYear}_${selectedMonth}.xlsx`);
+      
+      // Append to body, click, then clean up
+      document.body.appendChild(link);
+      link.click();
+      
+      // Small delay before cleanup to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        // Hide loading indicator if you have one
+        // setIsExporting(false);
+      }, 100);
+      
+    } catch (error) {
+      console.error("Failed to export dashboard:", error);
+      alert("Something went wrong while exporting. Please try again.");
+      // Hide loading indicator if you have one
+      // setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -619,6 +675,13 @@ const getTopFiveClosestGoals = () => {
         <div className="flex-1 p-8 ml-72 bg-[#FEF6EA]">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-[#18864F]">Data Analytics</h1>
+
+            <button
+              onClick={handleExportDashboard}
+              className="bg-[#18864F] text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300"
+            >
+              Export to Excel
+            </button>
           </div>
 
           <div className="mb-6 bg-white p-4 rounded-md shadow-sm">
