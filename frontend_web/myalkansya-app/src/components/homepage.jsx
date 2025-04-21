@@ -473,9 +473,7 @@ const HomePage = () => {
         `MyAlkansya_Report_${monthName}_${yearText}.xlsx`,
         { user, selectedMonth, selectedYear, months }
       );      
-      
-      // Show success message to user
-      alert("Export successful! Your file is downloading.");
+  
       
     } catch (error) {
       console.error("Export failed:", error);
