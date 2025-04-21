@@ -18,6 +18,7 @@ import {
   Filler 
 } from 'chart.js';
 import { Bar, Pie, Line } from 'react-chartjs-2';
+import { exportSheets } from '../utils/excelExport';
 
 // Register Chart.js components
 ChartJS.register(
@@ -43,6 +44,9 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [profileImage, setProfileImage] = useState(null);
   const [savingsGoalsData, setSavingsGoalsData] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [filteredIncomes, setFilteredIncomes] = useState([]);
+  const [filteredBudgets, setFilteredBudgets] = useState([]);
 
   const navigate = useNavigate();
 
@@ -127,6 +131,8 @@ const HomePage = () => {
         }
         const totalExpensesSum = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         setTotalExpenses(totalExpensesSum);
+        // After filtering expenses
+        setFilteredExpenses(filteredExpenses);
 
         const incomesResponse = await axios.get("http://localhost:8080/api/incomes/getIncomes", config);
         let filteredIncomes = incomesResponse.data;
@@ -144,6 +150,8 @@ const HomePage = () => {
         }
         const totalIncomeSum = filteredIncomes.reduce((sum, income) => sum + income.amount, 0);
         setTotalIncome(totalIncomeSum);
+        // After filtering incomes
+        setFilteredIncomes(filteredIncomes);
 
         const budgetsResponse = await axios.get("http://localhost:8080/api/budgets/user", config);
         let filteredBudgets = budgetsResponse.data;
@@ -160,6 +168,8 @@ const HomePage = () => {
         }
         const totalBudgetSum = filteredBudgets.reduce((sum, budget) => sum + budget.monthlyBudget, 0);
         setTotalBudget(totalBudgetSum);
+        // After filtering budgets
+        setFilteredBudgets(filteredBudgets);
 
         setTotalSavings(userResponse.data.totalSavings || 0);
 
@@ -375,6 +385,102 @@ const HomePage = () => {
   const handleLogout = () => {
     localStorage.removeItem("authToken");
     navigate("/login");
+  };
+
+  // Place this before the return statement, near other handler functions
+
+  const handleExportDashboard = () => {
+    try {
+      // Get month name for the filename
+      const monthName = selectedMonth > 0 
+        ? months.find(m => m.value === selectedMonth)?.label || selectedMonth
+        : "All";
+      
+      // Get year for the filename
+      const yearText = selectedYear > 0 ? selectedYear.toString() : "All";
+      
+      const summaryRows = [
+        { Metric: 'Total Income',   Value: totalIncome   },
+        { Metric: 'Total Expenses', Value: totalExpenses },
+        { Metric: 'Total Budget',   Value: totalBudget   },
+        { Metric: 'Total Savings',  Value: totalSavings  },
+      ];
+    
+      const sheets = [
+        {
+          name: 'Dashboard',
+          columns: [
+            { header: 'Metric', key: 'Metric' },
+            { header: 'Value',  key: 'Value'  },
+          ],
+          data: summaryRows,
+        },
+        {
+          name: 'Income',
+          columns: [
+            { header: 'Date',   key: 'date'   },
+            { header: 'Source', key: 'source' },
+            { header: 'Amount', key: 'amount' },
+          ],
+          data: filteredIncomes,
+        },
+        {
+          name: 'Expenses',
+          columns: [
+            { header: 'Date',     key: 'date'     },
+            { header: 'Category', key: 'category' },
+            { header: 'Amount',   key: 'amount'   },
+          ],
+          data: filteredExpenses,
+        },
+        {
+          name: 'Budget',
+          columns: [
+            { header: 'Category',       key: 'category'      },
+            { header: 'Monthly Budget', key: 'monthlyBudget' },
+            { header: 'Total Spent',    key: 'totalSpent'    },
+            { header: 'Remaining',      key: 'remaining'     },
+          ],
+          data: filteredBudgets.map(b => ({
+            category:      b.category,
+            monthlyBudget: b.monthlyBudget,
+            totalSpent:    b.totalSpent,
+            remaining:     b.monthlyBudget - b.totalSpent,
+          })),
+        },
+        {
+          name: 'SavingsGoal',
+          columns: [
+            { header: 'Goal',           key: 'goal'         },
+            { header: 'Target Amount',  key: 'targetAmount' },
+            { header: 'Current Amount', key: 'currentAmount'},
+            { header: 'Target Date',    key: 'targetDate'   },
+            { header: 'Progress (%)',   key: 'progress'     },
+          ],
+          data: savingsGoalsData.map(g => ({
+            goal:          g.goal,
+            targetAmount:  g.targetAmount,
+            currentAmount: g.currentAmount,
+            targetDate:    new Date(g.targetDate).toLocaleDateString(),
+            progress:      Math.round((g.currentAmount / g.targetAmount) * 100),
+          })),
+        },
+      ];
+    
+      // Pass the options object as the third parameter
+      exportSheets(
+        sheets,
+        `MyAlkansya_Report_${monthName}_${yearText}.xlsx`,
+        { user, selectedMonth, selectedYear, months }
+      );      
+      
+      // Show success message to user
+      alert("Export successful! Your file is downloading.");
+      
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Export failed. Please try again.");
+    }
   };
 
   if (loading) {
@@ -619,6 +725,13 @@ const getTopFiveClosestGoals = () => {
         <div className="flex-1 p-8 ml-72 bg-[#FEF6EA]">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold text-[#18864F]">Data Analytics</h1>
+
+            <button
+              onClick={handleExportDashboard}
+              className="bg-[#18864F] text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300"
+            >
+              Export to Excel
+            </button>
           </div>
 
           <div className="mb-6 bg-white p-4 rounded-md shadow-sm">
