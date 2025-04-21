@@ -8,6 +8,8 @@ import editIcon from "../assets/edit.png"; // Import the edit icon
 const SavingsGoal = () => {
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(8); // Set to 10 items per page
   const navigate = useNavigate();
 
   const apiUrl = "http://localhost:8080/api/savings-goals";
@@ -50,6 +52,25 @@ const SavingsGoal = () => {
     if (targetAmount <= 0) return 0;
     const progress = (currentAmount / targetAmount) * 100;
     return Math.min(100, Math.max(0, progress)); // Ensure between 0 and 100
+  };
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentSavingsGoals = savingsGoals.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(savingsGoals.length / itemsPerPage);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
   };
 
   if (error) {
@@ -96,10 +117,10 @@ const SavingsGoal = () => {
 
           {/* Savings Goals Data Container */}
           <div className="bg-white rounded-b-md shadow-md" style={{ height: "500px" }}>
-            {savingsGoals.length === 0 ? (
+            {currentSavingsGoals.length === 0 ? (
               <p className="text-center text-gray-500 py-4">No savings goals found.</p>
             ) : (
-              savingsGoals.map((goal) => {
+              currentSavingsGoals.map((goal) => {
                 const progressPercentage = calculateProgress(goal.currentAmount, goal.targetAmount);
                 const progressColor =
                   progressPercentage > 90 ? "#28a745" : progressPercentage > 50 ? "#ffc107" : "#dc3545";
@@ -184,6 +205,31 @@ const SavingsGoal = () => {
                 );
               })
             )}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-end items-center mt-4">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className={`bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-l-md ${
+                currentPage === 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
+              }`}
+            >
+              &lt;
+            </button>
+            <div className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4">
+              {currentPage} out of {totalPages || 1}
+            </div>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className={`bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-r-md ${
+                currentPage === totalPages || totalPages === 0 ? "opacity-50 cursor-not-allowed" : "hover:bg-yellow-500"
+              }`}
+            >
+              &gt;
+            </button>
           </div>
         </div>
       </div>

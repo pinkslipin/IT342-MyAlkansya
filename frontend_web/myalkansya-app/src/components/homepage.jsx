@@ -47,6 +47,7 @@ const HomePage = () => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [filteredIncomes, setFilteredIncomes] = useState([]);
   const [filteredBudgets, setFilteredBudgets] = useState([]);
+  const [displayedTotalSavings, setDisplayedTotalSavings] = useState(0);
 
   const navigate = useNavigate();
 
@@ -481,6 +482,48 @@ const HomePage = () => {
     }
   };
 
+  useEffect(() => {
+    if (user && user.currency && totalSavings > 0) {
+      // We'll use the same value initially
+      setDisplayedTotalSavings(totalSavings);
+      
+      // If the backend returns savings in a different currency than user preference,
+      // you would need to convert it here using your exchange rate service
+      const fetchExchangeRate = async () => {
+        try {
+          const authToken = localStorage.getItem("authToken");
+          if (!authToken) return;
+          
+          // Assuming your backend has a currency conversion endpoint
+          // Replace 'PHP' with whatever base currency your backend stores values in
+          const baseCurrency = "PHP"; 
+          if (user.currency !== baseCurrency) {
+            const response = await axios.get(
+              `http://localhost:8080/api/currency/rate?from=${baseCurrency}&to=${user.currency}`,
+              {
+                headers: { 
+                  Authorization: `Bearer ${authToken}`
+                }
+              }
+            );
+            
+            if (response.data && response.data.rate) {
+              // Convert the savings using the exchange rate
+              const convertedSavings = totalSavings * response.data.rate;
+              setDisplayedTotalSavings(convertedSavings);
+            }
+          }
+        } catch (error) {
+          console.error("Error converting savings:", error);
+        }
+      };
+      
+      fetchExchangeRate();
+    } else {
+      setDisplayedTotalSavings(totalSavings);
+    }
+  }, [user, totalSavings]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -502,26 +545,30 @@ const HomePage = () => {
 
   const displayName = user.name ? user.name : `${user.firstname || ""} ${user.lastname || ""}`.trim();
   const emailToDisplay = user.email || "";
+  
+  // Get the user's preferred currency or default to PHP if not set
+  const userCurrency = user.currency || "PHP";
 
+  // Format all monetary values using the user's preferred currency
   const formattedIncome = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "PHP",
+    currency: userCurrency,
   }).format(totalIncome);
 
   const formattedExpenses = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "PHP",
+    currency: userCurrency,
   }).format(totalExpenses);
 
   const formattedBudget = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "PHP",
+    currency: userCurrency,
   }).format(totalBudget);
 
   const formattedSavings = new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "PHP",
-  }).format(totalSavings);
+    currency: userCurrency,
+  }).format(displayedTotalSavings);
 
   const imageToDisplay = profileImage || user.picture || user.profilePicture || defaultProfilePic;
 
@@ -920,7 +967,7 @@ const getTopFiveClosestGoals = () => {
                 <p className="text-xl font-bold" style={{ color: totalIncome > totalExpenses ? '#18864F' : '#dc3545' }}>
                   {new Intl.NumberFormat("en-US", {
                     style: "currency",
-                    currency: "PHP",
+                    currency: userCurrency,
                   }).format(totalIncome - totalExpenses)}
                 </p>
                 <div className="text-sm">{totalIncome > totalExpenses ? 'Surplus' : 'Deficit'}</div>
