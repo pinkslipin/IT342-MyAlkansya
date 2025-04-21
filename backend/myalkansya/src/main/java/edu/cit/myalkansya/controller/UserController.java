@@ -12,6 +12,7 @@ import edu.cit.myalkansya.service.UserService;
 import edu.cit.myalkansya.security.JwtUtil;
 import edu.cit.myalkansya.security.GoogleTokenVerifier;
 import edu.cit.myalkansya.security.FacebookTokenVerifier;
+import edu.cit.myalkansya.service.CurrencyConversionService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -56,6 +57,9 @@ public class UserController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private CurrencyConversionService currencyConversionService; // Add this field
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterRequest request) {
@@ -109,7 +113,7 @@ public class UserController {
         }
  
         UserEntity user = userOpt.get();
-        // Include the profilePicture in the response
+        // Include the authProvider and providerId in the response
         Map<String, Object> responseMap = new HashMap<>();
         responseMap.put("userId", user.getUserId());
         responseMap.put("firstname", user.getFirstname());
@@ -118,6 +122,8 @@ public class UserController {
         responseMap.put("currency", user.getCurrency());
         responseMap.put("totalSavings", user.getTotalSavings());
         responseMap.put("profilePicture", user.getProfilePicture());
+        responseMap.put("authProvider", user.getAuthProvider()); // Add this line
+        responseMap.put("providerId", user.getProviderId()); // Add this line
         
         return ResponseEntity.ok(responseMap);
     }
@@ -341,30 +347,44 @@ public class UserController {
     }
     
     @PutMapping("/update")
-    public ResponseEntity<?> updateUser(@RequestBody UserUpdateDTO updateData, 
-                                       @RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> updateUser(@RequestHeader("Authorization") String token, @RequestBody Map<String, Object> updateData) {
         try {
+            // Existing code for authentication...
             String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-            UserEntity updatedUser = userService.updateUser(email, updateData);
+            UserEntity user = userService.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
             
-            // Return updated user data
-            return ResponseEntity.ok(Map.of(
-                "userId", updatedUser.getUserId(),
-                "firstname", updatedUser.getFirstname(),
-                "lastname", updatedUser.getLastname(),
-                "email", updatedUser.getEmail(),
-                "currency", updatedUser.getCurrency(),
-                "totalSavings", updatedUser.getTotalSavings(),
-                "profilePicture", updatedUser.getProfilePicture()
-            ));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+            // Check if we need to convert currency
+            String convertFromCurrency = (String) updateData.get("convertFromCurrency");
+            String convertToCurrency = (String) updateData.get("convertToCurrency");
+            boolean needsCurrencyConversion = convertFromCurrency != null && convertToCurrency != null;
+            
+            // Update user data
+            if (updateData.containsKey("firstname")) user.setFirstname((String) updateData.get("firstname"));
+            if (updateData.containsKey("lastname")) user.setLastname((String) updateData.get("lastname"));
+            // ... other fields
+            
+            // Update the currency
+            if (updateData.containsKey("currency")) {
+                user.setCurrency((String) updateData.get("currency"));
+            }
+            
+            UserEntity updatedUser = userRepository.save(user);
+            
+            // If currency has changed, convert all financial data
+            if (needsCurrencyConversion) {
+                // Call the convertUserCurrency method on the instance, not statically
+                currencyConversionService.convertUserCurrency(
+                    user.getUserId(), 
+                    convertFromCurrency, 
+                    convertToCurrency
+                );
+            }
+            
+            // Return the updated user
+            return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
-            logger.severe("Error updating user: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to update user: " + e.getMessage());
+                .body(Map.of("error", e.getMessage()));
         }
     }
     

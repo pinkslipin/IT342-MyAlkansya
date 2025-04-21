@@ -89,15 +89,23 @@ const CurrencyConverter = () => {
     const fetchCurrencies = async () => {
       try {
         setIsLoading(true);
+        
+        // Add logging to debug API call
+        console.log("Attempting to fetch currencies from:", `${API_BASE_URL}/api/currency/rates/USD`);
+        
         const response = await fetch(`${API_BASE_URL}/api/currency/rates/USD`, {
           headers: {
             'Accept': 'application/json'
           }
         });
         
+        // Log raw response
+        console.log("API Response status:", response.status);
+        
         // Check if response is actually JSON
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
+          console.error("Non-JSON response from API");
           throw new Error("Server returned non-JSON response. Check API endpoint.");
         }
         
@@ -118,19 +126,32 @@ const CurrencyConverter = () => {
             name: getCurrencyName(code)
           }));
         
-        setAvailableCurrencies(currencies);
+        if (currencies.length > 0) {
+          console.log("Found currencies:", currencies.length);
+          setAvailableCurrencies(currencies);
+        } else {
+          console.warn("No currencies found in API response, using fallbacks");
+          throw new Error("No currencies found in API response");
+        }
       } catch (error) {
         console.error("Error fetching currencies:", error);
-        setError(`Failed to load currencies: ${error.message}`);
+        setError(`Failed to load all currencies: ${error.message}`);
         
-        // Fall back to default currencies
-        setAvailableCurrencies([
+        // Always use these fallback currencies to ensure the component works
+        const fallbackCurrencies = [
           { code: "USD", name: "US Dollar" },
           { code: "EUR", name: "Euro" },
           { code: "JPY", name: "Japanese Yen" },
           { code: "GBP", name: "British Pound" },
-          { code: "PHP", name: "Philippine Peso" }
-        ]);
+          { code: "PHP", name: "Philippine Peso" },
+          { code: "AUD", name: "Australian Dollar" },
+          { code: "CAD", name: "Canadian Dollar" },
+          { code: "CHF", name: "Swiss Franc" },
+          { code: "CNY", name: "Chinese Yuan" },
+          { code: "SGD", name: "Singapore Dollar" }
+        ];
+        
+        setAvailableCurrencies(fallbackCurrencies);
       } finally {
         setIsLoading(false);
       }

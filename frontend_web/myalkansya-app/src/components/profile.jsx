@@ -27,10 +27,25 @@ const Profile = () => {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   
-  // Replace the isOAuthUser function with this more explicit version
+  // Add these state variables right after your other useState declarations
+  const [showProfileUpdateConfirm, setShowProfileUpdateConfirm] = useState(false);
+  const [showPictureUploadConfirm, setShowPictureUploadConfirm] = useState(false);
+  const [showPasswordChangeConfirm, setShowPasswordChangeConfirm] = useState(false);
+  const [tempProfilePicture, setTempProfilePicture] = useState(null);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
+
+  // Clean up the isOAuthUser function to be more focused
   const isOAuthUser = () => {
-    // Only return true if user exists and has a non-LOCAL auth provider
-    return user && user.authProvider && user.authProvider !== "LOCAL";
+    return user && (
+      user.authProvider === "GOOGLE" || 
+      user.authProvider === "FACEBOOK" ||
+      user.providerId !== null
+    );
+  };
+
+  // Simplify the isLocalUser function
+  const isLocalUser = () => {
+    return user && user.authProvider === "LOCAL";
   };
 
   // First, let's modify the debugging function to help identify what's happening:
@@ -54,11 +69,13 @@ const Profile = () => {
     }
   }, [formData, user]); 
 
+  // Clean up the fetchUser function by removing excess logging
   const fetchUser = async () => {
     try {
       const authToken = localStorage.getItem("authToken");
       if (!authToken) {
         setError("You are not logged in.");
+        setLoading(false);
         setTimeout(() => navigate("/login"), 2000);
         return;
       }
@@ -66,43 +83,43 @@ const Profile = () => {
       const response = await axios.get("http://localhost:8080/api/users/me", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-
-      console.log("User auth provider:", response.data.authProvider);
-      console.log("User provider ID:", response.data.providerId);
       
-      // Explicitly set the user's initial form data based on auth type
-      setUser(response.data);
+      // Create user object with consistent auth provider
+      const userData = {
+        ...response.data,
+        authProvider: response.data.authProvider || 
+                     (response.data.providerId ? "OAUTH" : "LOCAL")
+      };
+      
+      setUser(userData);
+      
+      // Initialize form data with user data
       setFormData({
-        firstname: response.data.firstname || "",
-        lastname: response.data.lastname || "",
-        email: response.data.email || "",
-        currency: response.data.currency || "PHP",
+        firstname: userData.firstname || "",
+        lastname: userData.lastname || "",
+        email: userData.email || "",
+        currency: userData.currency || "PHP",
       });
       
-      // Universal profile picture handling - works with both uploaded and OAuth pictures
-      if (response.data.profilePicture) {
-        if (response.data.profilePicture.startsWith('http')) {
-          console.log("Using external provider profile picture");
-          setProfileImage(response.data.profilePicture);
+      // Set profile image if available
+      if (userData.profilePicture) {
+        if (userData.profilePicture.startsWith('http')) {
+          setProfileImage(userData.profilePicture);
         } else {
           const baseUrl = "http://localhost:8080";
-          const path = response.data.profilePicture.startsWith('/') 
-            ? response.data.profilePicture 
-            : `/${response.data.profilePicture}`;
+          const path = userData.profilePicture.startsWith('/') 
+            ? userData.profilePicture 
+            : `/${userData.profilePicture}`;
           
           const finalUrl = `${baseUrl}${path}?t=${new Date().getTime()}`;
-          console.log("Using uploaded profile picture:", finalUrl);
           setProfileImage(finalUrl);
         }
-      } else {
-        setProfileImage("/default-profile.png");
-        console.log("No profile picture found, using default");
       }
       
       setLoading(false);
     } catch (err) {
       console.error("Error fetching user data:", err);
-      setError("Failed to fetch user data.");
+      setError("Failed to load your profile. Please try again later.");
       setLoading(false);
     }
   };
@@ -118,10 +135,33 @@ const Profile = () => {
   };
 
   // Modify handleSave to be even more strict about email updates for OAuth users
-  const handleSave = async () => {
+  const handleSave = () => {
+    setError("");
+    
+    // Validate form data
+    if (!formData.firstname.trim() || !formData.lastname.trim()) {
+      setError("Name fields are required");
+      return;
+    }
+  
+    if (!isOAuthUser() && !formData.email.trim()) {
+      setError("Email is required");
+      return;
+    } else if (isOAuthUser() && formData.email !== user.email) {
+      setError("Email cannot be changed for accounts linked to Google or Facebook");
+      return;
+    }
+    
+    // Show confirmation dialog
+    setShowProfileUpdateConfirm(true);
+  };
+  
+  // Add the actual update function that will be called after confirmation
+  const confirmProfileUpdate = async () => {
+    setShowProfileUpdateConfirm(false);
+    setSaving(true);
+    
     try {
-      setError("");
-      setSaving(true);
       const authToken = localStorage.getItem("authToken");
       if (!authToken) {
         setError("You are not logged in.");
@@ -130,34 +170,25 @@ const Profile = () => {
         return;
       }
 
-      // Validate form data
-      if (!formData.firstname.trim() || !formData.lastname.trim()) {
-        setError("Name fields are required");
-        setSaving(false);
-        return;
-      }
-
-      // Create update data object with ONLY allowed fields for ALL users
+      // Check if currency has changed
+      const currencyChanged = user.currency !== formData.currency;
+      const oldCurrency = user.currency;
+      
+      // Create data to update
       const updatedData = {
         firstname: formData.firstname,
         lastname: formData.lastname,
         currency: formData.currency
       };
       
-      // Only allow email updates for non-OAuth users
       if (!isOAuthUser()) {
-        if (!formData.email.trim()) {
-          setError("Email is required");
-          setSaving(false);
-          return;
-        }
-        // Only add email to update data for non-OAuth users
         updatedData.email = formData.email;
-      } else if (formData.email !== user.email) {
-        // If OAuth user somehow modified their email, reject the change
-        setError("Email cannot be changed for accounts linked to Google or Facebook");
-        setSaving(false);
-        return;
+      }
+
+      // If currency has changed, add a flag to tell the backend to convert data
+      if (currencyChanged) {
+        updatedData.convertFromCurrency = oldCurrency;
+        updatedData.convertToCurrency = formData.currency;
       }
 
       const response = await axios.put(
@@ -171,25 +202,37 @@ const Profile = () => {
         }
       );
 
-      setUser(response.data);
-      setSuccess("Profile updated successfully!");
-      setSaving(false);
-      setIsEditing(false);
+      const updatedUserData = {
+        ...response.data,
+        authProvider: response.data.authProvider || user.authProvider || 
+                     (response.data.providerId ? "OAUTH" : "LOCAL")
+      };
       
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(""), 3000);
+      setUser(updatedUserData);
+      
+      if (currencyChanged) {
+        setSuccess(`Profile updated successfully! All your financial data has been converted from ${oldCurrency} to ${formData.currency}.`);
+      } else {
+        setSuccess("Profile updated successfully!");
+      }
+      
+      setIsEditing(false);
+      setTimeout(() => setSuccess(""), 5000); // Show success message longer for currency conversions
     } catch (err) {
       console.error("Error updating user data:", err);
       if (err.response && err.response.status === 409) {
         setError("Email already in use by another account.");
+      } else if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
       } else {
         setError("Failed to update profile. Please try again later.");
       }
+    } finally {
       setSaving(false);
     }
   };
-  
-  const handleChangePassword = async (e) => {
+
+  const handleChangePassword = (e) => {
     e.preventDefault();
     setError("");
     
@@ -203,7 +246,15 @@ const Profile = () => {
       return;
     }
     
+    // Show confirmation dialog
+    setShowPasswordChangeConfirm(true);
+  };
+  
+  // Add the actual password change function that will be called after confirmation
+  const confirmPasswordChange = async () => {
+    setShowPasswordChangeConfirm(false);
     setSaving(true);
+    
     try {
       const authToken = localStorage.getItem("authToken");
       
@@ -224,9 +275,6 @@ const Profile = () => {
         confirmPassword: ""
       });
       setShowPasswordChange(false);
-      setSaving(false);
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Error changing password:", err);
@@ -235,14 +283,15 @@ const Profile = () => {
       } else {
         setError("Failed to update password. Please try again later.");
       }
+    } finally {
       setSaving(false);
     }
   };
 
-  const handleProfilePictureChange = async (e) => {
+  const handleProfilePictureChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+  
     // Validate file is an image
     if (!file.type.startsWith('image/')) {
       setError("Please select an image file");
@@ -254,13 +303,21 @@ const Profile = () => {
       setError("Image size should be less than 5MB");
       return;
     }
-
+  
+    // Store the file temporarily and show confirmation
+    setTempProfilePicture(file);
+    setShowPictureUploadConfirm(true);
+  };
+  
+  // Add the actual upload function that will be called after confirmation
+  const confirmProfilePictureUpload = async () => {
+    setShowPictureUploadConfirm(false);
     setError("");
     setUploading(true);
     
     const formData = new FormData();
-    formData.append("profilePicture", file);
-
+    formData.append("profilePicture", tempProfilePicture);
+  
     try {
       const authToken = localStorage.getItem("authToken");
       const response = await axios.post(
@@ -273,11 +330,8 @@ const Profile = () => {
           },
         }
       );
-
-      console.log("Upload response:", response.data);
       
       if (response.data.profilePicture) {
-        // Use the same logic as fetchUser for consistency
         if (response.data.profilePicture.startsWith('http')) {
           setProfileImage(response.data.profilePicture);
         } else {
@@ -287,23 +341,20 @@ const Profile = () => {
             : `/${response.data.profilePicture}`;
           
           const finalUrl = `${baseUrl}${path}?t=${new Date().getTime()}`;
-          console.log("New profile picture URL:", finalUrl);
           setProfileImage(finalUrl);
         }
         
-        // Update user state with new profile picture path
         setUser(prev => ({...prev, profilePicture: response.data.profilePicture}));
       }
       
       setSuccess("Profile picture uploaded successfully!");
-      setUploading(false);
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Error uploading profile picture:", err);
       setError("Failed to upload profile picture. Please try again later.");
+    } finally {
       setUploading(false);
+      setTempProfilePicture(null);
     }
   };
 
@@ -312,8 +363,114 @@ const Profile = () => {
     setProfileImage("/default-profile.png");
   };
 
+  // Modify the fetchAvailableCurrencies function
+  const fetchAvailableCurrencies = async () => {
+    try {
+      const response = await axios.get("http://localhost:8080/api/currency/rates/USD", {
+        headers: { 
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.data) {
+        // Create an array of currency objects from the rates
+        // Filter to include only currencies that have a name in our list
+        const currencies = Object.keys(response.data)
+          .filter(code => {
+            const name = getCurrencyName(code);
+            return name && name !== code; // Only include if we have a proper name
+          })
+          .map(code => ({
+            code,
+            name: getCurrencyName(code)
+          }));
+        
+        setAvailableCurrencies(currencies);
+      }
+    } catch (err) {
+      console.error("Error fetching available currencies:", err);
+      // Fallback to basic currencies if API fails
+      setAvailableCurrencies([
+        { code: "PHP", name: "Philippine Peso" },
+        { code: "USD", name: "US Dollar" },
+        { code: "EUR", name: "Euro" },
+        { code: "JPY", name: "Japanese Yen" },
+        { code: "GBP", name: "British Pound" },
+        { code: "AUD", name: "Australian Dollar" },
+        { code: "CAD", name: "Canadian Dollar" },
+        { code: "SGD", name: "Singapore Dollar" },
+        { code: "CNY", name: "Chinese Yuan" }
+      ]);
+    }
+  };
+
+  // Replace your existing getCurrencyName function with this version
+const getCurrencyName = (code) => {
+  const currencyNames = {
+    AED: "UAE Dirham",
+    ARS: "Argentine Peso",
+    AUD: "Australian Dollar",
+    BGN: "Bulgarian Lev",
+    BRL: "Brazilian Real",
+    BSD: "Bahamian Dollar",
+    CAD: "Canadian Dollar",
+    CHF: "Swiss Franc",
+    CLP: "Chilean Peso",
+    CNY: "Chinese Yuan",
+    COP: "Colombian Peso",
+    CZK: "Czech Koruna",
+    DKK: "Danish Krone",
+    DOP: "Dominican Peso",
+    EGP: "Egyptian Pound",
+    EUR: "Euro",
+    FJD: "Fijian Dollar",
+    GBP: "British Pound",
+    GTQ: "Guatemalan Quetzal",
+    HKD: "Hong Kong Dollar",
+    HRK: "Croatian Kuna",
+    HUF: "Hungarian Forint",
+    IDR: "Indonesian Rupiah",
+    ILS: "Israeli Shekel",
+    INR: "Indian Rupee",
+    ISK: "Icelandic Króna",
+    JPY: "Japanese Yen",
+    KRW: "South Korean Won",
+    KZT: "Kazakhstani Tenge",
+    MXN: "Mexican Peso",
+    MYR: "Malaysian Ringgit",
+    NOK: "Norwegian Krone",
+    NZD: "New Zealand Dollar",
+    PAB: "Panamanian Balboa",
+    PEN: "Peruvian Sol",
+    PHP: "Philippine Peso",
+    PKR: "Pakistani Rupee",
+    PLN: "Polish Złoty",
+    PYG: "Paraguayan Guaraní",
+    RON: "Romanian Leu",
+    RUB: "Russian Ruble",
+    SAR: "Saudi Riyal",
+    SEK: "Swedish Krona",
+    SGD: "Singapore Dollar",
+    THB: "Thai Baht",
+    TRY: "Turkish Lira",
+    TWD: "Taiwan Dollar",
+    UAH: "Ukrainian Hryvnia",
+    USD: "US Dollar",
+    UYU: "Uruguayan Peso",
+    ZAR: "South African Rand",
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    XRP: "Ripple",
+    LTC: "Litecoin",
+    BCH: "Bitcoin Cash"
+  };
+  
+  return currencyNames[code] || code;
+};
+
   useEffect(() => {
     fetchUser();
+    fetchAvailableCurrencies(); // Add this line
   }, []);
 
   if (loading) {
@@ -453,16 +610,16 @@ const Profile = () => {
                       )}
                     </div>
                     
-                    {/* Password Field - Only show "managed by" for OAuth users */}
-                    <div>
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="block text-[#18864F] font-medium">
-                          Password:
-                          {isEditing && isOAuthUser() && (
-                            <span className="text-xs ml-2 text-red-500">(Managed by external provider)</span>
-                          )}
-                        </label>
-                        {!isOAuthUser() && (
+                    {/* Password Field - Only show for LOCAL auth_provider users */}
+                    {user && (user.authProvider === "LOCAL") && (
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="block text-[#18864F] font-medium">
+                            Password:
+                            {/* Optional: Show what auth type was detected */}
+                            <span className="text-xs ml-2 text-gray-500">
+                            </span>
+                          </label>
                           <button 
                             type="button" 
                             className="text-sm text-[#18864F] font-medium hover:text-[#FFC107] transition duration-300"
@@ -470,67 +627,66 @@ const Profile = () => {
                           >
                             Change Password
                           </button>
+                        </div>
+                        <div className="w-full p-3 bg-gray-100 rounded-md">
+                          ••••••••••••
+                        </div>
+                        
+                        {/* Rest of password change form */}
+                        {showPasswordChange && (
+                          <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
+                            <h3 className="text-lg font-medium text-[#18864F] mb-3">Change Password</h3>
+                            <form onSubmit={handleChangePassword} className="space-y-4">
+                              {/* Current Password */}
+                              <div className="relative">
+                                <label className="block text-gray-700 text-sm font-medium mb-1">Current Password:</label>
+                                <input
+                                  type="password"
+                                  name="currentPassword"
+                                  value={passwordData.currentPassword}
+                                  onChange={handlePasswordInputChange}
+                                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                                  required
+                                />
+                              </div>
+                              
+                              {/* New Password */}
+                              <div className="relative">
+                                <label className="block text-gray-700 text-sm font-medium mb-1">New Password:</label>
+                                <input
+                                  type="password"
+                                  name="newPassword"
+                                  value={passwordData.newPassword}
+                                  onChange={handlePasswordInputChange}
+                                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                                  required
+                                />
+                              </div>
+                              
+                              {/* Confirm New Password */}
+                              <div className="relative">
+                                <label className="block text-gray-700 text-sm font-medium mb-1">Confirm New Password:</label>
+                                <input
+                                  type="password"
+                                  name="confirmPassword"
+                                  value={passwordData.confirmPassword}
+                                  onChange={handlePasswordInputChange}
+                                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                                  required
+                                />
+                              </div>
+                              
+                              {/* Submit Button */}
+                              <button
+                                type="submit"
+                                disabled={saving}
+                                className={`w-full bg-[#18864F] text-white py-2 rounded-md hover:bg-[#146c3c] transition duration-300 ${saving ? 'opacity-70' : ''}`}
+                              >
+                                {saving ? "Updating..." : "Change Password"}
+                              </button>
+                            </form>
+                          </div>
                         )}
-                      </div>
-                      <div className="w-full p-3 bg-gray-100 rounded-md">
-                        ••••••••••••
-                      </div>
-                    </div>
-                    
-                    {showPasswordChange && !isOAuthUser() && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200">
-                        <h3 className="text-lg font-medium text-[#18864F] mb-3">Change Password</h3>
-                        <form onSubmit={handleChangePassword} className="space-y-4">
-                          <div>
-                            <label className="block text-gray-700 text-sm font-medium mb-1">Current Password:</label>
-                            <input
-                              type="password"
-                              name="currentPassword"
-                              value={passwordData.currentPassword}
-                              onChange={handlePasswordInputChange}
-                              className="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-gray-700 text-sm font-medium mb-1">New Password:</label>
-                            <input
-                              type="password"
-                              name="newPassword"
-                              value={passwordData.newPassword}
-                              onChange={handlePasswordInputChange}
-                              className="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-gray-700 text-sm font-medium mb-1">Confirm New Password:</label>
-                            <input
-                              type="password"
-                              name="confirmPassword"
-                              value={passwordData.confirmPassword}
-                              onChange={handlePasswordInputChange}
-                              className="w-full p-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                              required
-                            />
-                          </div>
-                          <div className="flex justify-end gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setShowPasswordChange(false)}
-                              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="submit"
-                              className="px-4 py-2 bg-[#18864F] text-white rounded-md hover:bg-[#146c3c]"
-                              disabled={saving}
-                            >
-                              {saving ? "Updating..." : "Update Password"}
-                            </button>
-                          </div>
-                        </form>
                       </div>
                     )}
                   </div>
@@ -594,11 +750,22 @@ const Profile = () => {
                           className="w-full p-3 bg-yellow-50 border-2 border-[#18864F] rounded-md focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                           required
                         >
-                          <option value="PHP">PHP</option>
-                          <option value="USD">USD</option>
-                          <option value="EUR">EUR</option>
-                          <option value="JPY">JPY</option>
-                          <option value="GBP">GBP</option>
+                          {availableCurrencies.length > 0 ? (
+                            availableCurrencies.map(currency => (
+                              <option key={currency.code} value={currency.code}>
+                                {currency.code} - {currency.name}
+                              </option>
+                            ))
+                          ) : (
+                            // Fallback options if API fails
+                            <>
+                              <option value="PHP">PHP - Philippine Peso</option>
+                              <option value="USD">USD - US Dollar</option>
+                              <option value="EUR">EUR - Euro</option>
+                              <option value="JPY">JPY - Japanese Yen</option>
+                              <option value="GBP">GBP - British Pound</option>
+                            </>
+                          )}
                         </select>
                       ) : (
                         <div className="w-full p-3 bg-gray-100 rounded-md">{user.currency || "PHP"}</div>
@@ -651,6 +818,55 @@ const Profile = () => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+      <ConfirmationModal
+        isOpen={showProfileUpdateConfirm}
+        title="Confirm Profile Update"
+        message="Are you sure you want to update your profile?"
+        onConfirm={confirmProfileUpdate}
+        onCancel={() => setShowProfileUpdateConfirm(false)}
+      />
+      <ConfirmationModal
+        isOpen={showPictureUploadConfirm}
+        title="Confirm Picture Upload"
+        message="Are you sure you want to upload this picture?"
+        onConfirm={confirmProfilePictureUpload}
+        onCancel={() => setShowPictureUploadConfirm(false)}
+      />
+      <ConfirmationModal
+        isOpen={showPasswordChangeConfirm}
+        title="Confirm Password Change"
+        message="Are you sure you want to change your password?"
+        onConfirm={confirmPasswordChange}
+        onCancel={() => setShowPasswordChangeConfirm(false)}
+      />
+    </div>
+  );
+};
+
+// Updated ConfirmationModal that doesn't use a full black overlay
+const ConfirmationModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-transparent backdrop-blur-sm">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-2xl border border-gray-200">
+        <h3 className="text-xl font-bold text-[#18864F] mb-3">{title}</h3>
+        <p className="text-gray-700 mb-6">{message}</p>
+        <div className="flex justify-end space-x-3">
+          <button 
+            onClick={onCancel}
+            className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={onConfirm}
+            className="px-4 py-2 bg-[#18864F] text-white rounded-md hover:bg-[#146c3c] transition"
+          >
+            Confirm
+          </button>
         </div>
       </div>
     </div>
