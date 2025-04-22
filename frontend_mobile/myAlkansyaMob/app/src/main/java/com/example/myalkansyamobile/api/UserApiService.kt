@@ -11,16 +11,18 @@ interface UserApiService {
     @GET("users/{id}")
     fun getUserById(@Path("id") id: Int): Call<UserResponse>
     
-    @GET("users/me")
+    // Fix the endpoint path by adding the 'api/' prefix
+    @GET("api/users/me")
     fun getUserProfile(@Header("Authorization") token: String): Call<ProfileModel>
     
-    @PUT("users/update")
+    // Update these endpoints as well to include the 'api/' prefix
+    @PUT("api/users/update")
     fun updateUser(
         @Header("Authorization") token: String,
         @Body profileUpdateRequest: ProfileUpdateRequest
     ): Call<ProfileModel>
     
-    @POST("users/uploadProfilePicture")
+    @POST("api/users/uploadProfilePicture")
     @Multipart
     fun uploadProfilePicture(
         @Header("Authorization") token: String,

@@ -2,6 +2,7 @@ package com.example.myalkansyamobile.viewmodel
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -84,20 +85,38 @@ class ProfileViewModel : ViewModel() {
         val token = "Bearer $tokenValue"
         val updateRequest = ProfileUpdateRequest(firstname, lastname, email, currency)
         
+        Log.d("ProfileViewModel", "Updating profile: $updateRequest")
+        
         userApiService.updateUser(token, updateRequest).enqueue(object : Callback<ProfileModel> {
             override fun onResponse(call: Call<ProfileModel>, response: Response<ProfileModel>) {
                 _isLoading.value = false
+                
                 if (response.isSuccessful && response.body() != null) {
+                    Log.d("ProfileViewModel", "Profile update successful")
                     _profileData.value = response.body()
                     _updateSuccess.value = true
+                    
+                    // Update the session values
+                    sessionManager.saveFirstName(firstname)
+                    sessionManager.saveLastName(lastname)
+                    sessionManager.saveEmail(email)
+                    sessionManager.saveCurrency(currency)
                 } else {
-                    _error.value = "Failed to update profile: ${response.code()} ${response.message()}"
+                    try {
+                        val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                        Log.e("ProfileViewModel", "Update error: $errorBody")
+                        _error.value = "Failed to update profile: $errorBody"
+                    } catch (e: Exception) {
+                        Log.e("ProfileViewModel", "Error parsing error response", e)
+                        _error.value = "Failed to update profile: ${response.code()} ${response.message()}"
+                    }
                     _updateSuccess.value = false
                 }
             }
             
             override fun onFailure(call: Call<ProfileModel>, t: Throwable) {
                 _isLoading.value = false
+                Log.e("ProfileViewModel", "Network error during profile update", t)
                 _error.value = "Network error: ${t.message}"
                 _updateSuccess.value = false
             }

@@ -38,7 +38,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
             .requestMatchers("/", "/error", "/api/users/**", "/api/incomes/**", "/api/expenses/**", 
                             "/api/budgets/**", "/api/savings-goals/**", "/api/currency/**", 
-                            "/login", "/oauth2/**","/api/users/google","/api/users/facebook").permitAll()
+                            "/login", "/oauth2/**","/api/users/google","/api/users/facebook","/api/users/update","/api/users/uploadProfilePicture").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
