@@ -6,25 +6,25 @@ import retrofit2.http.*
 import java.time.LocalDate
 
 interface ExpenseApiService {
-    @GET("expenses/getExpenses")
+    @GET("api/expenses/getExpenses")
     suspend fun getExpenses(@Header("Authorization") token: String): List<ExpenseResponse>
     
-    @GET("expenses/getExpensesByCategory/{category}")
+    @GET("api/expenses/getExpensesByCategory/{category}")
     suspend fun getExpensesByCategory(
         @Header("Authorization") token: String,
         @Path("category") category: String
     ): List<ExpenseResponse>
     
-    @GET("expenses/getExpense/{id}")
+    @GET("api/expenses/getExpense/{id}")
     suspend fun getExpenseById(@Path("id") id: Int, @Header("Authorization") token: String): ExpenseResponse
     
-    @POST("expenses/postExpense")
+    @POST("api/expenses/postExpense")
     suspend fun createExpense(@Header("Authorization") token: String, @Body expense: ExpenseRequest): Response<ExpenseResponse>
     
-    @PUT("expenses/putExpense/{id}")
+    @PUT("api/expenses/putExpense/{id}")
     suspend fun updateExpense(@Path("id") id: Int, @Body expense: ExpenseRequest, @Header("Authorization") token: String): Response<ExpenseResponse>
     
-    @DELETE("expenses/deleteExpense/{id}")
+    @DELETE("api/expenses/deleteExpense/{id}")
     suspend fun deleteExpense(@Path("id") id: Int, @Header("Authorization") token: String): Response<String>
 }
 

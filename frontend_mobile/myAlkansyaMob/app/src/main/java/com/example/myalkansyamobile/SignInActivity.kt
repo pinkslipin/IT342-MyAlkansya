@@ -13,6 +13,7 @@ import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.utils.SessionManager
 import com.example.myalkansyamobile.databinding.ActivitySigninBinding
 import com.example.myalkansyamobile.api.AuthRepository
+import com.example.myalkansyamobile.model.AuthResponse
 import com.example.myalkansyamobile.model.LoginRequest
 import com.example.myalkansyamobile.utils.Resource
 import com.facebook.CallbackManager
@@ -74,7 +75,7 @@ class SignInActivity : AppCompatActivity() {
     }
     
     private fun setupActivityResultLaunchers() {
-        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result -> 
             if (result.resultCode == RESULT_OK) {
                 try {
                     val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
@@ -127,18 +128,7 @@ class SignInActivity : AppCompatActivity() {
             when (val result = authRepository.login(request)) {
                 is Resource.Success -> {
                     showLoading(false)
-                    result.data?.let { authResponse ->
-                        // Convert userId to Int if possible, or use -1 as default
-                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
-                        
-                        sessionManager.createLoginSession(
-                            token = authResponse.token,
-                            userId = userId, // Use Int
-                            username = authResponse.user.username ?: authResponse.user.email,
-                            email = authResponse.user.email
-                        )
-                        navigateToHome()
-                    }
+                    handleSuccessfulAuth(result)
                 }
                 is Resource.Error -> {
                     showLoading(false)
@@ -230,38 +220,18 @@ class SignInActivity : AppCompatActivity() {
             when (val result = authRepository.authenticateWithFacebook(accessToken)) {
                 is Resource.Success -> {
                     showLoading(false)
-                    result.data?.let { authResponse ->
-                        if (authResponse.user?.email.isNullOrEmpty()) {
-                            Log.e("FacebookAuth", "Email is NULL in AuthResponse!")
-                            Toast.makeText(this@SignInActivity, "Facebook authentication failed: Email is missing", Toast.LENGTH_LONG).show()
-                            return
-                        }
-                        
-                        // Convert userId to Int if possible, or use -1 as default
-                        val userId = authResponse.user.userId?.toIntOrNull() ?: -1
-                        
-                        sessionManager.createLoginSession(
-                            token = authResponse.token,
-                            userId = userId, // Use Int
-                            username = authResponse.user.username ?: authResponse.user.email,
-                            email = authResponse.user.email
-                        )
-                        navigateToHome()
-                    }
+                    handleSuccessfulAuth(result)
                 }
                 is Resource.Error -> {
-                    showLoading(false)
-                    Log.e("FacebookAuth", "Error: ${result.message}")
-                    
-                    // Handle case where user hasn't signed up yet
+                    // If user doesn't exist, try to register automatically
                     if (result.message?.contains("No user found", ignoreCase = true) == true || 
                         result.message?.contains("not registered", ignoreCase = true) == true) {
-                        Toast.makeText(this, "Please sign up with Facebook first before attempting to sign in", 
-                            Toast.LENGTH_LONG).show()
                         
-                        // Navigate to sign up page
-                        startActivity(Intent(this, SignUpActivity::class.java))
+                        Log.d("FacebookAuth", "User not found, attempting to register")
+                        registerWithFacebook(accessToken)
                     } else {
+                        showLoading(false)
+                        Log.e("FacebookAuth", "Error: ${result.message}")
                         Toast.makeText(this@SignInActivity, "Facebook authentication failed: ${result.message}", 
                             Toast.LENGTH_LONG).show()
                     }
@@ -275,6 +245,30 @@ class SignInActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun registerWithFacebook(accessToken: String) {
+        try {
+            when (val result = authRepository.registerWithFacebook(accessToken)) {
+                is Resource.Success -> {
+                    showLoading(false)
+                    handleSuccessfulAuth(result)
+                    Toast.makeText(this@SignInActivity, "Account created and signed in with Facebook", 
+                        Toast.LENGTH_SHORT).show()
+                }
+                is Resource.Error -> {
+                    showLoading(false)
+                    Log.e("FacebookAuth", "Registration error: ${result.message}")
+                    Toast.makeText(this@SignInActivity, "Facebook registration failed: ${result.message}", 
+                        Toast.LENGTH_LONG).show()
+                }
+                is Resource.Loading -> {}
+            }
+        } catch (e: Exception) {
+            showLoading(false)
+            Log.e("FacebookAuth", "Exception during Facebook registration", e)
+            Toast.makeText(this, "Facebook registration error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private suspend fun authenticateWithGoogle(idToken: String) {
         showLoading(true)
         Log.d("GoogleAuth", "Authenticating with Google...")
@@ -282,44 +276,86 @@ class SignInActivity : AppCompatActivity() {
         when (val result = authRepository.authenticateWithGoogle(idToken)) {
             is Resource.Success -> {
                 showLoading(false)
-                result.data?.let { authResponse ->
-                    if (authResponse.user?.email.isNullOrEmpty()) {
-                        Log.e("GoogleAuth", "Email is NULL in AuthResponse!")
-                        Toast.makeText(this@SignInActivity, "Google authentication failed: Email is missing", Toast.LENGTH_LONG).show()
-                        return
-                    }
-                    
-                    // Convert userId to Int if possible, or use -1 as default
-                    val userId = authResponse.user.userId?.toIntOrNull() ?: -1
-                    
-                    sessionManager.createLoginSession(
-                        token = authResponse.token,
-                        userId = userId, // Use Int
-                        username = authResponse.user.username ?: authResponse.user.email,
-                        email = authResponse.user.email
-                    )
-                    navigateToHome()
-                }
+                handleSuccessfulAuth(result)
             }
             is Resource.Error -> {
-                showLoading(false)
-                Log.e("GoogleAuth", "Error: ${result.message}")
-                
-                // Handle case where user hasn't signed up yet
+                // If user doesn't exist, try to register automatically
                 if (result.message?.contains("No user found", ignoreCase = true) == true || 
                     result.message?.contains("not registered", ignoreCase = true) == true) {
-                    Toast.makeText(this, "Please sign up with Google first before attempting to sign in", 
-                        Toast.LENGTH_LONG).show()
                     
-                    // Optionally navigate to sign up page
-                    startActivity(Intent(this, SignUpActivity::class.java))
+                    Log.d("GoogleAuth", "User not found, attempting to register")
+                    registerWithGoogle(idToken)
                 } else {
+                    showLoading(false)
+                    Log.e("GoogleAuth", "Error: ${result.message}")
                     Toast.makeText(this@SignInActivity, "Google authentication failed: ${result.message}", 
                         Toast.LENGTH_LONG).show()
                 }
             }
             is Resource.Loading -> {}
         }
+    }
+
+    private suspend fun registerWithGoogle(idToken: String) {
+        when (val result = authRepository.registerWithGoogle(idToken)) {
+            is Resource.Success -> {
+                showLoading(false)
+                handleSuccessfulAuth(result)
+                Toast.makeText(this@SignInActivity, "Account created and signed in with Google", 
+                    Toast.LENGTH_SHORT).show()
+            }
+            is Resource.Error -> {
+                showLoading(false)
+                Log.e("GoogleAuth", "Registration error: ${result.message}")
+                Toast.makeText(this@SignInActivity, "Google registration failed: ${result.message}", 
+                    Toast.LENGTH_LONG).show()
+            }
+            is Resource.Loading -> {}
+        }
+    }
+
+    private fun handleSuccessfulAuth(result: Resource.Success<AuthResponse>) {
+        val authResponse = result.data
+        if (authResponse == null) {
+            Log.e("Auth", "Auth response is NULL!")
+            Toast.makeText(this@SignInActivity, "Authentication failed: Empty response", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        val user = authResponse.user
+        if (user == null) {
+            Log.e("Auth", "User is NULL in AuthResponse!")
+            Toast.makeText(this@SignInActivity, "Authentication failed: User data is missing", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (user.email.isNullOrEmpty()) {
+            Log.e("Auth", "Email is NULL or empty in user data!")
+            Toast.makeText(this@SignInActivity, "Authentication failed: Email is missing", Toast.LENGTH_LONG).show()
+            return
+        }
+        
+        // Convert userId to Int if possible, or use -1 as default
+        val userId = user.userId?.toIntOrNull() ?: -1
+        
+        // Get firstname and lastname
+        val firstname = user.firstname ?: "User"
+        val lastname = user.lastname ?: ""
+        
+        // Create session with full name (firstname + lastname)
+        sessionManager.createLoginSession(
+            token = authResponse.token,
+            userId = userId,
+            username = "$firstname $lastname".trim(),
+            email = user.email
+        )
+        
+        // Save the individual name components for more flexibility
+        sessionManager.saveFirstName(firstname)
+        sessionManager.saveLastName(lastname)
+        
+        Log.d("Auth", "User successfully authenticated: $firstname $lastname")
+        navigateToHome()
     }
 
     private fun navigateToHome() {

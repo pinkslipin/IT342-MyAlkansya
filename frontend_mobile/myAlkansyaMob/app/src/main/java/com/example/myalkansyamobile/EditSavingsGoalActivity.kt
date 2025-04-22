@@ -107,7 +107,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
 
                 val bearerToken = "Bearer $token"
                 val response = withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.create(com.example.myalkansyamobile.api.SavingsGoalApiService::class.java)
+                    RetrofitClient.savingsGoalApiService
                         .getSavingsGoalById(goalId, bearerToken)
                 }
 
@@ -222,7 +222,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
 
                 val bearerToken = "Bearer $token"
                 withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.create(com.example.myalkansyamobile.api.SavingsGoalApiService::class.java)
+                    RetrofitClient.savingsGoalApiService
                         .updateSavingsGoal(goalId, savingsGoalRequest, bearerToken)
                 }
 
@@ -274,7 +274,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
 
                 val bearerToken = "Bearer $token"
                 withContext(Dispatchers.IO) {
-                    RetrofitClient.instance.create(com.example.myalkansyamobile.api.SavingsGoalApiService::class.java)
+                    RetrofitClient.savingsGoalApiService
                         .deleteSavingsGoal(goalId, bearerToken)
                 }
 

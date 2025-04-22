@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
     <color name="cream">#F5F5DC</color>
     <color name="green">#18864F</color>
     <color name="facebook_light_blue">#276BFF</color>
@@ -9,6 +9,13 @@
     <color name="yellow">#FFC107</color>
     <color name="light_beige">#FEF6EA</color>
 
+    <color name="colorPrimary">#18864F</color>
+    <color name="colorPrimaryDark">#106b3e</color>
+    <color name="colorAccent">#FFC107</color>
 
-
+    <!-- Make sure these colors are defined -->
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="teal_700">#018786</color>
 </resources>

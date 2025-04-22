@@ -21,6 +21,7 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.myalkansyamobile.ui.profile.ProfileActivity
 
 // API interfaces
 interface UserApiService {
@@ -129,14 +130,29 @@ class HomePageActivity : AppCompatActivity() {
             navigateTo(SavingsGoalsActivity::class.java)
         }
 
+        // Add Currency Converter navigation
+        binding.btnCurrencyConverter.setOnClickListener {
+            navigateTo(CurrencyConverterActivity::class.java)
+        }
+
         binding.btnLogout.setOnClickListener {
             logoutUser()
+        }
+
+        // Add this with the other button click listeners
+        binding.imgProfile.setOnClickListener {
+            navigateTo(com.example.myalkansyamobile.ui.profile.ProfileActivity::class.java)
         }
 
         // Time frame selector
         binding.btnTimeFrame.setOnClickListener {
             // Show time frame options (weekly, monthly, yearly)
             Toast.makeText(this, "Time frame options coming soon!", Toast.LENGTH_SHORT).show()
+        }
+        
+        // Add Currency Converter navigation
+        binding.btnCurrencyConverter.setOnClickListener {
+            navigateTo(CurrencyConverterActivity::class.java)
         }
     }
 
