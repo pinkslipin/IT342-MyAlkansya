@@ -84,13 +84,19 @@ const Register = () => {
             <img src={myAlkansyaTextLogo} alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
-            <button
-              className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded"
-              onClick={() => navigate("/login")}
-            >
-              SIGN IN
-            </button>
-          </div>
+          <button
+            className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded hover:bg-yellow-500 transition duration-300"
+            onClick={() => navigate("/login")}
+          >
+            SIGN IN
+          </button>
+          <button
+            className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded hover:bg-yellow-500 transition duration-300"
+            onClick={() => navigate("/register")}
+          >
+            SIGN UP
+          </button>
+        </div>
         </div>
       </nav>
 
@@ -262,7 +268,7 @@ const Register = () => {
           </div>
 
           <div className="mb-4">
-            <p className="text-center mb-4">Sign Up With</p>
+            <p className="text-center mb-4">Sign In With</p>
             <button
               type="button"
               onClick={handleGoogleSignUp}
@@ -288,6 +294,10 @@ const Register = () => {
               Sign up with Facebook
             </button>
           </div>
+          <div className="text-center text-sm text-gray-600">
+                      <span>Already have an account?</span>
+                      <a href="#" onClick={() => navigate("/login")} className="text-[#18864F] font-medium hover:underline ml-1">Sign In</a>
+                    </div>
         </div>
 
         {/* Welcome Side */}
