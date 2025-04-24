@@ -380,7 +380,6 @@ public class UserController {
                 );
             }
             
-            // Return the updated user
             return ResponseEntity.ok(updatedUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -103,16 +103,16 @@ public class CurrencyConversionService {
         }
         logger.info("Converted " + budgets.size() + " budgets");
         
-        // Convert the user's total savings
+        // Convert the user's total savings - REMOVING THE INCORRECT CONDITION
         UserEntity user = userRepository.findById(userId).orElseThrow(() -> 
             new RuntimeException("User not found"));
-        
-        if (fromCurrency.equals(user.getCurrency())) {
-            double convertedSavings = user.getTotalSavings() * exchangeRate;
-            user.setTotalSavings(convertedSavings);
-            userRepository.save(user);
-            logger.info("Converted user's total savings from " + fromCurrency + " to " + toCurrency);
-        }
+
+        // Always convert the savings regardless of current currency
+        double convertedSavings = user.getTotalSavings() * exchangeRate;
+        user.setTotalSavings(convertedSavings);
+        user.setCurrency(toCurrency); // Make sure the currency is updated
+        userRepository.save(user);
+        logger.info("Converted user's total savings from " + fromCurrency + " to " + toCurrency);
         
         logger.info("Currency conversion completed for user " + userId);
     }

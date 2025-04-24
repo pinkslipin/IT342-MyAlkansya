@@ -4,6 +4,7 @@ import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
 import trashIcon from "../assets/trash.png"; // Import the trash icon
+import { getCurrencyName, fetchAvailableCurrencies } from "./getCurrency";
 
 const EditSavingGoal = () => {
   const [formData, setFormData] = useState({
@@ -15,11 +16,12 @@ const EditSavingGoal = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
   const navigate = useNavigate();
   const { goalId } = useParams();
 
   useEffect(() => {
-    const fetchSavingGoal = async () => {
+    const initializeData = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
         if (!authToken) {
@@ -34,21 +36,54 @@ const EditSavingGoal = () => {
           },
         };
 
+        // Fetch savings goal data
         const response = await axios.get(`http://localhost:8080/api/savings-goals/getSavingsGoal/${goalId}`, config);
-        setFormData(response.data);
-        setLoading(false);
+        
+        // Format numeric values to 2 decimal places when setting initial data
+        const data = response.data;
+        if (data.targetAmount) {
+          data.targetAmount = parseFloat(data.targetAmount).toFixed(2);
+        }
+        if (data.currentAmount) {
+          data.currentAmount = parseFloat(data.currentAmount).toFixed(2);
+        }
+        
+        setFormData(data);
+        
+        // Fetch available currencies
+        await fetchAvailableCurrencies(setAvailableCurrencies);
       } catch (err) {
         console.error("Error fetching savings goal:", err);
         setError("Failed to fetch savings goal details. Please try again later.");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchSavingGoal();
+    initializeData();
   }, [goalId, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle amount fields with 2 decimal places
+    if (name === "targetAmount" || name === "currentAmount") {
+      // For empty inputs, just set to empty string
+      if (value === "") {
+        setFormData({ ...formData, [name]: "" });
+        return;
+      }
+      
+      // For numeric inputs, format with 2 decimal places
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        // Store as a string with 2 decimal places
+        setFormData({ ...formData, [name]: numValue.toFixed(2) });
+        return;
+      }
+    }
+    
+    // For other fields, no special formatting
     setFormData({ ...formData, [name]: value });
   };
 
@@ -66,10 +101,18 @@ const EditSavingGoal = () => {
       const config = {
         headers: {
           Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
         },
       };
 
-      await axios.put(`http://localhost:8080/api/savings-goals/putSavingsGoal/${goalId}`, formData, config);
+      // Convert string amounts to numbers for submission
+      const submissionData = {
+        ...formData,
+        targetAmount: parseFloat(formData.targetAmount),
+        currentAmount: parseFloat(formData.currentAmount)
+      };
+
+      await axios.put(`http://localhost:8080/api/savings-goals/putSavingsGoal/${goalId}`, submissionData, config);
       navigate("/savingsgoal"); // Redirect to the Savings Goal page after successful update
     } catch (err) {
       console.error("Error editing savings goal:", err);
@@ -169,6 +212,7 @@ const EditSavingGoal = () => {
                       onChange={handleInputChange}
                       className="w-full p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                       placeholder="Enter target amount"
+                      step="0.01" // This restricts input to 2 decimal places
                       required
                     />
                     <select
@@ -177,9 +221,19 @@ const EditSavingGoal = () => {
                       onChange={handleInputChange}
                       className="p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                     >
-                      <option value="PHP">PHP</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
+                      {availableCurrencies.length > 0 ? (
+                        availableCurrencies.map(currency => (
+                          <option key={currency.code} value={currency.code}>
+                            {currency.code} - {currency.name}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="PHP">PHP - Philippine Peso</option>
+                          <option value="USD">USD - US Dollar</option>
+                          <option value="EUR">EUR - Euro</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
@@ -193,6 +247,7 @@ const EditSavingGoal = () => {
                     onChange={handleInputChange}
                     className="w-full max-w-lg p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                     placeholder="Enter current amount saved"
+                    step="0.01" // This restricts input to 2 decimal places
                     required
                   />
                 </div>

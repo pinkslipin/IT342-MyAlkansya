@@ -47,7 +47,6 @@ const HomePage = () => {
   const [filteredExpenses, setFilteredExpenses] = useState([]);
   const [filteredIncomes, setFilteredIncomes] = useState([]);
   const [filteredBudgets, setFilteredBudgets] = useState([]);
-  const [displayedTotalSavings, setDisplayedTotalSavings] = useState(0);
 
   const navigate = useNavigate();
 
@@ -482,48 +481,6 @@ const HomePage = () => {
     }
   };
 
-  useEffect(() => {
-    if (user && user.currency && totalSavings > 0) {
-      // We'll use the same value initially
-      setDisplayedTotalSavings(totalSavings);
-      
-      // If the backend returns savings in a different currency than user preference,
-      // you would need to convert it here using your exchange rate service
-      const fetchExchangeRate = async () => {
-        try {
-          const authToken = localStorage.getItem("authToken");
-          if (!authToken) return;
-          
-          // Assuming your backend has a currency conversion endpoint
-          // Replace 'PHP' with whatever base currency your backend stores values in
-          const baseCurrency = "PHP"; 
-          if (user.currency !== baseCurrency) {
-            const response = await axios.get(
-              `http://localhost:8080/api/currency/rate?from=${baseCurrency}&to=${user.currency}`,
-              {
-                headers: { 
-                  Authorization: `Bearer ${authToken}`
-                }
-              }
-            );
-            
-            if (response.data && response.data.rate) {
-              // Convert the savings using the exchange rate
-              const convertedSavings = totalSavings * response.data.rate;
-              setDisplayedTotalSavings(convertedSavings);
-            }
-          }
-        } catch (error) {
-          console.error("Error converting savings:", error);
-        }
-      };
-      
-      fetchExchangeRate();
-    } else {
-      setDisplayedTotalSavings(totalSavings);
-    }
-  }, [user, totalSavings]);
-
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -565,10 +522,11 @@ const HomePage = () => {
     currency: userCurrency,
   }).format(totalBudget);
 
-  const formattedSavings = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: userCurrency,
-  }).format(displayedTotalSavings);
+  // Use totalSavings directly in the formatter
+const formattedSavings = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: userCurrency,
+}).format(totalSavings); // Changed from displayedTotalSavings to totalSavings
 
   const imageToDisplay = profileImage || user.picture || user.profilePicture || defaultProfilePic;
 
@@ -613,7 +571,7 @@ const HomePage = () => {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Amount (PHP)'
+          text: `Amount (${userCurrency})`
         }
       }
     }
