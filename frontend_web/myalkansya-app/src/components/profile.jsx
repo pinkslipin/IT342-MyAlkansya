@@ -3,6 +3,7 @@ import axios from "axios";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import { useNavigate } from "react-router-dom";
+import { getCurrencyName, fetchAvailableCurrencies } from "./getCurrency";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -363,114 +364,14 @@ const Profile = () => {
     setProfileImage("/default-profile.png");
   };
 
-  // Modify the fetchAvailableCurrencies function
-  const fetchAvailableCurrencies = async () => {
-    try {
-      const response = await axios.get("http://localhost:8080/api/currency/rates/USD", {
-        headers: { 
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (response.data) {
-        // Create an array of currency objects from the rates
-        // Filter to include only currencies that have a name in our list
-        const currencies = Object.keys(response.data)
-          .filter(code => {
-            const name = getCurrencyName(code);
-            return name && name !== code; // Only include if we have a proper name
-          })
-          .map(code => ({
-            code,
-            name: getCurrencyName(code)
-          }));
-        
-        setAvailableCurrencies(currencies);
-      }
-    } catch (err) {
-      console.error("Error fetching available currencies:", err);
-      // Fallback to basic currencies if API fails
-      setAvailableCurrencies([
-        { code: "PHP", name: "Philippine Peso" },
-        { code: "USD", name: "US Dollar" },
-        { code: "EUR", name: "Euro" },
-        { code: "JPY", name: "Japanese Yen" },
-        { code: "GBP", name: "British Pound" },
-        { code: "AUD", name: "Australian Dollar" },
-        { code: "CAD", name: "Canadian Dollar" },
-        { code: "SGD", name: "Singapore Dollar" },
-        { code: "CNY", name: "Chinese Yuan" }
-      ]);
-    }
-  };
-
-  // Replace your existing getCurrencyName function with this version
-const getCurrencyName = (code) => {
-  const currencyNames = {
-    AED: "UAE Dirham",
-    ARS: "Argentine Peso",
-    AUD: "Australian Dollar",
-    BGN: "Bulgarian Lev",
-    BRL: "Brazilian Real",
-    BSD: "Bahamian Dollar",
-    CAD: "Canadian Dollar",
-    CHF: "Swiss Franc",
-    CLP: "Chilean Peso",
-    CNY: "Chinese Yuan",
-    COP: "Colombian Peso",
-    CZK: "Czech Koruna",
-    DKK: "Danish Krone",
-    DOP: "Dominican Peso",
-    EGP: "Egyptian Pound",
-    EUR: "Euro",
-    FJD: "Fijian Dollar",
-    GBP: "British Pound",
-    GTQ: "Guatemalan Quetzal",
-    HKD: "Hong Kong Dollar",
-    HRK: "Croatian Kuna",
-    HUF: "Hungarian Forint",
-    IDR: "Indonesian Rupiah",
-    ILS: "Israeli Shekel",
-    INR: "Indian Rupee",
-    ISK: "Icelandic Króna",
-    JPY: "Japanese Yen",
-    KRW: "South Korean Won",
-    KZT: "Kazakhstani Tenge",
-    MXN: "Mexican Peso",
-    MYR: "Malaysian Ringgit",
-    NOK: "Norwegian Krone",
-    NZD: "New Zealand Dollar",
-    PAB: "Panamanian Balboa",
-    PEN: "Peruvian Sol",
-    PHP: "Philippine Peso",
-    PKR: "Pakistani Rupee",
-    PLN: "Polish Złoty",
-    PYG: "Paraguayan Guaraní",
-    RON: "Romanian Leu",
-    RUB: "Russian Ruble",
-    SAR: "Saudi Riyal",
-    SEK: "Swedish Krona",
-    SGD: "Singapore Dollar",
-    THB: "Thai Baht",
-    TRY: "Turkish Lira",
-    TWD: "Taiwan Dollar",
-    UAH: "Ukrainian Hryvnia",
-    USD: "US Dollar",
-    UYU: "Uruguayan Peso",
-    ZAR: "South African Rand",
-    BTC: "Bitcoin",
-    ETH: "Ethereum",
-    XRP: "Ripple",
-    LTC: "Litecoin",
-    BCH: "Bitcoin Cash"
-  };
-  
-  return currencyNames[code] || code;
-};
-
   useEffect(() => {
-    fetchUser();
-    fetchAvailableCurrencies(); // Add this line
+    const initializeData = async () => {
+      await fetchUser();
+      // Use the imported fetchAvailableCurrencies function
+      await fetchAvailableCurrencies(setAvailableCurrencies);
+    };
+    
+    initializeData();
   }, []);
 
   if (loading) {

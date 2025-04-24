@@ -4,6 +4,7 @@ import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
 import trashIcon from "../assets/trash.png"; // Import the trash icon
+import { getCurrencyName, fetchAvailableCurrencies } from "./getCurrency";
 
 const EditBudget = () => {
   const [formData, setFormData] = useState({
@@ -16,11 +17,12 @@ const EditBudget = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
   const navigate = useNavigate();
   const { budgetId } = useParams();
 
   useEffect(() => {
-    const fetchBudget = async () => {
+    const initializeData = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
         if (!authToken) {
@@ -35,21 +37,54 @@ const EditBudget = () => {
           },
         };
 
+        // Fetch budget data
         const response = await axios.get(`http://localhost:8080/api/budgets/${budgetId}`, config);
-        setFormData(response.data);
-        setLoading(false);
+        
+        // Format numeric values to 2 decimal places when setting initial data
+        const data = response.data;
+        if (data.monthlyBudget) {
+          data.monthlyBudget = parseFloat(data.monthlyBudget).toFixed(2);
+        }
+        if (data.totalSpent) {
+          data.totalSpent = parseFloat(data.totalSpent).toFixed(2);
+        }
+        
+        setFormData(data);
+        
+        // Fetch available currencies
+        await fetchAvailableCurrencies(setAvailableCurrencies);
       } catch (err) {
         console.error("Error fetching budget:", err);
         setError("Failed to fetch budget details. Please try again later.");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchBudget();
+    initializeData();
   }, [budgetId, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle amount fields with 2 decimal places
+    if (name === "monthlyBudget") {
+      // For empty inputs, just set to empty string
+      if (value === "") {
+        setFormData({ ...formData, [name]: "" });
+        return;
+      }
+      
+      // For numeric inputs, format with 2 decimal places
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        // Store as a string with 2 decimal places to preserve trailing zeros
+        setFormData({ ...formData, [name]: numValue.toFixed(2) });
+        return;
+      }
+    }
+    
+    // For other fields, no special formatting
     setFormData({ ...formData, [name]: value });
   };
 
@@ -70,7 +105,14 @@ const EditBudget = () => {
         },
       };
 
-      await axios.put(`http://localhost:8080/api/budgets/update/${budgetId}`, formData, config);
+      // Convert string amounts to numbers for submission
+      const submissionData = {
+        ...formData,
+        monthlyBudget: parseFloat(formData.monthlyBudget),
+        totalSpent: parseFloat(formData.totalSpent || 0)
+      };
+
+      await axios.put(`http://localhost:8080/api/budgets/update/${budgetId}`, submissionData, config);
       navigate("/budget"); // Redirect to the Budget page after successful update
     } catch (err) {
       console.error("Error editing budget:", err);
@@ -174,129 +216,147 @@ const EditBudget = () => {
                 <h1 className="text-2xl font-bold text-[#18864F]">Edit Budget</h1>
               </div>
 
-              <form onSubmit={handleEditBudget}>
-                <div className="mb-4">
-                  <label className="block text-[#18864F] font-bold mb-2">Category</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full max-w-lg p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select a category
-                    </option>
-                    <option value="Food">Food</option>
-                    <option value="Transportation">Transportation</option>
-                    <option value="Housing">Housing</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Entertainment">Entertainment</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Education">Education</option>
-                    <option value="Shopping">Shopping</option>
-                    <option value="Other">Other</option>
-                  </select>
+              {loading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#18864F]"></div>
+                  <span className="ml-3 text-[#18864F]">Loading budget and currency data...</span>
                 </div>
-
-                {/* Month and Year Selection */}
-                <div className="mb-4">
-                  <label className="block text-[#18864F] font-bold mb-2">Month and Year</label>
-                  <div className="flex max-w-lg">
+              ) : (
+                <form onSubmit={handleEditBudget}>
+                  <div className="mb-4">
+                    <label className="block text-[#18864F] font-bold mb-2">Category</label>
                     <select
-                      name="budgetMonth"
-                      value={formData.budgetMonth}
+                      name="category"
+                      value={formData.category}
                       onChange={handleInputChange}
-                      className="w-1/2 p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      className="w-full max-w-lg p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                       required
                     >
-                      {months.map((month) => (
-                        <option key={month.value} value={month.value}>
-                          {month.label}
-                        </option>
-                      ))}
+                      <option value="" disabled>
+                        Select a category
+                      </option>
+                      <option value="Food">Food</option>
+                      <option value="Transportation">Transportation</option>
+                      <option value="Housing">Housing</option>
+                      <option value="Utilities">Utilities</option>
+                      <option value="Entertainment">Entertainment</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Education">Education</option>
+                      <option value="Shopping">Shopping</option>
+                      <option value="Other">Other</option>
                     </select>
-                    <select
-                      name="budgetYear"
-                      value={formData.budgetYear}
-                      onChange={handleInputChange}
-                      className="w-1/2 p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                      required
+                  </div>
+
+                  {/* Month and Year Selection */}
+                  <div className="mb-4">
+                    <label className="block text-[#18864F] font-bold mb-2">Month and Year</label>
+                    <div className="flex max-w-lg">
+                      <select
+                        name="budgetMonth"
+                        value={formData.budgetMonth}
+                        onChange={handleInputChange}
+                        className="w-1/2 p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                        required
+                      >
+                        {months.map((month) => (
+                          <option key={month.value} value={month.value}>
+                            {month.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        name="budgetYear"
+                        value={formData.budgetYear}
+                        onChange={handleInputChange}
+                        className="w-1/2 p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                        required
+                      >
+                        {years.map((year) => (
+                          <option key={year} value={year}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-[#18864F] font-bold mb-2">Monthly Budget</label>
+                    <div className="flex max-w-lg">
+                      <input
+                        type="number"
+                        name="monthlyBudget"
+                        value={formData.monthlyBudget}
+                        onChange={handleInputChange}
+                        className="w-full p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                        placeholder="Enter monthly budget"
+                        step="0.01" // This restricts input to 2 decimal places
+                        required
+                      />
+                      <select
+                        name="currency"
+                        value={formData.currency}
+                        onChange={handleInputChange}
+                        className="p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      >
+                        {availableCurrencies.length > 0 ? (
+                          availableCurrencies.map(currency => (
+                            <option key={currency.code} value={currency.code}>
+                              {currency.code} - {currency.name}
+                            </option>
+                          ))
+                        ) : (
+                          <>
+                            <option value="PHP">PHP - Philippine Peso</option>
+                            <option value="USD">USD - US Dollar</option>
+                            <option value="EUR">EUR - Euro</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Display Total Spent (read-only) */}
+                  <div className="mb-4">
+                    <label className="block text-[#18864F] font-bold mb-2">Total Spent</label>
+                    <div className="p-3 border rounded-md bg-gray-100 text-gray-700 max-w-lg">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: formData.currency || "PHP",
+                      }).format(formData.totalSpent)}
+                    </div>
+                  </div>
+
+                  {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
+                  <div className="flex justify-between max-w-lg">
+                    <button
+                      type="submit"
+                      className="bg-[#18864F] text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300"
                     >
-                      {years.map((year) => (
-                        <option key={year} value={year}>
-                          {year}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-[#18864F] font-bold mb-2">Monthly Budget</label>
-                  <div className="flex max-w-lg">
-                    <input
-                      type="number"
-                      name="monthlyBudget"
-                      value={formData.monthlyBudget}
-                      onChange={handleInputChange}
-                      className="w-full p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-                      placeholder="Enter monthly budget"
-                      required
-                    />
-                    <select
-                      name="currency"
-                      value={formData.currency}
-                      onChange={handleInputChange}
-                      className="p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                      Save Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/budget")}
+                      className="bg-[#FEF6EA] text-[#18864F] font-bold py-2 px-4 rounded-md border border-[#18864F] hover:bg-[#EDFBE9] transition duration-300"
                     >
-                      <option value="PHP">PHP</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
-                    </select>
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeleteBudget}
+                      className="hover:opacity-80"
+                    >
+                      <img
+                        src={trashIcon}
+                        alt="Delete"
+                        className="h-6 w-6"
+                      />
+                    </button>
                   </div>
-                </div>
-
-                {/* Display Total Spent (read-only) */}
-                <div className="mb-4">
-                  <label className="block text-[#18864F] font-bold mb-2">Total Spent</label>
-                  <div className="p-3 border rounded-md bg-gray-100 text-gray-700 max-w-lg">
-                    {new Intl.NumberFormat("en-US", {
-                      style: "currency",
-                      currency: formData.currency || "PHP",
-                    }).format(formData.totalSpent)}
-                  </div>
-                </div>
-
-                {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-
-                <div className="flex justify-between max-w-lg">
-                  <button
-                    type="submit"
-                    className="bg-[#18864F] text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition duration-300"
-                  >
-                    Save Changes
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/budget")}
-                    className="bg-[#FEF6EA] text-[#18864F] font-bold py-2 px-4 rounded-md border border-[#18864F] hover:bg-[#EDFBE9] transition duration-300"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleDeleteBudget}
-                    className="hover:opacity-80"
-                  >
-                    <img
-                      src={trashIcon}
-                      alt="Delete"
-                      className="h-6 w-6"
-                    />
-                  </button>
-                </div>
-              </form>
+                </form>
+              )}
             </div>
 
             {/* Right Section */}

@@ -92,7 +92,7 @@ const Sidebar = ({ activePage }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
           </svg>
-          Income Tracker
+          Income Management
         </button>
 
         <button
@@ -104,7 +104,7 @@ const Sidebar = ({ activePage }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
           </svg>
-          Expense Tracker
+          Expense Management
         </button>
 
         <button

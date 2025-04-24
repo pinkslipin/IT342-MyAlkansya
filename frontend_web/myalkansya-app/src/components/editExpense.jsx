@@ -4,6 +4,7 @@ import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
 import trashIcon from "../assets/trash.png"; // Import the trash icon
+import { getCurrencyName, fetchAvailableCurrencies } from "./getCurrency";
 
 const EditExpense = () => {
   const [formData, setFormData] = useState({
@@ -15,11 +16,12 @@ const EditExpense = () => {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [availableCurrencies, setAvailableCurrencies] = useState([]);
   const navigate = useNavigate();
   const { expenseId } = useParams();
 
   useEffect(() => {
-    const fetchExpense = async () => {
+    const initializeData = async () => {
       try {
         const authToken = localStorage.getItem("authToken");
         if (!authToken) {
@@ -34,21 +36,51 @@ const EditExpense = () => {
           },
         };
 
+        // Fetch expense data
         const response = await axios.get(`http://localhost:8080/api/expenses/getExpense/${expenseId}`, config);
-        setFormData(response.data);
-        setLoading(false);
+        
+        // Format numeric values to 2 decimal places when setting initial data
+        const data = response.data;
+        if (data.amount) {
+          data.amount = parseFloat(data.amount).toFixed(2);
+        }
+        
+        setFormData(data);
+        
+        // Fetch available currencies
+        await fetchAvailableCurrencies(setAvailableCurrencies);
       } catch (err) {
         console.error("Error fetching expense:", err);
         setError("Failed to fetch expense details. Please try again later.");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchExpense();
+    initializeData();
   }, [expenseId, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Handle amount field with 2 decimal places
+    if (name === "amount") {
+      // For empty inputs, just set to empty string
+      if (value === "") {
+        setFormData({ ...formData, [name]: "" });
+        return;
+      }
+      
+      // For numeric inputs, format with 2 decimal places
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        // Store as a string with 2 decimal places to preserve trailing zeros
+        setFormData({ ...formData, [name]: numValue.toFixed(2) });
+        return;
+      }
+    }
+    
+    // For other fields, no special formatting
     setFormData({ ...formData, [name]: value });
   };
 
@@ -69,7 +101,13 @@ const EditExpense = () => {
         },
       };
 
-      await axios.put(`http://localhost:8080/api/expenses/putExpense/${expenseId}`, formData, config);
+      // Convert string amount to number for submission
+      const submissionData = {
+        ...formData,
+        amount: parseFloat(formData.amount)
+      };
+
+      await axios.put(`http://localhost:8080/api/expenses/putExpense/${expenseId}`, submissionData, config);
       navigate("/expense"); // Redirect to the Expense page after successful update
     } catch (err) {
       console.error("Error editing expense:", err);
@@ -205,6 +243,7 @@ const EditExpense = () => {
                       onChange={handleInputChange}
                       className="w-full p-3 border rounded-l-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                       placeholder="Enter amount"
+                      step="0.01" // This restricts input to 2 decimal places
                       required
                     />
                     <select
@@ -213,9 +252,19 @@ const EditExpense = () => {
                       onChange={handleInputChange}
                       className="p-3 border rounded-r-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
                     >
-                      <option value="PHP">PHP</option>
-                      <option value="USD">USD</option>
-                      <option value="EUR">EUR</option>
+                      {availableCurrencies.length > 0 ? (
+                        availableCurrencies.map(currency => (
+                          <option key={currency.code} value={currency.code}>
+                            {currency.code} - {currency.name}
+                          </option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="PHP">PHP - Philippine Peso</option>
+                          <option value="USD">USD - US Dollar</option>
+                          <option value="EUR">EUR - Euro</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>
