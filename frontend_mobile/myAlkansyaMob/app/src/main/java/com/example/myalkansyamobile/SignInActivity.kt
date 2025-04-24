@@ -15,6 +15,7 @@ import com.example.myalkansyamobile.databinding.ActivitySigninBinding
 import com.example.myalkansyamobile.api.AuthRepository
 import com.example.myalkansyamobile.model.AuthResponse
 import com.example.myalkansyamobile.model.LoginRequest
+import com.example.myalkansyamobile.model.UserDTO
 import com.example.myalkansyamobile.utils.Resource
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -312,6 +313,32 @@ class SignInActivity : AppCompatActivity() {
             }
             is Resource.Loading -> {}
         }
+    }
+
+    private fun handleLoginSuccess(token: String, user: UserDTO) {
+        // Store user token and other data in SessionManager
+        sessionManager.clearSession() // Clear any existing session first
+        
+        // Convert the userId from String? to Int
+        val userId = user.userId?.toIntOrNull() ?: -1
+        
+        sessionManager.createLoginSession(
+            token = token,
+            userId = userId, // Now passing an Int instead of String?
+            username = "${user.firstname} ${user.lastname}".trim(),
+            email = user.email
+        )
+        
+        // Store additional user data
+        user.firstname?.let { sessionManager.saveFirstName(it) }
+        user.lastname?.let { sessionManager.saveLastName(it) }
+
+        
+        // Navigate to the home screen
+        val intent = Intent(this@SignInActivity, HomePageActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 
     private fun handleSuccessfulAuth(result: Resource.Success<AuthResponse>) {

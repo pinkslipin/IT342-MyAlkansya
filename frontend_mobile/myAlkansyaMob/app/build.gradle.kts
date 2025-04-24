@@ -30,17 +30,20 @@ android {
             )
         }
     }
+    
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    
     kotlinOptions {
         jvmTarget = "11"
     }
 }
 
 dependencies {
-
+    // Core libraries
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -75,7 +78,17 @@ dependencies {
     // Glide for image loading
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("com.github.bumptech.glide:glide:4.15.1")
+    
+    // Chart library for data visualization
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    
+    // REPLACE Apache POI with Android-friendly CSV library
+    implementation("com.github.doyaaaaaken:kotlin-csv:1.9.2")  // Kotlin CSV library
 
+    // UI components
     implementation ("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation ("com.google.android.material:material:1.9.0")
+    
+    // Add desugaring support for Java 8+ APIs
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }

@@ -4,6 +4,8 @@
     package="com.example.myalkansyamobile">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
     <supports-screens
         android:smallScreens="true"
@@ -62,6 +64,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- New Dashboard Activity -->
+        <activity
+            android:name=".DashboardActivity"
+            android:exported="false"
+            android:label="Data Analytics" />
 
         <!-- Sign In Activity -->
         <activity
@@ -173,6 +181,17 @@
             android:name=".CurrencyConverterActivity"
             android:exported="false"
             android:label="Currency Converter" />
+
+        <!-- File Provider Declaration -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
     </application>
 

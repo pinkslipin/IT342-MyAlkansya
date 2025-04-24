@@ -2,6 +2,9 @@ package com.example.myalkansyamobile
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -144,15 +147,31 @@ class HomePageActivity : AppCompatActivity() {
             navigateTo(com.example.myalkansyamobile.ui.profile.ProfileActivity::class.java)
         }
 
-        // Time frame selector
-        binding.btnTimeFrame.setOnClickListener {
-            // Show time frame options (weekly, monthly, yearly)
-            Toast.makeText(this, "Time frame options coming soon!", Toast.LENGTH_SHORT).show()
+        // Add Dashboard navigation with a clearer description
+        binding.btnDashboard.setOnClickListener {
+            startActivity(Intent(this, DashboardActivity::class.java))
+            Toast.makeText(this, "View detailed financial analytics", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+
+        // Add Dashboard item
+        menu.add(Menu.NONE, MENU_DASHBOARD, Menu.NONE, "Analytics Dashboard")
+            .setIcon(R.drawable.ic_dashboard) // Add this icon to your drawable resources
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
         
-        // Add Currency Converter navigation
-        binding.btnCurrencyConverter.setOnClickListener {
-            navigateTo(CurrencyConverterActivity::class.java)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            MENU_DASHBOARD -> {
+                startActivity(Intent(this, DashboardActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
@@ -172,9 +191,16 @@ class HomePageActivity : AppCompatActivity() {
     private fun fetchUserData() {
         lifecycleScope.launch {
             try {
-                val authToken = sessionManager.getToken()
+                // Changed to use basic validation which only checks user endpoints
+                val authToken = try {
+                    sessionManager.getBasicValidatedToken()
+                } catch (e: Exception) {
+                    Log.e("HomePageActivity", "Error validating token", e)
+                    null
+                }
+                
                 if (authToken.isNullOrEmpty()) {
-                    Toast.makeText(this@HomePageActivity, "Authentication token not found. Please log in again.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this@HomePageActivity, "Authentication token not found or expired. Please log in again.", Toast.LENGTH_SHORT).show()
                     logoutUser()
                     return@launch
                 }
@@ -225,11 +251,6 @@ class HomePageActivity : AppCompatActivity() {
 
                     // Display whatever user info we have from session
                     val userName = sessionManager.getUserName() ?: "User"
-                    val userEmail = sessionManager.getUserEmail() ?: ""
-
-                    binding.txtWelcomeMessage.text = "Welcome, $userName!"
-                    binding.txtEmail.text = userEmail
-
                     val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
                     binding.txtTotalBudget.text = formatter.format(0.0)
                     binding.txtTotalExpenses.text = formatter.format(0.0)
@@ -252,7 +273,6 @@ class HomePageActivity : AppCompatActivity() {
     private fun updateBudgetCategories() {
         // Extract unique categories from budgets
         val categories = allBudgets.map { it.category }.distinct().sorted()
-
         // Create a new list with "All Categories" as the first option
         budgetCategories = listOf("All Categories") + categories
 
@@ -263,14 +283,12 @@ class HomePageActivity : AppCompatActivity() {
             budgetCategories
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
         // Apply the adapter to the spinner
         binding.spinnerBudgetCategory.adapter = adapter
     }
 
     private fun updateDisplayForSelectedCategory(category: String) {
         val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
-
         // Make sure to update the category label to indicate selected category
         binding.txtCategoryLabel.text = category
 
@@ -278,10 +296,8 @@ class HomePageActivity : AppCompatActivity() {
             // Display totals for all categories
             val totalBudget = allBudgets.sumOf { it.monthlyBudget }
             val totalExpenses = allExpenses.sumOf { it.amount }
-
             binding.txtTotalBudget.text = formatter.format(totalBudget)
             binding.txtTotalExpenses.text = formatter.format(totalExpenses)
-            
             // Hide remaining budget and warning when showing all categories
             binding.txtRemainingBudget.visibility = View.GONE
             binding.txtBudgetWarning.visibility = View.GONE
@@ -289,10 +305,8 @@ class HomePageActivity : AppCompatActivity() {
             // Filter budget and expenses for the selected category
             val categoryBudget = allBudgets.find { it.category == category }?.monthlyBudget ?: 0.0
             val categoryExpenses = allExpenses.filter { it.category == category }.sumOf { it.amount }
-
             binding.txtTotalBudget.text = formatter.format(categoryBudget)
             binding.txtTotalExpenses.text = formatter.format(categoryExpenses)
-
             // Show remaining budget
             binding.txtRemainingBudget.visibility = View.VISIBLE
             val remaining = categoryBudget - categoryExpenses
@@ -321,5 +335,9 @@ class HomePageActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+    }
+
+    companion object {
+        private const val MENU_DASHBOARD = 1001 // Choose any unique ID
     }
 }

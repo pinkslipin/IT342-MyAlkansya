@@ -116,7 +116,7 @@
             android:id="@+id/txtAnalyticsHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Data Analytics"
+            android:text="Quick Overview"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="#18864F"
@@ -131,6 +131,7 @@
             android:text="Weekly"
             android:textColor="#18864F"
             android:backgroundTint="#FFC107"
+            android:visibility="gone"
             app:layout_constraintTop_toTopOf="@id/txtAnalyticsHeader"
             app:layout_constraintBottom_toBottomOf="@id/txtAnalyticsHeader"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -269,24 +270,12 @@
         <androidx.cardview.widget.CardView
             android:id="@+id/chartContainer"
             android:layout_width="match_parent"
-            android:layout_height="250dp"
+            android:layout_height="0dp"
+            android:visibility="gone"
             android:layout_marginTop="16dp"
             app:cardCornerRadius="8dp"
             app:cardElevation="4dp"
             app:layout_constraintTop_toBottomOf="@id/summaryCardsContainer">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:orientation="vertical">
-                
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Chart will be displayed here"
-                    android:textColor="#757575"/>
-            </LinearLayout>
         </androidx.cardview.widget.CardView>
 
         <!-- Navigation Buttons in Grid Layout -->
@@ -299,7 +288,7 @@
             android:alignmentMode="alignMargins"
             android:columnOrderPreserved="false"
             android:layout_marginTop="24dp"
-            app:layout_constraintTop_toBottomOf="@id/chartContainer">
+            app:layout_constraintTop_toBottomOf="@id/summaryCardsContainer">
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/btnIncome"
@@ -477,6 +466,43 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="Currency Converter"
+                        android:textStyle="bold"
+                        android:textColor="#18864F" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Analytics Dashboard Button -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/btnDashboard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_rowWeight="1"
+                android:layout_margin="8dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:src="@drawable/ic_dashboard"
+                        android:contentDescription="Analytics Dashboard" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Analytics"
                         android:textStyle="bold"
                         android:textColor="#18864F" />
                 </LinearLayout>
