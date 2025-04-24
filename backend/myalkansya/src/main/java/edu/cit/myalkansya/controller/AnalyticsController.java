@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analytics")
@@ -53,5 +54,37 @@ public class AnalyticsController {
         
         List<CategorySummaryDTO> categorySummary = analyticsService.getExpenseByCategory(userId, month, year);
         return ResponseEntity.ok(categorySummary);
+    }
+
+    @GetMapping("/financial-summary")
+    public ResponseEntity<?> getFinancialSummary(
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year,
+            @RequestHeader("Authorization") String token) {
+        
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+        int userId = userService.findByEmail(email).get().getUserId();
+        
+        // If month/year are not provided, use current month/year
+        if (month == null) {
+            month = java.time.LocalDate.now().getMonthValue();
+        }
+        if (year == null) {
+            year = java.time.Year.now().getValue();
+        }
+        
+        Map<String, Object> financialSummary = analyticsService.getFinancialSummary(userId, month, year);
+        return ResponseEntity.ok(financialSummary);
+    }
+
+    @GetMapping("/savings-goals-progress")
+    public ResponseEntity<?> getSavingsGoalsProgress(
+            @RequestHeader("Authorization") String token) {
+        
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+        int userId = userService.findByEmail(email).get().getUserId();
+        
+        List<Map<String, Object>> savingsGoalsProgress = analyticsService.getSavingsGoalsProgress(userId);
+        return ResponseEntity.ok(savingsGoalsProgress);
     }
 }
