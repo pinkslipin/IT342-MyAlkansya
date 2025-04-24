@@ -59,16 +59,19 @@ const Login = () => {
             <img src={myAlkansyaTextLogo} alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
-            <button className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded">
-              SIGN IN
-            </button>
-            <button
-              className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded"
-              onClick={() => navigate("/register")}
-            >
-              SIGN UP
-            </button>
-          </div>
+          <button
+            className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded hover:bg-yellow-500 transition duration-300"
+            onClick={() => navigate("/login")}
+          >
+            SIGN IN
+          </button>
+          <button
+            className="bg-[#FFC107] text-[#FFFFFF] font-bold py-2 px-4 rounded hover:bg-yellow-500 transition duration-300"
+            onClick={() => navigate("/register")}
+          >
+            SIGN UP
+          </button>
+        </div>
         </div>
       </nav>
 
