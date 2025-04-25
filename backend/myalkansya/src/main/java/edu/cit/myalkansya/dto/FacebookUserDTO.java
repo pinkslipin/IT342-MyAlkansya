@@ -1,18 +1,20 @@
 package edu.cit.myalkansya.dto;
 
 public class FacebookUserDTO {
-    private String providerId;
     private String firstname;
     private String lastname;
     private String email;
     private String profilePicture;
+    private String providerId;
 
-    // Getters and setters
-    public String getProviderId() {
-        return providerId;
+    public FacebookUserDTO() {
     }
 
-    public void setProviderId(String providerId) {
+    public FacebookUserDTO(String firstname, String lastname, String email, String profilePicture, String providerId) {
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.email = email;
+        this.profilePicture = profilePicture;
         this.providerId = providerId;
     }
 
@@ -46,5 +48,13 @@ public class FacebookUserDTO {
 
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 }
