@@ -83,7 +83,7 @@ const TopBar = () => {
       {/* Logo */}
       <div
         className="flex items-center cursor-pointer"
-        onClick={() => navigate("/")}
+        onClick={() => navigate("/home")}
       >
         <img
           src="/src/assets/MyAlkansyaTextLogo.png"

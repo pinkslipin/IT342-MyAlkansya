@@ -13,6 +13,7 @@ import edu.cit.myalkansya.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.NoSuchElementException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -267,29 +268,46 @@ public class CurrencyConversionService {
     
     // IMPLEMENTATION START: User Savings
     private void convertUserTotalSavings(int userId, String fromCurrency, String toCurrency, double exchangeRate) {
-        UserEntity user = userRepository.findById(userId).orElseThrow(() -> 
+        UserEntity user = userRepository.findById(userId).orElseThrow(() ->
             new RuntimeException("User not found"));
-        
-        // If converting back to original currency, use the original amount
-        if (user.getOriginalCurrency() != null && toCurrency.equals(user.getOriginalCurrency())) {
-            user.setTotalSavings(user.getOriginalTotalSavings());
-            user.setCurrency(toCurrency);
-        } else {
-            // Otherwise, do regular conversion
-            double convertedSavings = user.getTotalSavings() * exchangeRate;
-            user.setTotalSavings(roundToTwoDecimals(convertedSavings));
-            user.setCurrency(toCurrency);
+
+        // Sum all incomes in the new currency
+        List<IncomeEntity> incomes = incomeRepository.findByUserUserId(userId);
+        double totalIncome = 0.0;
+        for (IncomeEntity income : incomes) {
+            double amount = income.getAmount();
+            if (!income.getCurrency().equals(toCurrency)) {
+                double rate = exchangeRateService.getExchangeRate(income.getCurrency(), toCurrency);
+                amount = roundToTwoDecimals(amount * rate);
+            }
+            totalIncome += amount;
         }
-        
+
+        // Sum all expenses in the new currency
+        List<ExpenseEntity> expenses = expenseRepository.findByUserUserId(userId);
+        double totalExpense = 0.0;
+        for (ExpenseEntity expense : expenses) {
+            double amount = expense.getAmount();
+            if (!expense.getCurrency().equals(toCurrency)) {
+                double rate = exchangeRateService.getExchangeRate(expense.getCurrency(), toCurrency);
+                amount = roundToTwoDecimals(amount * rate);
+            }
+            totalExpense += amount;
+        }
+
+        double newTotal = roundToTwoDecimals(totalIncome - totalExpense);
+        user.setTotalSavings(newTotal);
+        user.setCurrency(toCurrency);
+
         userRepository.save(user);
-        logger.info("Converted user's total savings from " + fromCurrency + " to " + toCurrency);
+        logger.info("Recalculated user's total savings in " + toCurrency + ": " + newTotal);
     }
     
     private void storeOriginalUserValues(int userId, String currency) {
         UserEntity user = userRepository.findById(userId).orElseThrow(() -> 
             new RuntimeException("User not found"));
-        
-        // Only store original values if they haven't been stored yet
+
+        // Only store original value if it hasn't been stored yet
         if (user.getOriginalTotalSavings() == null && user.getCurrency().equals(currency)) {
             user.setOriginalTotalSavings(user.getTotalSavings());
             user.setOriginalCurrency(currency);
@@ -298,4 +316,77 @@ public class CurrencyConversionService {
         }
     }
     // IMPLEMENTATION END: User Savings
+
+    @Transactional
+    public ExpenseEntity createExpense(ExpenseEntity expense, int userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        expense.setUser(user);
+        ExpenseEntity savedExpense = expenseRepository.save(expense);
+
+        // Update totalSavings in the user's current currency
+        user.setTotalSavings(user.getTotalSavings() - expense.getAmount());
+
+        // Recalculate originalTotalSavings from all transactions
+        recalculateOriginalTotalSavings(user);
+
+        userRepository.save(user);
+        return savedExpense;
+    }
+
+    @Transactional
+    public IncomeEntity createIncome(IncomeEntity income, int userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        income.setUser(user);
+        IncomeEntity savedIncome = incomeRepository.save(income);
+
+        // Update totalSavings in the user's current currency
+        user.setTotalSavings(user.getTotalSavings() + income.getAmount());
+
+        // Recalculate originalTotalSavings from all transactions
+        recalculateOriginalTotalSavings(user);
+
+        userRepository.save(user);
+        return savedIncome;
+    }
+
+    // Helper method to recalculate originalTotalSavings
+    private void recalculateOriginalTotalSavings(UserEntity user) {
+        String originalCurrency = user.getOriginalCurrency();
+        if (originalCurrency == null) {
+            // If not set, use current currency as original
+            originalCurrency = user.getCurrency();
+            user.setOriginalCurrency(originalCurrency);
+        }
+
+        // Sum all incomes in original currency
+        List<IncomeEntity> incomes = incomeRepository.findByUserUserId(user.getUserId());
+        double totalIncome = 0.0;
+        for (IncomeEntity income : incomes) {
+            double amount = income.getAmount();
+            if (!income.getCurrency().equals(originalCurrency)) {
+                double rate = exchangeRateService.getExchangeRate(income.getCurrency(), originalCurrency);
+                amount = roundToTwoDecimals(amount * rate);
+            }
+            totalIncome += amount;
+        }
+
+        // Sum all expenses in original currency
+        List<ExpenseEntity> expenses = expenseRepository.findByUserUserId(user.getUserId());
+        double totalExpense = 0.0;
+        for (ExpenseEntity expense : expenses) {
+            double amount = expense.getAmount();
+            if (!expense.getCurrency().equals(originalCurrency)) {
+                double rate = exchangeRateService.getExchangeRate(expense.getCurrency(), originalCurrency);
+                amount = roundToTwoDecimals(amount * rate);
+            }
+            totalExpense += amount;
+        }
+
+        double originalTotalSavings = roundToTwoDecimals(totalIncome - totalExpense);
+        user.setOriginalTotalSavings(originalTotalSavings);
+    }
 }
