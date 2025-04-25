@@ -34,6 +34,11 @@ public class BudgetEntity {
     private int budgetMonth; // 1-12 for January-December
     private int budgetYear;  // e.g., 2025
     
+    // New fields for currency conversion tracking
+    private Double originalMonthlyBudget;
+    private Double originalTotalSpent;
+    private String originalCurrency;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"budgets", "expenses", "incomes"}) // Prevents infinite recursion in JSON response
@@ -161,5 +166,30 @@ public class BudgetEntity {
     public void updateExpense(ExpenseEntity expense, double oldAmount) {
         // Calculate the difference and update the totalSpent
         this.totalSpent = this.totalSpent - oldAmount + expense.getAmount();
+    }
+
+    // Getters and setters including for new fields
+    public Double getOriginalMonthlyBudget() {
+        return originalMonthlyBudget;
+    }
+
+    public void setOriginalMonthlyBudget(Double originalMonthlyBudget) {
+        this.originalMonthlyBudget = originalMonthlyBudget;
+    }
+
+    public Double getOriginalTotalSpent() {
+        return originalTotalSpent;
+    }
+
+    public void setOriginalTotalSpent(Double originalTotalSpent) {
+        this.originalTotalSpent = originalTotalSpent;
+    }
+
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public void setOriginalCurrency(String originalCurrency) {
+        this.originalCurrency = originalCurrency;
     }
 }

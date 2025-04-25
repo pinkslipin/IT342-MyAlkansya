@@ -24,6 +24,10 @@ public class IncomeEntity {
     private double amount;
     private String currency;
     
+    // New fields for currency conversion tracking
+    private Double originalAmount;
+    private String originalCurrency;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties("incomes") // Prevents infinite recursion in JSON response
@@ -87,5 +91,22 @@ public class IncomeEntity {
     
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    // Getters and setters including for new fields
+    public Double getOriginalAmount() {
+        return originalAmount;
+    }
+
+    public void setOriginalAmount(Double originalAmount) {
+        this.originalAmount = originalAmount;
+    }
+
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public void setOriginalCurrency(String originalCurrency) {
+        this.originalCurrency = originalCurrency;
     }
 }
