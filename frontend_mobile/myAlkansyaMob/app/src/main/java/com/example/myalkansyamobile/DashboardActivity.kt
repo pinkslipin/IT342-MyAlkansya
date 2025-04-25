@@ -174,16 +174,76 @@ class DashboardActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
+                
+                // Fetch real user data for export
+                val selectedMonth = binding.spinnerMonth.selectedItemPosition
+                val selectedYear = if (binding.spinnerYear.selectedItemPosition == 0)
+                    currentYear else binding.spinnerYear.selectedItem.toString().toInt()
+                
+                // Fetch incomes
+                val incomes = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitClient.incomeApiService.getIncomes(bearerToken)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardActivity", "Error fetching incomes for export: ${e.message}")
+                    emptyList<com.example.myalkansyamobile.model.Income>()
+                }
+                
+                // Fetch expenses
+                val expenses = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitClient.expenseApiService.getExpenses(bearerToken)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardActivity", "Error fetching expenses for export: ${e.message}")
+                    emptyList<com.example.myalkansyamobile.api.ExpenseResponse>()
+                }
+                
+                // Fetch budgets
+                val budgets = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitClient.budgetApiService.getUserBudgets(bearerToken)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardActivity", "Error fetching budgets for export: ${e.message}")
+                    emptyList<com.example.myalkansyamobile.BudgetResponse>()
+                }
+                
+                // Fetch savings goals
+                val savingsGoals = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitClient.savingsGoalApiService.getAllSavingsGoals(bearerToken)
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardActivity", "Error fetching savings goals for export: ${e.message}")
+                    emptyList<com.example.myalkansyamobile.api.SavingsGoalResponse>()
+                }
 
-                val incomes = listOf<Any>()
-                val expenses = listOf<Any>()
-                val budgets = listOf<Any>()
-                val savingsGoals = listOf<Any>()
-
-                exportService.exportAndShareFinancialData(incomes, expenses, budgets, savingsGoals)
+                // Fetch financial summary
+                val financialSummary = try {
+                    withContext(Dispatchers.IO) {
+                        RetrofitClient.analyticsApiService.getFinancialSummary(
+                            bearerToken,
+                            if (selectedMonth == 0) currentMonth else selectedMonth,
+                            selectedYear
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e("DashboardActivity", "Error fetching financial summary for export: ${e.message}")
+                    null
+                }
+                
+                // Now export the real data
+                exportService.exportAndShareFinancialData(
+                    incomes = incomes,
+                    expenses = expenses,
+                    budgets = budgets,
+                    savingsGoals = savingsGoals,
+                    financialSummary = financialSummary
+                )
 
                 dialog.dismiss()
-
             } catch (e: Exception) {
                 dialog.dismiss()
                 Toast.makeText(this@DashboardActivity, "Export failed: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -240,7 +300,7 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.w("DashboardActivity", "Monthly summary error: ${e.message}")
-                    emptyList()
+                    emptyList<MonthlySummaryResponse>()
                 }
                 
                 val categoryDataResult = try {
@@ -253,7 +313,7 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.w("DashboardActivity", "Category data error: ${e.message}")
-                    emptyList()
+                    emptyList<CategoryExpenseResponse>()
                 }
                 
                 val financialSummaryResult = try {
@@ -284,7 +344,7 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.w("DashboardActivity", "Savings goals error: ${e.message}")
-                    emptyList()
+                    emptyList<SavingsGoalProgressResponse>()
                 }
 
                 // Check if we got any real data
@@ -346,9 +406,9 @@ class DashboardActivity : AppCompatActivity() {
                 )
             )
             
-            setupMonthlyChart(emptyList())
-            setupCategoryPieChart(emptyList())
-            setupSavingsGoalsProgressChart(emptyList())
+            setupMonthlyChart(emptyList<MonthlySummaryResponse>())
+            setupCategoryPieChart(emptyList<CategoryExpenseResponse>())
+            setupSavingsGoalsProgressChart(emptyList<SavingsGoalProgressResponse>())
             
             // Show empty state message
             binding.tvNoSavingsGoals.visibility = View.VISIBLE

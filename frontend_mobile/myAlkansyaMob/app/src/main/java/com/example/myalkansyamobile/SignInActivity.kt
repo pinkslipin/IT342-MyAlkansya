@@ -224,11 +224,11 @@ class SignInActivity : AppCompatActivity() {
                     handleSuccessfulAuth(result)
                 }
                 is Resource.Error -> {
-                    // If user doesn't exist, try to register automatically
-                    if (result.message?.contains("No user found", ignoreCase = true) == true || 
-                        result.message?.contains("not registered", ignoreCase = true) == true) {
+                    // Check for specific error indicating the user doesn't exist
+                    if (result.message?.contains("User not registered", ignoreCase = true) == true || 
+                        result.code == 401) {
                         
-                        Log.d("FacebookAuth", "User not found, attempting to register")
+                        Log.d("FacebookAuth", "User not found or 401 received, attempting to register")
                         registerWithFacebook(accessToken)
                     } else {
                         showLoading(false)
@@ -280,11 +280,11 @@ class SignInActivity : AppCompatActivity() {
                 handleSuccessfulAuth(result)
             }
             is Resource.Error -> {
-                // If user doesn't exist, try to register automatically
-                if (result.message?.contains("No user found", ignoreCase = true) == true || 
-                    result.message?.contains("not registered", ignoreCase = true) == true) {
+                // Check for specific error indicating the user doesn't exist
+                if (result.message?.contains("User not registered", ignoreCase = true) == true || 
+                    result.code == 401) {
                     
-                    Log.d("GoogleAuth", "User not found, attempting to register")
+                    Log.d("GoogleAuth", "User not found or 401 received, attempting to register")
                     registerWithGoogle(idToken)
                 } else {
                     showLoading(false)
@@ -298,6 +298,7 @@ class SignInActivity : AppCompatActivity() {
     }
 
     private suspend fun registerWithGoogle(idToken: String) {
+        Log.d("GoogleAuth", "Registering with Google...")
         when (val result = authRepository.registerWithGoogle(idToken)) {
             is Resource.Success -> {
                 showLoading(false)
