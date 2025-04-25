@@ -25,6 +25,11 @@ public class SavingsGoalEntity {
     private LocalDate targetDate;
     private String currency;
     
+    // New fields for currency conversion tracking
+    private Double originalTargetAmount;
+    private Double originalCurrentAmount;
+    private String originalCurrency;
+    
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnoreProperties({"savingsGoals", "incomes", "expenses", "budgets"}) // Prevents infinite recursion in JSON response
@@ -97,5 +102,30 @@ public class SavingsGoalEntity {
     
     public void setUser(UserEntity user) {
         this.user = user;
+    }
+
+    // Getters and setters including for new fields
+    public Double getOriginalTargetAmount() {
+        return originalTargetAmount;
+    }
+
+    public void setOriginalTargetAmount(Double originalTargetAmount) {
+        this.originalTargetAmount = originalTargetAmount;
+    }
+
+    public Double getOriginalCurrentAmount() {
+        return originalCurrentAmount;
+    }
+
+    public void setOriginalCurrentAmount(Double originalCurrentAmount) {
+        this.originalCurrentAmount = originalCurrentAmount;
+    }
+
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public void setOriginalCurrency(String originalCurrency) {
+        this.originalCurrency = originalCurrency;
     }
 }

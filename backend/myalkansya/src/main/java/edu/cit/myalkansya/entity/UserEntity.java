@@ -38,6 +38,10 @@ public class UserEntity {
 
     private String currency = "USD"; // Default currency
 
+    // New fields for currency conversion tracking
+    private Double originalTotalSavings;
+    private String originalCurrency;
+
     private LocalDateTime createdAt = LocalDateTime.now();
     
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -224,5 +228,22 @@ public class UserEntity {
     public void removeSavingsGoal(SavingsGoalEntity savingsGoal) {
         savingsGoals.remove(savingsGoal);
         savingsGoal.setUser(null);
+    }
+
+    // Getters and setters for new fields
+    public Double getOriginalTotalSavings() {
+        return originalTotalSavings;
+    }
+
+    public void setOriginalTotalSavings(Double originalTotalSavings) {
+        this.originalTotalSavings = originalTotalSavings;
+    }
+
+    public String getOriginalCurrency() {
+        return originalCurrency;
+    }
+
+    public void setOriginalCurrency(String originalCurrency) {
+        this.originalCurrency = originalCurrency;
     }
 }
