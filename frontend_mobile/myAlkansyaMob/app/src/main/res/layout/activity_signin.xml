@@ -45,8 +45,6 @@
                     android:contentDescription="App Name"
                     android:src="@drawable/myalkansya_text_logo" />
             </LinearLayout>
-
-            <!-- Removed the btnSignUp button from here -->
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.appcompat.widget.Toolbar>
 
@@ -61,220 +59,211 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topBar">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintWidth_max="480dp">
 
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cardView"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardBackgroundColor="#FFFFFF"
-                app:cardCornerRadius="8dp"
-                app:cardElevation="4dp"
-                app:cardUseCompatPadding="true"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintWidth_max="480dp">
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/poppins_bold"
+                android:text="Sign In"
+                android:textColor="#18864F"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
-                <LinearLayout
+            <!-- Email Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Email"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusBottomEnd="4dp"
+                app:boxCornerRadiusBottomStart="4dp"
+                app:boxCornerRadiusTopEnd="4dp"
+                app:boxCornerRadiusTopStart="4dp"
+                app:startIconDrawable="@drawable/ic_email"
+                app:startIconTint="#18864F">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/emailInput"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="24dp">
+                    android:fontFamily="@font/poppins_regular"
+                    android:inputType="textEmailAddress" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="24dp"
-                        android:text="Sign In"
-                        android:textColor="#18864F"
-                        android:textSize="28sp"
-                        android:textStyle="bold" />
+            <!-- Password Input -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:hint="Password"
+                app:boxBackgroundMode="outline"
+                app:boxCornerRadiusBottomEnd="4dp"
+                app:boxCornerRadiusBottomStart="4dp"
+                app:boxCornerRadiusTopEnd="4dp"
+                app:boxCornerRadiusTopStart="4dp"
+                app:passwordToggleEnabled="true"
+                app:startIconDrawable="@drawable/ic_lock"
+                app:startIconTint="#18864F">
 
-                    <!-- Email Input -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:hint="Email"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusBottomEnd="4dp"
-                        app:boxCornerRadiusBottomStart="4dp"
-                        app:boxCornerRadiusTopEnd="4dp"
-                        app:boxCornerRadiusTopStart="4dp"
-                        app:startIconDrawable="@drawable/ic_email"
-                        app:startIconTint="#18864F">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/passwordInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:inputType="textPassword" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/emailInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textEmailAddress" />
-                    </com.google.android.material.textfield.TextInputLayout>
+            <!-- Forgot Password Link -->
+            <TextView
+                android:id="@+id/txtForgotPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginBottom="24dp"
+                android:fontFamily="@font/poppins_regular"
+                android:text="Forgot password?"
+                android:textColor="#666666"
+                android:textSize="14sp" />
 
-                    <!-- Password Input -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:hint="Password"
-                        app:boxBackgroundMode="outline"
-                        app:boxCornerRadiusBottomEnd="4dp"
-                        app:boxCornerRadiusBottomStart="4dp"
-                        app:boxCornerRadiusTopEnd="4dp"
-                        app:boxCornerRadiusTopStart="4dp"
-                        app:passwordToggleEnabled="true"
-                        app:startIconDrawable="@drawable/ic_lock"
-                        app:startIconTint="#18864F">
+            <!-- Sign In Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/signInButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp"
+                android:backgroundTint="#18864F"
+                android:fontFamily="@font/poppins_bold"
+                android:padding="12dp"
+                android:text="SIGN IN"
+                android:textColor="#FFFFFF"
+                app:cornerRadius="4dp" />
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/passwordInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textPassword" />
-                    </com.google.android.material.textfield.TextInputLayout>
+            <!-- OR Divider -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                android:orientation="horizontal">
 
-                    <!-- Forgot Password Link -->
-                    <TextView
-                        android:id="@+id/txtForgotPassword"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:layout_marginBottom="24dp"
-                        android:text="Forgot password?"
-                        android:textColor="#666666"
-                        android:textSize="14sp" />
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#DDDDDD" />
 
-                    <!-- Sign In Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/signInButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="24dp"
-                        android:backgroundTint="#18864F"
-                        android:padding="12dp"
-                        android:text="SIGN IN"
-                        android:textColor="#FFFFFF"
-                        app:cornerRadius="4dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="OR"
+                    android:textColor="#666666"
+                    android:textSize="12sp" />
 
-                    <!-- OR Divider -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:gravity="center"
-                        android:orientation="horizontal">
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"
+                    android:background="#DDDDDD" />
+            </LinearLayout>
 
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#DDDDDD" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="center"
+                android:text="Sign In With"
+                android:textColor="#666666" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_marginEnd="8dp"
-                            android:text="OR"
-                            android:textColor="#666666"
-                            android:textSize="12sp" />
+            <!-- Google Sign In Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGoogle2"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="start|center_vertical"
+                android:padding="12dp"
+                android:text="Sign in with Google"
+                android:textColor="#666666"
+                app:cornerRadius="4dp"
+                app:icon="@drawable/ic_google"
+                app:iconGravity="start"
+                app:iconPadding="8dp"
+                app:iconSize="18dp"
+                app:iconTint="@null"
+                app:strokeColor="#DDDDDD"
+                app:strokeWidth="1dp" />
 
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#DDDDDD" />
-                    </LinearLayout>
+            <!-- Facebook Sign In Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnFacebook2"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/poppins_regular"
+                android:gravity="start|center_vertical"
+                android:padding="12dp"
+                android:text="Sign in with Facebook"
+                android:textColor="#666666"
+                app:cornerRadius="4dp"
+                app:icon="@drawable/ic_facebook"
+                app:iconGravity="start"
+                app:iconPadding="8dp"
+                app:iconSize="18dp"
+                app:iconTint="@null"
+                app:strokeColor="#DDDDDD"
+                app:strokeWidth="1dp" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:gravity="center"
-                        android:text="Sign In With"
-                        android:textColor="#666666" />
+            <!-- Sign Up Link -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal">
 
-                    <!-- Google Sign In Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnGoogle2"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="8dp"
-                        android:gravity="start|center_vertical"
-                        android:padding="12dp"
-                        android:text="Sign in with Google"
-                        android:textColor="#666666"
-                        app:cornerRadius="4dp"
-                        app:icon="@drawable/ic_google"
-                        app:iconGravity="start"
-                        app:iconPadding="8dp"
-                        app:iconSize="18dp"
-                        app:iconTint="@null"
-                        app:strokeColor="#DDDDDD"
-                        app:strokeWidth="1dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_regular"
+                    android:text="Don't have an account? "
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
 
-                    <!-- Facebook Sign In Button -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnFacebook2"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="16dp"
-                        android:gravity="start|center_vertical"
-                        android:padding="12dp"
-                        android:text="Sign in with Facebook"
-                        android:textColor="#666666"
-                        app:cornerRadius="4dp"
-                        app:icon="@drawable/ic_facebook"
-                        app:iconGravity="start"
-                        app:iconPadding="8dp"
-                        app:iconSize="18dp"
-                        app:iconTint="@null"
-                        app:strokeColor="#DDDDDD"
-                        app:strokeWidth="1dp" />
-
-                    <!-- Sign Up Link -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Don't have an account? "
-                            android:textColor="#666666"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/txtDontHaveAccount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Sign Up"
-                            android:textColor="#18864F"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </LinearLayout>
-            </androidx.cardview.widget.CardView>
-
+                <TextView
+                    android:id="@+id/txtDontHaveAccount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/poppins_bold"
+                    android:text="Sign Up"
+                    android:textColor="#18864F"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
             <ProgressBar
                 android:id="@+id/progressBar"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/signInButton"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cardView" />
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                app:layout_constraintEnd_toEndOf="parent" />
+        </LinearLayout>
     </ScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
