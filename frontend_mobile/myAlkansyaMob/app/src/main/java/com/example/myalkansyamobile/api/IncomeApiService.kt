@@ -17,8 +17,8 @@ interface IncomeApiService {
 
     @POST("/api/incomes/postIncome")
     suspend fun addIncome(
-        @Body income: Income,
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Body incomeRequest: IncomeRequest
     ): Response<Income>
 
     @PUT("/api/incomes/putIncome/{incomeId}")

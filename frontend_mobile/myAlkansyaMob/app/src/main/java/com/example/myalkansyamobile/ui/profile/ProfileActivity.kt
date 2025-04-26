@@ -8,6 +8,8 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +18,7 @@ import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.example.myalkansyamobile.HomePageActivity
 import com.example.myalkansyamobile.R
+import com.example.myalkansyamobile.UserResponse
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.databinding.ActivityProfileBinding
 import com.example.myalkansyamobile.model.ProfileModel
@@ -31,6 +34,8 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var viewModel: ProfileViewModel
     private var isEditMode = false
     private var selectedImageUri: Uri? = null
+    private lateinit var currencyDropdown: AutoCompleteTextView
+    private var isOAuthUser = false
 
     // Result launcher for image picking
     private val pickImageLauncher = registerForActivityResult(
@@ -58,6 +63,9 @@ class ProfileActivity : AppCompatActivity() {
 
         // Initialize ViewModel
         viewModel = ViewModelProvider(this)[ProfileViewModel::class.java]
+
+        // Initialize the currency dropdown
+        currencyDropdown = findViewById(R.id.spinnerCurrency)
 
         // Set up the toolbar
         try {
@@ -169,7 +177,10 @@ class ProfileActivity : AppCompatActivity() {
             binding.etFirstName.setText(firstName)
             binding.etLastName.setText(lastName)
             binding.etEmail.setText(sessionManager.getUserEmail() ?: "")
-            binding.etCurrency.setText(sessionManager.getCurrency() ?: "USD")
+            
+            // Set selected currency in dropdown (fix for line 178)
+            val userCurrency = sessionManager.getCurrency() ?: "USD"
+            setupInitialCurrencyDropdown(userCurrency)
 
             // Load profile picture if available
             val profilePicUrl = sessionManager.getProfilePicture()
@@ -192,6 +203,15 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun displayProfileData(profile: ProfileModel) {
         try {
+            // Check if this is an OAuth user
+            isOAuthUser = profile.authProvider != null && 
+                         (profile.authProvider == "GOOGLE" || 
+                          profile.authProvider == "FACEBOOK" || 
+                          profile.providerId != null)
+            
+            // Log the auth provider info for debugging
+            Log.d("ProfileActivity", "Auth Provider: ${profile.authProvider}, Is OAuth: $isOAuthUser")
+            
             // Update UI with profile data - view mode
             binding.tvName.text = "${profile.firstname} ${profile.lastname}"
             binding.tvEmail.text = profile.email
@@ -201,7 +221,10 @@ class ProfileActivity : AppCompatActivity() {
             binding.etFirstName.setText(profile.firstname)
             binding.etLastName.setText(profile.lastname)
             binding.etEmail.setText(profile.email)
-            binding.etCurrency.setText(profile.currency ?: "USD")
+            
+            // Set selected currency in dropdown
+            val profileCurrency = profile.currency ?: "USD"
+            setupInitialCurrencyDropdown(profileCurrency)
 
             // Load profile picture if available
             if (!profile.profilePicture.isNullOrEmpty()) {
@@ -233,13 +256,37 @@ class ProfileActivity : AppCompatActivity() {
         binding.editModeLayout.visibility = if (isEdit) View.VISIBLE else View.GONE
         binding.btnEditProfile.visibility = if (isEdit) View.GONE else View.VISIBLE
         binding.btnChangePicture.visibility = if (isEdit) View.VISIBLE else View.GONE
+
+        if (isEdit) {
+            // When entering edit mode, set up the currency dropdown
+            setupCurrencyDropdown()
+            
+            // Handle email field for OAuth users
+            if (isOAuthUser) {
+                // Disable email editing for OAuth users
+                binding.etEmail.isEnabled = false
+                binding.etEmail.setBackgroundResource(android.R.color.darker_gray)
+                
+                // Show warning message below email field
+                binding.tvEmailWarning.visibility = View.VISIBLE
+                binding.tvEmailWarning.text = "Email cannot be changed (OAuth account)"
+            } else {
+                // Enable email editing for regular users
+                binding.etEmail.isEnabled = true
+                binding.etEmail.setBackgroundResource(android.R.color.transparent)
+                binding.tvEmailWarning.visibility = View.GONE
+            }
+        }
     }
 
     private fun saveProfileChanges() {
         val firstName = binding.etFirstName.text.toString().trim()
         val lastName = binding.etLastName.text.toString().trim()
         val email = binding.etEmail.text.toString().trim()
-        val currency = binding.etCurrency.text.toString().trim()
+
+        // Get the selected currency's code part (e.g., "USD" from "USD - US Dollar")
+        val selectedCurrencyText = currencyDropdown.text.toString()
+        val currencyCode = selectedCurrencyText.split(" - ").firstOrNull() ?: "USD"
 
         // Validate inputs
         if (firstName.isEmpty() || lastName.isEmpty() || email.isEmpty()) {
@@ -247,14 +294,79 @@ class ProfileActivity : AppCompatActivity() {
             return
         }
 
+        // For OAuth users, use the original email instead of the input field
+        val emailToUpdate = if (isOAuthUser) {
+            binding.tvEmail.text.toString() // Use the current email
+        } else {
+            email // Use the edited email
+        }
+
         // Update profile via ViewModel
         viewModel.updateProfile(
             sessionManager = sessionManager,
             firstname = firstName,
             lastname = lastName,
-            email = email,
-            currency = currency
+            email = emailToUpdate,
+            currency = currencyCode
         )
+    }
+
+    private fun setupCurrencyDropdown() {
+        try {
+            // Create a list of currency options with code and name
+            val currencyOptions = listOf(
+                "PHP - Philippine Peso",
+                "USD - US Dollar",
+                "EUR - Euro",
+                "JPY - Japanese Yen",
+                "GBP - British Pound",
+                "AUD - Australian Dollar",
+                "CAD - Canadian Dollar",
+                "CHF - Swiss Franc",
+                "CNY - Chinese Yuan",
+                "SGD - Singapore Dollar"
+            )
+            
+            // Create adapter for the dropdown
+            val currencyAdapter = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, currencyOptions)
+            currencyDropdown.setAdapter(currencyAdapter)
+            
+            // Get user's current currency
+            val userCurrency = sessionManager.getCurrency() ?: "USD"
+            
+            // Find and select the matching option
+            val userCurrencyOption = currencyOptions.firstOrNull { it.startsWith(userCurrency) }
+            if (userCurrencyOption != null) {
+                currencyDropdown.setText(userCurrencyOption, false)
+            } else {
+                // Default to PHP if user currency not found in options
+                currencyDropdown.setText(currencyOptions[0], false)
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileActivity", "Error setting up currency dropdown: ${e.message}")
+        }
+    }
+
+    private fun setupInitialCurrencyDropdown(currency: String) {
+        try {
+            // If the dropdown adapter isn't set up yet, use a simple text display
+            if (currencyDropdown.adapter == null) {
+                currencyDropdown.setText(currency)
+            } else {
+                // Find the currency in the dropdown options
+                val adapter = currencyDropdown.adapter as ArrayAdapter<*>
+                for (i in 0 until adapter.count) {
+                    val item = adapter.getItem(i) as String
+                    if (item.startsWith(currency)) {
+                        currencyDropdown.setText(item, false)
+                        break
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileActivity", "Error setting initial currency: ${e.message}")
+            currencyDropdown.setText(currency)
+        }
     }
 
     private fun openImagePicker() {
@@ -294,6 +406,7 @@ class ProfileActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
+        super.onBackPressed()
         // If in edit mode, cancel edits instead of going back
         if (isEditMode) {
             toggleEditMode(false)
@@ -301,5 +414,20 @@ class ProfileActivity : AppCompatActivity() {
         }
         // Otherwise, navigate to home
         navigateToHome()
+    }
+
+    // After a successful profile update:
+    private fun updateProfileSuccess(updatedUser: UserResponse) {
+        // Save updated info to SessionManager
+        sessionManager.saveUsername("${updatedUser.firstname} ${updatedUser.lastname}".trim())
+        sessionManager.saveFirstName(updatedUser.firstname)
+        sessionManager.saveLastName(updatedUser.lastname)
+        sessionManager.saveEmail(updatedUser.email)
+        
+        // Make sure to save the currency if it was updated
+        updatedUser.currency?.let { sessionManager.saveCurrency(it) }
+        
+        // Show success message
+        Toast.makeText(this, "Profile updated successfully", Toast.LENGTH_SHORT).show()
     }
 }

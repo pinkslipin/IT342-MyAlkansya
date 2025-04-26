@@ -180,18 +180,32 @@
                                 android:inputType="textEmailAddress" />
                         </com.google.android.material.textfield.TextInputLayout>
 
+                        <!-- Add warning text for OAuth users -->
+                        <TextView
+                            android:id="@+id/tvEmailWarning"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Email cannot be changed (OAuth account)"
+                            android:textColor="#B71C1C"
+                            android:background="#FFEBEE"
+                            android:padding="8dp"
+                            android:layout_marginBottom="8dp"
+                            android:visibility="gone" />
+
                         <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilCurrency"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginBottom="16dp"
                             android:hint="Preferred Currency"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etCurrency"
+                            <AutoCompleteTextView
+                                android:id="@+id/spinnerCurrency"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text" />
+                                android:inputType="none"
+                                android:focusable="false"/>
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <LinearLayout

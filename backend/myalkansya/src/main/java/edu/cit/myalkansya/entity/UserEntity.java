@@ -36,7 +36,7 @@ public class UserEntity {
 
     private double totalSavings = 0.0;
 
-    private String currency = "USD"; // Default currency
+    private String currency = "PHP"; // Default currency
 
     // New fields for currency conversion tracking
     private Double originalTotalSavings;

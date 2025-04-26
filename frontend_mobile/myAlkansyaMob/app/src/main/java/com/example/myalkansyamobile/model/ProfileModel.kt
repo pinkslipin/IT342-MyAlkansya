@@ -16,10 +16,16 @@ data class ProfileModel(
     val email: String,
     
     @SerializedName("currency")
-    val currency: String,
+    val currency: String?,
     
     @SerializedName("profilePicture")
     val profilePicture: String?,
+    
+    @SerializedName("authProvider")
+    val authProvider: String?, // Added to identify OAuth vs LOCAL users
+    
+    @SerializedName("providerId")
+    val providerId: String?,    // Additional field to detect OAuth accounts
     
     @SerializedName("totalSavings")
     val totalSavings: Double

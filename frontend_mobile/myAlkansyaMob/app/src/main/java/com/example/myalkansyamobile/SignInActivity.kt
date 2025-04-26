@@ -225,10 +225,8 @@ class SignInActivity : AppCompatActivity() {
                 }
                 is Resource.Error -> {
                     // Check for specific error indicating the user doesn't exist
-                    if (result.message?.contains("User not registered", ignoreCase = true) == true || 
-                        result.code == 401) {
-                        
-                        Log.d("FacebookAuth", "User not found or 401 received, attempting to register")
+                    if (result.message?.contains("User not registered", ignoreCase = true) == true) {
+                        Log.d("FacebookAuth", "User not found, attempting to register")
                         registerWithFacebook(accessToken)
                     } else {
                         showLoading(false)
@@ -281,10 +279,8 @@ class SignInActivity : AppCompatActivity() {
             }
             is Resource.Error -> {
                 // Check for specific error indicating the user doesn't exist
-                if (result.message?.contains("User not registered", ignoreCase = true) == true || 
-                    result.code == 401) {
-                    
-                    Log.d("GoogleAuth", "User not found or 401 received, attempting to register")
+                if (result.message?.contains("User not registered", ignoreCase = true) == true) {
+                    Log.d("GoogleAuth", "User not found, attempting to register")
                     registerWithGoogle(idToken)
                 } else {
                     showLoading(false)
@@ -381,6 +377,15 @@ class SignInActivity : AppCompatActivity() {
         // Save the individual name components for more flexibility
         sessionManager.saveFirstName(firstname)
         sessionManager.saveLastName(lastname)
+        
+        // Explicitly set PHP as default currency for all users (especially important for OAuth)
+        sessionManager.saveCurrency("PHP")
+        
+        // For OAuth users (Google or Facebook), ensure currency is set to PHP
+        if (user.authProvider != null || user.providerId != null) {
+            Log.d("Auth", "OAuth user detected, enforcing PHP as default currency")
+            sessionManager.saveCurrency("PHP")
+        }
         
         Log.d("Auth", "User successfully authenticated: $firstname $lastname")
         navigateToHome()

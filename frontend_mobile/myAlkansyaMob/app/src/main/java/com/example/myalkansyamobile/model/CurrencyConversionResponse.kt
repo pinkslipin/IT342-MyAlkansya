@@ -42,16 +42,3 @@ data class TrendData(
     val trendPoints: List<Double>
 )
 
-data class PopularCurrency(
-    @SerializedName("code")
-    val code: String,
-    
-    @SerializedName("name")
-    val name: String,
-    
-    @SerializedName("rate")
-    val rate: Double,
-    
-    @SerializedName("changePercent")
-    val changePercent: Double
-)

@@ -33,14 +33,14 @@ class AuthRepository(private val apiService: AuthApiService) {
                     if (errorBody.contains("No user found", ignoreCase = true) || 
                         errorBody.contains("not registered", ignoreCase = true) ||
                         response.code() == 401) {
-                        Resource.Error("User not registered", code = response.code())
+                        Resource.Error("User not registered")
                     } else {
-                        Resource.Error("Google login failed: $errorBody", code = response.code())
+                        Resource.Error("Google login failed: $errorBody")
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("AuthRepository", "HTTP error during Google auth: ${e.code()}: ${e.message()}")
-                Resource.Error("Server Error: ${e.message()}", code = e.code())
+                Resource.Error("Server Error: ${e.message()}")
             } catch (e: IOException) {
                 Log.e("AuthRepository", "Network error during Google auth: ${e.message}")
                 Resource.Error("Network error: Please check your internet connection.")
@@ -66,11 +66,11 @@ class AuthRepository(private val apiService: AuthApiService) {
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
                     Log.e("AuthRepository", "Google registration failed: $errorBody")
-                    Resource.Error("Google registration failed: $errorBody", code = response.code())
+                    Resource.Error("Google registration failed: $errorBody")
                 }
             } catch (e: HttpException) {
                 Log.e("AuthRepository", "HTTP error during Google registration: ${e.code()}: ${e.message()}")
-                Resource.Error("Server Error: ${e.message()}", code = e.code())
+                Resource.Error("Server Error: ${e.message()}")
             } catch (e: IOException) {
                 Log.e("AuthRepository", "Network error during Google registration: ${e.message}")
                 Resource.Error("Network error: Please check your internet connection.")
@@ -100,14 +100,14 @@ class AuthRepository(private val apiService: AuthApiService) {
                     if (errorBody.contains("No user found", ignoreCase = true) || 
                         errorBody.contains("not registered", ignoreCase = true) ||
                         response.code() == 401) {
-                        Resource.Error("User not registered", code = response.code())
+                        Resource.Error("User not registered")
                     } else {
-                        Resource.Error("Facebook login failed: $errorBody", code = response.code())
+                        Resource.Error("Facebook login failed: $errorBody")
                     }
                 }
             } catch (e: HttpException) {
                 Log.e("AuthRepository", "HTTP error during Facebook auth: ${e.code()}: ${e.message()}")
-                Resource.Error("Server Error: ${e.message()}", code = e.code())
+                Resource.Error("Server Error: ${e.message()}")
             } catch (e: IOException) {
                 Log.e("AuthRepository", "Network error during Facebook auth: ${e.message}")
                 Resource.Error("Network error: Please check your internet connection.")
@@ -133,11 +133,11 @@ class AuthRepository(private val apiService: AuthApiService) {
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "Unknown error"
                     Log.e("AuthRepository", "Facebook registration failed: $errorBody")
-                    Resource.Error("Facebook registration failed: $errorBody", code = response.code())
+                    Resource.Error("Facebook registration failed: $errorBody")
                 }
             } catch (e: HttpException) {
                 Log.e("AuthRepository", "HTTP error during Facebook registration: ${e.code()}: ${e.message()}")
-                Resource.Error("Server Error: ${e.message()}", code = e.code())
+                Resource.Error("Server Error: ${e.message()}")
             } catch (e: IOException) {
                 Log.e("AuthRepository", "Network error during Facebook registration: ${e.message}")
                 Resource.Error("Network error: Please check your internet connection.")

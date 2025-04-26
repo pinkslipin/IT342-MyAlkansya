@@ -83,9 +83,24 @@ class ProfileViewModel : ViewModel() {
         }
         
         val token = "Bearer $tokenValue"
-        val updateRequest = ProfileUpdateRequest(firstname, lastname, email, currency)
         
-        Log.d("ProfileViewModel", "Updating profile: $updateRequest")
+        // Check if the user is an OAuth user by getting the current profile
+        val currentEmail = _profileData.value?.email
+        val isOAuthUser = _profileData.value?.authProvider != null && 
+                         (_profileData.value?.authProvider == "GOOGLE" || 
+                          _profileData.value?.authProvider == "FACEBOOK" || 
+                          _profileData.value?.providerId != null)
+        
+        // For OAuth users, ensure we're using their original email
+        val emailToUpdate = if (isOAuthUser && currentEmail != null) {
+            currentEmail  // Keep the original email for OAuth users
+        } else {
+            email  // Use the provided email for regular users
+        }
+        
+        val updateRequest = ProfileUpdateRequest(firstname, lastname, emailToUpdate, currency)
+        
+        Log.d("ProfileViewModel", "Updating profile: $updateRequest, Is OAuth user: $isOAuthUser")
         
         userApiService.updateUser(token, updateRequest).enqueue(object : Callback<ProfileModel> {
             override fun onResponse(call: Call<ProfileModel>, response: Response<ProfileModel>) {
@@ -99,7 +114,7 @@ class ProfileViewModel : ViewModel() {
                     // Update the session values
                     sessionManager.saveFirstName(firstname)
                     sessionManager.saveLastName(lastname)
-                    sessionManager.saveEmail(email)
+                    sessionManager.saveEmail(emailToUpdate)
                     sessionManager.saveCurrency(currency)
                 } else {
                     try {
@@ -179,7 +194,7 @@ class ProfileViewModel : ViewModel() {
         tempFile.deleteOnExit()
         
         FileOutputStream(tempFile).use { fileOut ->
-            inputStream.use { input ->
+            inputStream.use { input -> 
                 input.copyTo(fileOut)
             }
         }
