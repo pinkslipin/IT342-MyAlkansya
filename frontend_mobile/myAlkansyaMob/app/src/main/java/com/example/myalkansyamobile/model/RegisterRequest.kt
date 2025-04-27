@@ -5,5 +5,5 @@ data class RegisterRequest(
     val lastname: String,
     val email: String,
     val password: String,
-    val currency: String = "USD"  // Default currency
+    val currency: String = "PHP"  // Default currency
 )

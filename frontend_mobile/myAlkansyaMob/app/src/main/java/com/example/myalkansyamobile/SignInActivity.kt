@@ -1,5 +1,6 @@
 package com.example.myalkansyamobile
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -24,9 +25,14 @@ import com.facebook.FacebookSdk
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.Scope
+import com.google.android.gms.tasks.Task
+import com.google.api.services.sheets.v4.SheetsScopes
+import com.google.gson.Gson
 import kotlinx.coroutines.launch
 
 class SignInActivity : AppCompatActivity() {
@@ -59,12 +65,7 @@ class SignInActivity : AppCompatActivity() {
         }
 
         // Initialize Google Sign-In
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(getString(R.string.server_client_id))
-            .requestEmail()
-            .requestProfile()
-            .build()
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
+        setupGoogleSignIn()
         
         // Initialize Facebook Login
         callbackManager = CallbackManager.Factory.create()
@@ -75,18 +76,30 @@ class SignInActivity : AppCompatActivity() {
         setupClickListeners()
     }
     
+    private fun setupGoogleSignIn() {
+        // Request both authentication and Google Sheets scopes together
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.server_client_id))
+            .requestEmail()
+            .requestProfile()
+            // Add Google Sheets scope to initial sign-in
+            .requestScopes(Scope(SheetsScopes.SPREADSHEETS))
+            .build()
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+        
+        binding.btnGoogle2.setOnClickListener {
+            showLoading(true)
+            signInWithGoogle()
+        }
+    }
+
     private fun setupActivityResultLaunchers() {
         googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result -> 
             if (result.resultCode == RESULT_OK) {
                 try {
                     val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                    val account = task.getResult(ApiException::class.java)
-                    val idToken = account.idToken
-                    if (idToken != null) {
-                        lifecycleScope.launch {
-                            authenticateWithGoogle(idToken)
-                        }
-                    }
+                    handleGoogleSignInResult(task)
                 } catch (e: ApiException) {
                     showLoading(false)
                     Log.e("GoogleLogin", "Google sign-in failed", e)
@@ -109,10 +122,6 @@ class SignInActivity : AppCompatActivity() {
             }
         }
 
-        binding.btnGoogle2.setOnClickListener {
-            signInWithGoogle()
-        }
-        
         binding.btnFacebook2.setOnClickListener {
             signInWithFacebook()
         }
@@ -225,10 +234,8 @@ class SignInActivity : AppCompatActivity() {
                 }
                 is Resource.Error -> {
                     // Check for specific error indicating the user doesn't exist
-                    if (result.message?.contains("User not registered", ignoreCase = true) == true || 
-                        result.code == 401) {
-                        
-                        Log.d("FacebookAuth", "User not found or 401 received, attempting to register")
+                    if (result.message?.contains("User not registered", ignoreCase = true) == true) {
+                        Log.d("FacebookAuth", "User not found, attempting to register")
                         registerWithFacebook(accessToken)
                     } else {
                         showLoading(false)
@@ -281,10 +288,8 @@ class SignInActivity : AppCompatActivity() {
             }
             is Resource.Error -> {
                 // Check for specific error indicating the user doesn't exist
-                if (result.message?.contains("User not registered", ignoreCase = true) == true || 
-                    result.code == 401) {
-                    
-                    Log.d("GoogleAuth", "User not found or 401 received, attempting to register")
+                if (result.message?.contains("User not registered", ignoreCase = true) == true) {
+                    Log.d("GoogleAuth", "User not found, attempting to register")
                     registerWithGoogle(idToken)
                 } else {
                     showLoading(false)
@@ -313,6 +318,36 @@ class SignInActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG).show()
             }
             is Resource.Loading -> {}
+        }
+    }
+
+    private fun handleGoogleSignInResult(completedTask: Task<GoogleSignInAccount>) {
+        try {
+            val account = completedTask.getResult(ApiException::class.java)
+            
+            // Check if user granted all requested scopes including Sheets
+            val hasSheetScope = GoogleSignIn.hasPermissions(
+                account,
+                Scope(SheetsScopes.SPREADSHEETS)
+            )
+            
+            // Log the granted scopes for debugging
+            Log.d("GoogleAuth", "Google sign-in successful. Has Sheets scope: $hasSheetScope")
+            
+            // Save the account info for use in GoogleSheetsHelper
+            val accountJson = Gson().toJson(account)
+            val sharedPrefs = getSharedPreferences("google_sign_in", Context.MODE_PRIVATE)
+            sharedPrefs.edit().putString("last_account", accountJson).apply()
+            
+            // Launch a coroutine to call the suspend function
+            lifecycleScope.launch {
+                // Continue with backend authentication in a coroutine context
+                authenticateWithGoogle(account.idToken!!)
+            }
+        } catch (e: ApiException) {
+            showLoading(false)
+            Log.e("GoogleAuth", "Google sign-in failed", e)
+            Toast.makeText(this, "Google sign-in failed: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -381,6 +416,15 @@ class SignInActivity : AppCompatActivity() {
         // Save the individual name components for more flexibility
         sessionManager.saveFirstName(firstname)
         sessionManager.saveLastName(lastname)
+        
+        // Explicitly set PHP as default currency for all users (especially important for OAuth)
+        sessionManager.saveCurrency("PHP")
+        
+        // For OAuth users (Google or Facebook), ensure currency is set to PHP
+        if (user.authProvider != null || user.providerId != null) {
+            Log.d("Auth", "OAuth user detected, enforcing PHP as default currency")
+            sessionManager.saveCurrency("PHP")
+        }
         
         Log.d("Auth", "User successfully authenticated: $firstname $lastname")
         navigateToHome()

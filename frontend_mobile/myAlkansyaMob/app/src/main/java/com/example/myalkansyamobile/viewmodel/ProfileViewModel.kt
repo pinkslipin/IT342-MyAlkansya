@@ -83,9 +83,24 @@ class ProfileViewModel : ViewModel() {
         }
         
         val token = "Bearer $tokenValue"
-        val updateRequest = ProfileUpdateRequest(firstname, lastname, email, currency)
         
-        Log.d("ProfileViewModel", "Updating profile: $updateRequest")
+        // Check if the user is an OAuth user by getting the current profile
+        val currentEmail = _profileData.value?.email
+        val isOAuthUser = _profileData.value?.authProvider != null && 
+                         (_profileData.value?.authProvider == "GOOGLE" || 
+                          _profileData.value?.authProvider == "FACEBOOK" || 
+                          _profileData.value?.providerId != null)
+        
+        // For OAuth users, ensure we're using their original email
+        val emailToUpdate = if (isOAuthUser && currentEmail != null) {
+            currentEmail  // Keep the original email for OAuth users
+        } else {
+            email  // Use the provided email for regular users
+        }
+        
+        val updateRequest = ProfileUpdateRequest(firstname, lastname, emailToUpdate, currency)
+        
+        Log.d("ProfileViewModel", "Updating profile: $updateRequest, Is OAuth user: $isOAuthUser")
         
         userApiService.updateUser(token, updateRequest).enqueue(object : Callback<ProfileModel> {
             override fun onResponse(call: Call<ProfileModel>, response: Response<ProfileModel>) {
@@ -99,7 +114,7 @@ class ProfileViewModel : ViewModel() {
                     // Update the session values
                     sessionManager.saveFirstName(firstname)
                     sessionManager.saveLastName(lastname)
-                    sessionManager.saveEmail(email)
+                    sessionManager.saveEmail(emailToUpdate)
                     sessionManager.saveCurrency(currency)
                 } else {
                     try {
@@ -179,11 +194,53 @@ class ProfileViewModel : ViewModel() {
         tempFile.deleteOnExit()
         
         FileOutputStream(tempFile).use { fileOut ->
-            inputStream.use { input ->
+            inputStream.use { input -> 
                 input.copyTo(fileOut)
             }
         }
         
         return tempFile
+    }
+
+    // Method to update profile data without triggering LiveData
+    suspend fun updateProfileData(
+        sessionManager: SessionManager,
+        firstname: String,
+        lastname: String,
+        email: String,
+        currency: String
+    ): Boolean {
+        return try {
+            val token = sessionManager.getToken() ?: return false
+            
+            val profileUpdateRequest = ProfileUpdateRequest(
+                firstname = firstname,
+                lastname = lastname, 
+                email = email,
+                currency = currency
+            )
+            
+            val response = RetrofitClient.userApiService.updateUser(
+                "Bearer $token", 
+                profileUpdateRequest
+            ).execute()
+            
+            if (response.isSuccessful && response.body() != null) {
+                val updatedProfile = response.body()!!
+                
+                // Update session data
+                sessionManager.saveFirstName(updatedProfile.firstname)
+                sessionManager.saveLastName(updatedProfile.lastname)
+                sessionManager.saveEmail(updatedProfile.email)
+                sessionManager.saveCurrency(updatedProfile.currency ?: "USD")
+                
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileViewModel", "Error updating profile: ${e.message}", e)
+            false
+        }
     }
 }

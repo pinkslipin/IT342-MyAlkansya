@@ -1,146 +1,210 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFF9E7">
+    android:background="@color/background_light">
 
-    <RelativeLayout
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:titleTextColor="@color/white" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/appBarLayout">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="16dp">
 
-            <!-- Header -->
-            <LinearLayout
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilSource"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_marginTop="16dp"
+                android:hint="Income Source"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_back" />
-
-                <TextView
-                    android:layout_width="wrap_content"
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSource"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="MyAlkansya"
-                    android:textStyle="bold"
-                    android:textColor="#388E3C"
-                    android:textSize="18sp"
-                    android:layout_marginStart="8dp" />
-            </LinearLayout>
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:hint="Date"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tilSource">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
+                android:id="@+id/tvAmountLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Add Income"
-                android:textStyle="bold"
-                android:textSize="20sp"
-                android:layout_marginTop="24dp"
-                android:textColor="#000000" />
+                android:layout_marginTop="16dp"
+                android:text="Amount"
+                android:textSize="16sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tilDate" />
 
-            <!-- Source -->
-            <EditText
-                android:id="@+id/inputSource"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Source"
-                android:background="#FFD740"
-                android:padding="12dp"
-                android:textColor="#000000"
-                android:textColorHint="#000000"
-                android:layout_marginTop="16dp" />
-
-            <!-- Date -->
             <LinearLayout
+                android:id="@+id/llAmountContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:orientation="horizontal"
-                android:layout_marginTop="12dp">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvAmountLabel">
 
-                <EditText
-                    android:id="@+id/inputDate"
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilAmount"
                     android:layout_width="0dp"
-                    android:layout_weight="1"
                     android:layout_height="wrap_content"
-                    android:hint="Date"
-                    android:background="#FFD740"
-                    android:padding="12dp"
-                    android:focusable="false"
-                    android:textColor="#000000"
-                    android:textColorHint="#000000" />
+                    android:layout_weight="1">
 
-                <ImageButton
-                    android:id="@+id/btnPickDate"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_calendar"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:layout_marginStart="8dp"
-                    android:contentDescription="Pick Date" />
-            </LinearLayout>
-
-            <!-- Amount + Currency -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp">
-
-                <EditText
-                    android:id="@+id/inputAmount"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:hint="Amount"
-                    android:background="#FFD740"
-                    android:padding="12dp"
-                    android:inputType="numberDecimal"
-                    android:textColor="#000000"
-                    android:textColorHint="#000000" />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Spinner
                     android:id="@+id/spinnerCurrency"
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:background="#FFD740"
-                    android:padding="8dp"
-                    android:spinnerMode="dropdown" />
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:minWidth="120dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp" />
             </LinearLayout>
 
-            <!-- Buttons -->
-            <Button
-                android:id="@+id/btnAddIncome"
+            <ProgressBar
+                android:id="@+id/progressBarConversion"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:visibility="gone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/llAmountContainer" />
+
+            <TextView
+                android:id="@+id/tvConversionInfo"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/green_700"
+                android:textSize="14sp"
+                android:textStyle="italic"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/progressBarConversion"
+                app:layout_constraintTop_toBottomOf="@+id/llAmountContainer"
+                tools:text="Converted 100 USD to 5,600 PHP"
+                tools:visibility="visible" />
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cvCurrencyInfo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Add Income"
                 android:layout_marginTop="24dp"
-                android:backgroundTint="#388E3C"
-                android:textColor="#FFFFFF" />
+                app:cardBackgroundColor="@color/info_background"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="2dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvConversionInfo">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Currency Information"
+                        android:textColor="@color/primary_dark"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvCurrencyInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/green"
+                        android:textSize="14sp"
+                        tools:text="Your default currency is PHP. Income will be stored in this currency." />
+
+                    <TextView
+                        android:id="@+id/tvCurrencyWarning"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/warning_color"
+                        android:textSize="14sp"
+                        android:textStyle="italic"
+                        android:visibility="gone"
+                        tools:text="Note: This income will be automatically converted to PHP when saved."
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
             <Button
-                android:id="@+id/btnCancel"
+                android:id="@+id/btnSave"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Cancel"
-                android:layout_marginTop="12dp"
-                android:backgroundTint="#FFF3D1"
-                android:textColor="#000000" />
-        </LinearLayout>
-        
-        <!-- Progress Bar -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:visibility="gone" />
-    </RelativeLayout>
-</ScrollView>
+                android:layout_marginTop="24dp"
+                android:text="Save Income"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/cvCurrencyInfo" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/btnSave" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+</androidx.constraintlayout.widget.ConstraintLayout>

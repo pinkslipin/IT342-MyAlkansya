@@ -9,7 +9,9 @@ data class ExpenseRequest(
     val category: String,
     val date: String,
     val amount: Double,
-    val currency: String = "PHP"
+    val currency: String = "PHP",
+    val originalAmount: Double? = null,
+    val originalCurrency: String? = null
 ) {
     companion object {
         fun fromExpense(expense: com.example.myalkansyamobile.model.Expense): ExpenseRequest {
@@ -18,7 +20,9 @@ data class ExpenseRequest(
                 category = expense.category,
                 date = expense.date.toString(),
                 amount = expense.amount,
-                currency = expense.currency
+                currency = expense.currency,
+                originalAmount = expense.originalAmount,
+                originalCurrency = expense.originalCurrency
             )
         }
     }

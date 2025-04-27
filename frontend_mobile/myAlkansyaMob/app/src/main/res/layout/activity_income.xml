@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#FFF9E7">
+    android:background="#FEF6EA">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -28,17 +28,155 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_arrow_back" />
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#18864F" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="MyAlkansya"
                 android:textStyle="bold"
-                android:textColor="#388E3C"
+                android:textColor="#18864F"
                 android:textSize="18sp"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
+
+        <!-- Header with Title and Add Button -->
+        <LinearLayout
+            android:id="@+id/headerSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@+id/topBar">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Income Management"
+                android:textColor="#18864F"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btnAddIncome"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Income"
+                android:textAllCaps="false"
+                android:textColor="#18864F"
+                android:backgroundTint="#FFC107"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp" />
+        </LinearLayout>
+
+        <!-- Filter Card -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/filterCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/headerSection">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Filters"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#18864F"
+                        android:layout_marginEnd="16dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
+                        
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginEnd="8dp">
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Month:"
+                                android:textColor="#18864F"
+                                android:layout_marginEnd="4dp" />
+                                
+                            <Spinner
+                                android:id="@+id/monthSpinner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/spinner_background"
+                                android:padding="4dp" />
+                        </LinearLayout>
+                        
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Year:"
+                                android:textColor="#18864F"
+                                android:layout_marginEnd="4dp" />
+                                
+                            <Spinner
+                                android:id="@+id/yearSpinner"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:background="@drawable/spinner_background"
+                                android:padding="4dp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/btnResetFilters"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:text="Reset"
+                        android:textAllCaps="false"
+                        android:textSize="12sp"
+                        android:textColor="#18864F"
+                        android:backgroundTint="#FFC107"
+                        android:paddingHorizontal="8dp" />
+                </LinearLayout>
+
+                <!-- Active filters indicator (initially hidden) -->
+                <TextView
+                    android:id="@+id/activeFiltersText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#EDFBE9"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="Active filters: Month: January, Year: 2023"
+                    android:textColor="#18864F"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
         <!-- Progress Bar -->
         <ProgressBar
@@ -51,75 +189,82 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- Add Income + Filter -->
+        <!-- Income List Header -->
         <LinearLayout
-            android:id="@+id/actionBar"
+            android:id="@+id/listHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#FFC107"
             android:orientation="horizontal"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="16dp"
             android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/topBar"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-<!--            android:gravity="space_between"-->
-            <Button
-                android:id="@+id/btnAddIncome"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:text="Add Income"
-                android:backgroundTint="#A68ED3"
-                android:textColor="#FFFFFF" />
+            app:layout_constraintTop_toBottomOf="@+id/filterCard">
 
-            <ImageButton
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:src="@drawable/ic_filter_list"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:layout_marginStart="8dp"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Date"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Source"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Amount"
+                android:gravity="end"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Actions"
+                android:layout_marginStart="8dp"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
         </LinearLayout>
 
-        <!-- Header -->
-        <TextView
-            android:id="@+id/header"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Income Tracker"
-            android:background="#FFD740"
-            android:padding="8dp"
-            android:textStyle="bold"
-            android:textColor="#000000"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@+id/actionBar"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
-
-        <!-- RecyclerView for Income List -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewIncome"
+        <!-- Income List Container (Card) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/incomeListCard"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/header"
-            app:layout_constraintBottom_toTopOf="@+id/paginationControls"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:visibility="visible" />
+            android:minHeight="200dp"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/listHeader"
+            app:layout_constraintBottom_toTopOf="@+id/paginationControls">
 
-        <!-- Empty State Message -->
-        <TextView
-            android:id="@+id/txtEmptyState"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="No income entries yet."
-            android:textColor="#888888"
-            android:textSize="16sp"
-            android:gravity="center"
-            android:layout_marginTop="24dp"
-            android:visibility="visible"
-            app:layout_constraintTop_toBottomOf="@+id/header"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            <!-- RecyclerView for Income List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewIncome"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="visible" />
+
+            <!-- Empty State Message -->
+            <TextView
+                android:id="@+id/txtEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="No income records found."
+                android:textColor="#757575"
+                android:textSize="16sp"
+                android:gravity="center"
+                android:padding="24dp"
+                android:visibility="gone" />
+        </androidx.cardview.widget.CardView>
 
         <!-- Pagination Controls -->
         <LinearLayout
@@ -127,34 +272,43 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center"
+            android:gravity="end"
             android:layout_marginTop="16dp"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-            <ImageButton
+            <Button
+                android:id="@+id/btnPrevPage"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@drawable/ic_arrow_left"
-                android:backgroundTint="#FFD740"
-                android:background="?attr/selectableItemBackgroundBorderless"/>
+                android:text="&lt;"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:backgroundTint="#FFC107" />
 
             <TextView
+                android:id="@+id/tvPagination"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:text="1 out of 1"
-                android:layout_marginHorizontal="16dp"
+                android:gravity="center"
+                android:background="#FFC107"
+                android:paddingHorizontal="16dp"
                 android:textStyle="bold"
-                android:textColor="#000000"/>
+                android:textColor="#18864F"/>
 
-            <ImageButton
+            <Button
+                android:id="@+id/btnNextPage"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:src="@drawable/ic_arrow_right"
-                android:backgroundTint="#FFD740"
-                android:background="?attr/selectableItemBackgroundBorderless"/>
+                android:text="&gt;"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:backgroundTint="#FFC107" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

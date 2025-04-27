@@ -77,6 +77,9 @@ class HomePageActivity : AppCompatActivity() {
     private var allExpenses: List<ExpenseResponse> = listOf()
     private var allBudgets: List<BudgetResponse> = listOf()
     private var budgetCategories: List<String> = listOf()
+    private var userCurrency: String = "PHP" // Default currency
+
+    private val SETTINGS_REQUEST_CODE = 1001
 
     // Create API services
     private val userApiService: UserApiService
@@ -175,6 +178,33 @@ class HomePageActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        
+        // Check if stored currency has changed
+        val currentCurrency = sessionManager.getCurrency() ?: "PHP"
+        if (currentCurrency != userCurrency) {
+            Log.d("HomePageActivity", "Currency changed from $userCurrency to $currentCurrency - refreshing data")
+            userCurrency = currentCurrency
+            fetchUserData()  // Refresh all data with new currency
+        } else {
+            // Check if the user's name might have changed
+            val storedName = sessionManager.getUserName()
+            if (storedName != null && !binding.txtWelcomeMessage.text.contains(storedName)) {
+                Log.d("HomePageActivity", "User name appears to have changed - refreshing data")
+                fetchUserData()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SETTINGS_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Currency was changed - reload all data
+            fetchUserData()
+        }
+    }
+
     private fun setupCategorySpinner() {
         // Set up listener for category selection
         binding.spinnerBudgetCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
@@ -213,6 +243,11 @@ class HomePageActivity : AppCompatActivity() {
                         userApiService.getCurrentUser(bearerToken)
                     }
 
+                    // Store user currency
+                    userCurrency = userResponse.currency ?: "USD"
+                    sessionManager.saveCurrency(userCurrency)
+                    Log.d("HomePageActivity", "User preferred currency: $userCurrency")
+
                     // Fetch expenses
                     allExpenses = withContext(Dispatchers.IO) {
                         expenseApiService.getExpenses(bearerToken)
@@ -236,8 +271,8 @@ class HomePageActivity : AppCompatActivity() {
                     binding.txtWelcomeMessage.text = "Welcome, $userName!"
                     binding.txtEmail.text = userResponse.email
 
-                    // Format and display financial data
-                    val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
+                    // Format and display financial data with the user's preferred currency
+                    val formatter = getCurrencyFormatter(userCurrency)
                     binding.txtTotalBudget.text = formatter.format(totalBudget)
                     binding.txtTotalExpenses.text = formatter.format(totalExpenses)
                     binding.txtTotalSavings.text = formatter.format(totalSavings)
@@ -251,7 +286,8 @@ class HomePageActivity : AppCompatActivity() {
 
                     // Display whatever user info we have from session
                     val userName = sessionManager.getUserName() ?: "User"
-                    val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
+                    userCurrency = sessionManager.getCurrency() ?: "USD"
+                    val formatter = getCurrencyFormatter(userCurrency)
                     binding.txtTotalBudget.text = formatter.format(0.0)
                     binding.txtTotalExpenses.text = formatter.format(0.0)
                     binding.txtTotalSavings.text = formatter.format(0.0)
@@ -262,12 +298,25 @@ class HomePageActivity : AppCompatActivity() {
                 binding.txtWelcomeMessage.text = "Welcome!"
                 binding.txtEmail.text = ""
 
-                val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
+                userCurrency = sessionManager.getCurrency() ?: "USD"
+                val formatter = getCurrencyFormatter(userCurrency)
                 binding.txtTotalBudget.text = formatter.format(0.0)
                 binding.txtTotalExpenses.text = formatter.format(0.0)
                 binding.txtTotalSavings.text = formatter.format(0.0)
             }
         }
+    }
+
+    // Helper method to get a formatter for the specified currency
+    private fun getCurrencyFormatter(currencyCode: String): NumberFormat {
+        val formatter = NumberFormat.getCurrencyInstance()
+        try {
+            formatter.currency = Currency.getInstance(currencyCode)
+        } catch (e: Exception) {
+            Log.w("HomePageActivity", "Invalid currency code: $currencyCode, defaulting to USD")
+            formatter.currency = Currency.getInstance("USD")
+        }
+        return formatter
     }
 
     private fun updateBudgetCategories() {
@@ -288,7 +337,7 @@ class HomePageActivity : AppCompatActivity() {
     }
 
     private fun updateDisplayForSelectedCategory(category: String) {
-        val formatter = NumberFormat.getCurrencyInstance(Locale("en", "PH"))
+        val formatter = getCurrencyFormatter(userCurrency)
         // Make sure to update the category label to indicate selected category
         binding.txtCategoryLabel.text = category
 

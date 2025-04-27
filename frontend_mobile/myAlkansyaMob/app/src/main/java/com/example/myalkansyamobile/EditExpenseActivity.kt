@@ -10,7 +10,9 @@ import androidx.lifecycle.lifecycleScope
 import com.example.myalkansyamobile.model.Expense
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.api.ExpenseRequest
+import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.SessionManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.time.LocalDate
@@ -26,60 +28,35 @@ class EditExpenseActivity : AppCompatActivity() {
     private lateinit var btnSaveChanges: Button
     private lateinit var btnCancel: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var tvConversionInfo: TextView
+    private lateinit var tvCurrencyWarning: TextView
     
     private lateinit var sessionManager: SessionManager
     
     private var expenseId: Int = 0
     private var selectedDate = LocalDate.now()
+    private var userDefaultCurrency: String = "PHP"
+    private var originalAmount: Double? = null
+    private var originalCurrency: String? = null
+    private var conversionJob: Job? = null
     
-    // Updated categories list matching with backend and AddExpenseActivity
+    private val currencies = CurrencyUtils.currencyCodes.toTypedArray()
+    
     private val categories = arrayOf(
         "Food", "Transportation", "Housing", "Utilities", 
         "Entertainment", "Healthcare", "Education", "Shopping", 
         "Personal Care", "Debt Payment", "Savings", "Other"
     )
-    private val currencies = arrayOf("PHP", "USD", "EUR", "GBP", "JPY")
-    private var selectedCurrency = "PHP"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_expense)
         
-        // Initialize session manager
         sessionManager = SessionManager(this)
+        userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         
-        // Add error handling for findViewById operations
-        try {
-            // Initialize UI elements
-            etSubject = findViewById(R.id.etSubjectEdit)
-            tvDate = findViewById(R.id.tvDateEdit)
-            spinnerCategory = findViewById(R.id.spinnerCategoryEdit)
-            etAmount = findViewById(R.id.etAmountEdit)
-            
-            // Try to find the currency spinner with possible different IDs
-            spinnerCurrency = findViewById(R.id.spinnerCurrencyEdit) 
-                ?: findViewById(R.id.spinnerCurrency) 
-                ?: throw NullPointerException("Currency spinner not found in layout")
-            
-            btnPickDate = findViewById(R.id.btnPickDateEdit)
-            btnSaveChanges = findViewById(R.id.btnSaveExpense)
-            btnCancel = findViewById(R.id.btnCancelEdit)
-            
-            // Add the progress bar programmatically since it's missing from the XML
-            progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
-            progressBar.visibility = View.GONE
-            
-            val layout = findViewById<LinearLayout>(R.id.editExpenseLayout) // You'll need to add this ID to the root LinearLayout in XML
-            layout.addView(progressBar, 0)
-
-        } catch (e: Exception) {
-            Log.e("EditExpenseActivity", "Error finding views: ${e.message}")
-            Toast.makeText(this, "Failed to initialize UI: ${e.message}", Toast.LENGTH_LONG).show()
-            finish()
-            return
-        }
+        initializeUI()
         
-        // Get expense ID from intent
         expenseId = intent.getIntExtra("EXPENSE_ID", 0)
         if (expenseId == 0) {
             Toast.makeText(this, "Invalid expense ID", Toast.LENGTH_SHORT).show()
@@ -87,22 +64,18 @@ class EditExpenseActivity : AppCompatActivity() {
             return
         }
         
-        // Setup category spinner
         val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
         spinnerCategory.adapter = categoryAdapter
         
-        // Setup currency spinner - now safely after view initialization
         setupCurrencySpinner()
+        setupAmountListener()
         
-        // Setup date picker
         btnPickDate.setOnClickListener {
             showDatePicker()
         }
         
-        // Load expense details
         loadExpenseDetails()
         
-        // Setup button click listeners
         btnSaveChanges.setOnClickListener {
             updateExpense()
         }
@@ -112,36 +85,171 @@ class EditExpenseActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupCurrencySpinner() {
+    private fun initializeUI() {
         try {
-            val currencyAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currencies)
-            currencyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            spinnerCurrency.adapter = currencyAdapter
+            etSubject = findViewById(R.id.etSubjectEdit)
+            tvDate = findViewById(R.id.tvDateEdit)
+            spinnerCategory = findViewById(R.id.spinnerCategoryEdit)
+            etAmount = findViewById(R.id.etAmountEdit)
+            spinnerCurrency = findViewById(R.id.spinnerCurrencyEdit) ?: findViewById(R.id.spinnerCurrency)
+                ?: throw NullPointerException("Currency spinner not found in layout")
+            btnPickDate = findViewById(R.id.btnPickDateEdit)
+            btnSaveChanges = findViewById(R.id.btnSaveExpense)
+            btnCancel = findViewById(R.id.btnCancelEdit)
+            progressBar = findViewById(R.id.progressBar) ?: ProgressBar(this).also {
+                it.visibility = View.GONE
+                val layout = findViewById<LinearLayout>(R.id.editExpenseLayout)
+                layout?.addView(it, 0)
+            }
+            
+            tvConversionInfo = findViewById(R.id.tvConversionInfo) 
+                ?: TextView(this).also { it.visibility = View.GONE }
+            tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
+                ?: TextView(this).also { it.visibility = View.GONE }
+            
         } catch (e: Exception) {
-            Log.e("EditExpenseActivity", "Error setting up currency spinner: ${e.message}")
-            // Non-fatal error, app can still work with default selection
+            Log.e("EditExpenseActivity", "Error finding views: ${e.message}")
+            Toast.makeText(this, "Failed to initialize UI: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
         }
     }
 
-    // New data class to represent a date for pre-API 26 devices
-    data class DateCompat(val year: Int, val month: Int, val day: Int) {
-        override fun toString(): String {
-            return String.format("%04d-%02d-%02d", year, month, day)
+    private fun setupCurrencySpinner() {
+        try {
+            val currencyItems = CurrencyUtils.currencyCodes.map { code ->
+                val isDefault = code == userDefaultCurrency
+                val displayText = CurrencyUtils.getCurrencyDisplayText(code) + if (isDefault) " (Default)" else ""
+                displayText
+            }
+            
+            val currencyAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currencyItems)
+            currencyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinnerCurrency.adapter = currencyAdapter
+            
+            val defaultPosition = CurrencyUtils.currencyCodes.indexOf(userDefaultCurrency)
+            if (defaultPosition >= 0) {
+                spinnerCurrency.setSelection(defaultPosition)
+            }
+            
+            spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    val selectedCurrency = CurrencyUtils.currencyCodes[position]
+                    handleCurrencyChange(selectedCurrency)
+                }
+                
+                override fun onNothingSelected(parent: AdapterView<*>?) {}
+            }
+        } catch (e: Exception) {
+            Log.e("EditExpenseActivity", "Error setting up currency spinner: ${e.message}")
+        }
+    }
+    
+    private fun setupAmountListener() {
+        etAmount.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                val amountStr = etAmount.text.toString()
+                if (amountStr.isNotEmpty()) {
+                    try {
+                        val amount = amountStr.toDouble()
+                        etAmount.setText(String.format("%.2f", amount))
+                    } catch (e: Exception) {
+                        etAmount.error = "Invalid amount"
+                    }
+                }
+            }
+        }
+    }
+    
+    private fun getSelectedCurrency(): String {
+        val position = spinnerCurrency.selectedItemPosition
+        return CurrencyUtils.currencyCodes[position]
+    }
+    
+    private fun handleCurrencyChange(newCurrency: String) {
+        val amountStr = etAmount.text.toString()
+        val currentAmount = amountStr.toDoubleOrNull()
+        
+        if (currentAmount != null && currentAmount > 0) {
+            val selectedCurrency = newCurrency
+            val currentCurrency = originalCurrency ?: getSelectedCurrency()
+            
+            if (selectedCurrency != currentCurrency) {
+                if (originalAmount == null) {
+                    originalAmount = currentAmount
+                    originalCurrency = currentCurrency
+                }
+                
+                if (selectedCurrency == originalCurrency) {
+                    etAmount.setText(String.format("%.2f", originalAmount))
+                    tvConversionInfo.visibility = View.GONE
+                } else {
+                    convertAmount(currentAmount, currentCurrency, selectedCurrency)
+                }
+            }
+        }
+        
+        updateConversionNotification(newCurrency)
+    }
+    
+    private fun updateConversionNotification(selectedCurrency: String) {
+        if (tvCurrencyWarning != null) {
+            if (selectedCurrency != userDefaultCurrency) {
+                tvCurrencyWarning.text = 
+                    "Note: This expense will be automatically converted to $userDefaultCurrency when saved."
+                tvCurrencyWarning.visibility = View.VISIBLE
+            } else {
+                tvCurrencyWarning.visibility = View.GONE
+            }
+        }
+    }
+    
+    private fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String) {
+        conversionJob?.cancel()
+        
+        progressBar.visibility = View.VISIBLE
+        tvConversionInfo.text = "Converting..."
+        tvConversionInfo.visibility = View.VISIBLE
+        
+        conversionJob = lifecycleScope.launch {
+            try {
+                val authToken = sessionManager.getToken()
+                if (authToken.isNullOrEmpty()) {
+                    tvConversionInfo.text = "Error: Not logged in"
+                    progressBar.visibility = View.GONE
+                    return@launch
+                }
+                
+                val convertedAmount = CurrencyUtils.convertCurrency(
+                    amount, 
+                    fromCurrency, 
+                    toCurrency, 
+                    authToken
+                )
+                
+                if (convertedAmount != null) {
+                    etAmount.setText(String.format("%.2f", convertedAmount))
+                    tvConversionInfo.text = "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency"
+                    tvConversionInfo.visibility = View.VISIBLE
+                } else {
+                    tvConversionInfo.text = "Conversion failed. Please enter amount manually."
+                    tvConversionInfo.visibility = View.VISIBLE
+                }
+            } catch (e: Exception) {
+                tvConversionInfo.text = "Error: ${e.message}"
+                tvConversionInfo.visibility = View.VISIBLE
+            } finally {
+                progressBar.visibility = View.GONE
+            }
         }
     }
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
-
-        // Handle API compatibility for LocalDate
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            // API level 26+ implementation
             calendar.set(Calendar.YEAR, selectedDate.year)
             calendar.set(Calendar.MONTH, selectedDate.monthValue - 1)
             calendar.set(Calendar.DAY_OF_MONTH, selectedDate.dayOfMonth)
         } else {
-            // Pre-API level 26 implementation
-            // Extract date components manually using string parsing
             val dateParts = selectedDate.toString().split("-")
             if (dateParts.size == 3) {
                 try {
@@ -153,7 +261,6 @@ class EditExpenseActivity : AppCompatActivity() {
                     calendar.set(Calendar.DAY_OF_MONTH, day)
                 } catch (e: Exception) {
                     Log.e("EditExpenseActivity", "Error parsing date: ${e.message}")
-                    // Use current date as fallback
                 }
             }
         }
@@ -161,12 +268,9 @@ class EditExpenseActivity : AppCompatActivity() {
         val datePickerDialog = DatePickerDialog(this,
             { _, year, month, day ->
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    // API level 26+ implementation
                     selectedDate = LocalDate.of(year, month + 1, day)
                 } else {
-                    // Pre-API level 26 implementation
-                    // Create a string representation that can be parsed later
-                    selectedDate = parseLocalDateCompat(year, month + 1, day)
+                    selectedDate = LocalDate.parse(String.format("%04d-%02d-%02d", year, month + 1, day))
                 }
                 tvDate.text = selectedDate.toString()
             },
@@ -177,16 +281,6 @@ class EditExpenseActivity : AppCompatActivity() {
         datePickerDialog.show()
     }
 
-    // Helper function to manage the DateCompat class for pre-API 26
-    private fun parseLocalDateCompat(year: Int, month: Int, day: Int): LocalDate {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            return LocalDate.of(year, month, day)
-        } else {
-            // Creates a string that will be parsed in the loadExpenseDetails
-            return LocalDate.parse(String.format("%04d-%02d-%02d", year, month, day))
-        }
-    }
-    
     private fun loadExpenseDetails() {
         progressBar.visibility = View.VISIBLE
         
@@ -201,25 +295,22 @@ class EditExpenseActivity : AppCompatActivity() {
                 
                 val expense = RetrofitClient.expenseApiService.getExpenseById(expenseId, "Bearer $token")
                 
-                // Parse the response and populate the form
                 etSubject.setText(expense.subject)
                 tvDate.text = expense.date
                 selectedDate = LocalDate.parse(expense.date)
                 etAmount.setText(expense.amount.toString())
+                
+                originalCurrency = expense.currency
+                originalAmount = expense.amount
                 
                 val categoryPosition = categories.indexOf(expense.category)
                 if (categoryPosition >= 0) {
                     spinnerCategory.setSelection(categoryPosition)
                 }
                 
-                selectedCurrency = expense.currency
-                try {
-                    val currencyPosition = currencies.indexOf(expense.currency)
-                    if (currencyPosition >= 0) {
-                        spinnerCurrency.setSelection(currencyPosition)
-                    }
-                } catch (e: Exception) {
-                    Log.e("EditExpenseActivity", "Error setting currency: ${e.message}")
+                val currencyPosition = CurrencyUtils.currencyCodes.indexOf(expense.currency)
+                if (currencyPosition >= 0) {
+                    spinnerCurrency.setSelection(currencyPosition)
                 }
                 
                 progressBar.visibility = View.GONE
@@ -245,27 +336,21 @@ class EditExpenseActivity : AppCompatActivity() {
     private fun updateExpense() {
         val subject = etSubject.text.toString().trim()
         val category = spinnerCategory.selectedItem.toString()
-        val amountString = etAmount.text.toString().trim()
-        val currency = try {
-            spinnerCurrency.selectedItem?.toString() ?: "PHP"  // Default to PHP if null
-        } catch (e: Exception) {
-            Log.e("EditExpenseActivity", "Error getting selected currency: ${e.message}")
-            "PHP"  // Default to PHP on error
-        }
+        val amountStr = etAmount.text.toString().trim()
+        val currency = getSelectedCurrency()
         
-        // Validation
         if (subject.isEmpty()) {
             etSubject.error = "Subject cannot be empty"
             return
         }
         
-        if (amountString.isEmpty()) {
+        if (amountStr.isEmpty()) {
             etAmount.error = "Amount cannot be empty"
             return
         }
         
         val amount = try {
-            amountString.toDouble()
+            amountStr.toDouble()
         } catch (e: NumberFormatException) {
             etAmount.error = "Invalid amount format"
             return
@@ -276,28 +361,81 @@ class EditExpenseActivity : AppCompatActivity() {
             return
         }
         
-        val updatedExpense = Expense(
-            id = expenseId,
-            subject = subject,
-            category = category,
-            date = selectedDate,
-            amount = amount,
-            currency = currency
-        )
-        
         progressBar.visibility = View.VISIBLE
         
+        if (currency != userDefaultCurrency) {
+            if (tvCurrencyWarning != null) {
+                tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
+                tvCurrencyWarning.visibility = View.VISIBLE
+            }
+            
+            lifecycleScope.launch {
+                try {
+                    val token = sessionManager.getToken()
+                    if (token == null) {
+                        Toast.makeText(this@EditExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                        progressBar.visibility = View.GONE
+                        return@launch
+                    }
+                    
+                    val convertedAmount = CurrencyUtils.convertCurrency(
+                        amount, 
+                        currency, 
+                        userDefaultCurrency, 
+                        token
+                    )
+                    
+                    if (convertedAmount != null) {
+                        val updatedExpense = Expense(
+                            id = expenseId,
+                            subject = subject,
+                            category = category,
+                            date = selectedDate,
+                            amount = convertedAmount,
+                            currency = userDefaultCurrency,
+                            originalAmount = amount,
+                            originalCurrency = currency
+                        )
+                        saveExpenseToServer(updatedExpense)
+                    } else {
+                        val updatedExpense = Expense(
+                            id = expenseId,
+                            subject = subject,
+                            category = category,
+                            date = selectedDate,
+                            amount = amount,
+                            currency = currency
+                        )
+                        saveExpenseToServer(updatedExpense)
+                    }
+                } catch (e: Exception) {
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(this@EditExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            val updatedExpense = Expense(
+                id = expenseId,
+                subject = subject,
+                category = category,
+                date = selectedDate,
+                amount = amount,
+                currency = currency
+            )
+            saveExpenseToServer(updatedExpense)
+        }
+    }
+    
+    private fun saveExpenseToServer(updatedExpense: Expense) {
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken()
                 if (token == null) {
                     Toast.makeText(this@EditExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
                     progressBar.visibility = View.GONE
-                    finish()
                     return@launch
                 }
                 
-                // Convert the Expense to ExpenseRequest for API call
                 val expenseRequest = ExpenseRequest.fromExpense(updatedExpense)
                 val response = RetrofitClient.expenseApiService.updateExpense(expenseId, expenseRequest, "Bearer $token")
                 
@@ -305,23 +443,11 @@ class EditExpenseActivity : AppCompatActivity() {
                 
                 if (response.isSuccessful) {
                     Toast.makeText(this@EditExpenseActivity, "Expense updated successfully", Toast.LENGTH_SHORT).show()
-                    
-                    // Return updated data to calling activity
                     setResult(RESULT_OK)
                     finish()
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Unknown error"
                     Toast.makeText(this@EditExpenseActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
-                }
-                
-            } catch (e: HttpException) {
-                progressBar.visibility = View.GONE
-                if (e.code() == 401) {
-                    Toast.makeText(this@EditExpenseActivity, "Session expired. Please login again.", Toast.LENGTH_SHORT).show()
-                    sessionManager.clearSession()
-                    finish()
-                } else {
-                    Toast.makeText(this@EditExpenseActivity, "Failed to update expense: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
                 progressBar.visibility = View.GONE

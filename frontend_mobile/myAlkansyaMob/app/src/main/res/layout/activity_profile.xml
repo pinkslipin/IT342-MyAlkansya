@@ -180,19 +180,52 @@
                                 android:inputType="textEmailAddress" />
                         </com.google.android.material.textfield.TextInputLayout>
 
-                        <com.google.android.material.textfield.TextInputLayout
+                        <!-- Add warning text for OAuth users -->
+                        <TextView
+                            android:id="@+id/tvEmailWarning"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:hint="Preferred Currency"
-                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                            android:text="Email cannot be changed (OAuth account)"
+                            android:textColor="#B71C1C"
+                            android:background="#FFEBEE"
+                            android:padding="8dp"
+                            android:layout_marginBottom="8dp"
+                            android:visibility="gone" />
 
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/etCurrency"
+                        <!-- Currency Section -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Preferred Currency"
+                            android:textColor="@color/green"
+                            android:textStyle="bold"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="4dp" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilCurrency"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="8dp"
+                            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+
+                            <AutoCompleteTextView
+                                android:id="@+id/spinnerCurrency"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="text" />
+                                android:inputType="none"
+                                android:hint="Select Currency" />
                         </com.google.android.material.textfield.TextInputLayout>
+
+                        <TextView
+                            android:id="@+id/tvCurrencyInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Changing your currency will convert all your financial data."
+                            android:textColor="@color/warning_color"
+                            android:textStyle="italic"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="16dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"

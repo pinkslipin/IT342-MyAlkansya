@@ -1,6 +1,8 @@
 package com.example.myalkansyamobile.api
 
+import com.android.installreferrer.BuildConfig
 import com.google.gson.GsonBuilder
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -84,11 +86,54 @@ object RetrofitClient {
     // Create logging interceptor
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
+        
+        // Add special handling for deleted resources
+        if (BuildConfig.DEBUG) {
+            // Add custom response handling
+            redactHeader("Authorization")
+            redactHeader("Cookie")
+        }
+    }
+    
+    // Custom interceptor to properly handle error responses
+    private val errorInterceptor = Interceptor { chain ->
+        val request = chain.request()
+        val response = chain.proceed(request)
+        
+        // Log response details
+        val url = response.request.url.toString()
+        val code = response.code
+        val contentType = response.header("Content-Type") ?: "unknown"
+        
+        // If it's a failed DELETE and then we try to GET the same resource, we shouldn't log out
+        // This is a special case where we're handling the "resource not found after delete" situation
+        val isDeleteAftermath = request.method == "GET" && url.contains("/get") && 
+                              (code == 401 || code == 403 || code == 404)
+        
+        // Use safe call operator with  elvis operator to handle nullable return value
+        val extractedId = extractIdFromUrl(url)
+        if (isDeleteAftermath && extractedId != null && url.endsWith(extractedId)) {
+            // This is likely just attempting to access a deleted resource 
+            // Don't treat as an auth error
+            android.util.Log.d("RetrofitClient", "Resource not found after deletion: $url")
+        } else if (code == 401 || code == 403) {
+            // Only log true auth errors for debugging
+            android.util.Log.e("RetrofitClient", "Authentication issue detected - Code: $code, Content-Type: $contentType, URL: $url")
+        }
+        
+        response
+    }
+    
+    // Helper to extract ID from a URL like "/api/expenses/getExpense/3"
+    private fun extractIdFromUrl(url: String): String? {
+        val segments = url.split("/")
+        return if (segments.isNotEmpty()) segments.last() else null
     }
     
     // Configure OkHttpClient with timeout and logging
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(errorInterceptor)
         .addInterceptor { chain ->
             val request = chain.request()
             
@@ -142,6 +187,7 @@ object RetrofitClient {
     // Create Retrofit instance for analytics endpoints
     private val analyticsOkHttpClient = OkHttpClient.Builder()
         .addInterceptor(loggingInterceptor)
+        .addInterceptor(errorInterceptor)
         .addInterceptor { chain ->
             val request = chain.request()
             

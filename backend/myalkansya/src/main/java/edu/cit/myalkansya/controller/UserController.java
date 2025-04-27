@@ -40,6 +40,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 
 // Add this import with your other imports
 import edu.cit.myalkansya.dto.PasswordChangeRequest;
+import edu.cit.myalkansya.dto.ChangeCurrencyRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -517,5 +518,32 @@ public class UserController {
         if (filename.endsWith(".svg")) return "image/svg+xml";
         if (filename.endsWith(".webp")) return "image/webp";
         return "application/octet-stream"; // Default
+    }
+
+    @PostMapping("/changeCurrency")
+    public ResponseEntity<?> changeCurrency(@RequestHeader("Authorization") String token,
+                                            @RequestBody ChangeCurrencyRequest request) {
+        try {
+            // Extract user ID from token
+            String username = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+            UserEntity user = userRepository.findByEmail(username)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            // Perform the currency conversion
+            currencyConversionService.convertUserCurrency(
+                user.getUserId(), 
+                request.getOldCurrency(), 
+                request.getNewCurrency()
+            );
+            
+            // Save new currency preference to user
+            user.setCurrency(request.getNewCurrency());
+            UserEntity updatedUser = userRepository.save(user);
+            
+            return ResponseEntity.ok(updatedUser);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 }

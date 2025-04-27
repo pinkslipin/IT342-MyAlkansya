@@ -50,9 +50,9 @@ class IncomeRepository(private val apiService: IncomeApiService) {
         }
     }
 
-    suspend fun addIncome(income: Income, token: String): Resource<Income> = withContext(Dispatchers.IO) {
+    suspend fun addIncome(incomeRequest: IncomeRequest, token: String): Resource<Income> = withContext(Dispatchers.IO) {
         try {
-            val response = apiService.addIncome(income, "Bearer $token")
+            val response = apiService.addIncome("Bearer $token", incomeRequest)
             if (response.isSuccessful) {
                 response.body()?.let {
                     Resource.Success(it)

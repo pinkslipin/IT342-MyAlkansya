@@ -25,7 +25,7 @@ interface ExpenseApiService {
     suspend fun updateExpense(@Path("id") id: Int, @Body expense: ExpenseRequest, @Header("Authorization") token: String): Response<ExpenseResponse>
     
     @DELETE("api/expenses/deleteExpense/{id}")
-    suspend fun deleteExpense(@Path("id") id: Int, @Header("Authorization") token: String): Response<String>
+    suspend fun deleteExpense(@Path("id") id: Int, @Header("Authorization") token: String): Response<Void>
 }
 
 data class ExpenseResponse(
@@ -34,7 +34,9 @@ data class ExpenseResponse(
     val category: String = "",
     val date: String = "",
     val amount: Double = 0.0,
-    val currency: String = "PHP"
+    val currency: String = "PHP",
+    val originalAmount: Double? = null,
+    val originalCurrency: String? = null
 )
 
 

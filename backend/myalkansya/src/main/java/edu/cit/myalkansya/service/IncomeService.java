@@ -28,6 +28,20 @@ public class IncomeService {
                 .orElseThrow(() -> new NoSuchElementException("User with ID " + userId + " not found."));
         income.setUser(user);
         
+        // If original amount and currency are provided and different from main amount/currency,
+        // store them in the respective fields
+        if (income.getOriginalAmount() != null && income.getOriginalCurrency() != null) {
+            // Original values were already set in controller from the request
+        } else if (!user.getCurrency().equals(income.getCurrency())) {
+            // No original values but currency differs from user's currency
+            // Store the current values as original before they might be converted
+            income.setOriginalAmount(income.getAmount());
+            income.setOriginalCurrency(income.getCurrency());
+            
+            // No need to convert here as it should be done in frontend
+            // Just ensuring we have original values stored
+        }
+        
         // Save the income first
         IncomeEntity savedIncome = incomeRepository.save(income);
         

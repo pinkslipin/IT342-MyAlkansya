@@ -6,11 +6,8 @@
     <color name="green">#18864F</color>
 
     <!-- App theme colors -->
-    <color name="green_primary">#18864F</color>
     <color name="green_secondary">#4CAF50</color>
-    <color name="yellow_primary">#FFC107</color>
     <color name="bg_primary">#FEF6EA</color>
-    <color name="red">#DC3545</color>
 
     <color name="facebook_light_blue">#276BFF</color>
     <color name="primary_green">#2E8B57</color>
@@ -21,9 +18,29 @@
     <color name="colorPrimaryDark">#106b3e</color>
     <color name="colorAccent">#FFC107</color>
 
+    <!-- Added missing colors used in layout files -->
+    <color name="error_color">#DC3545</color>
+    <color name="info_background">#E3F2FD</color>
+    <color name="primary_dark">#106b3e</color>
+    <color name="warning_color">#FFC107</color>
+    <color name="green_700">#388E3C</color>
+    <color name="background_light">#FEF6EA</color>
+    
+    <!-- Add these missing text colors -->
+    <color name="primary_text">#212121</color>
+    <color name="secondary_text">#757575</color>
+
     <!-- Make sure these colors are defined -->
     <color name="purple_500">#6200EE</color>
     <color name="purple_700">#3700B3</color>
     <color name="teal_200">#03DAC5</color>
     <color name="teal_700">#018786</color>
+
+        <!-- MyAlkansya Colors (matching web frontend) -->
+    <color name="green_primary">#18864F</color>
+    <color name="yellow_primary">#FFC107</color>
+    <color name="background_cream">#FEF6EA</color>
+    <color name="light_green">#EDFBE9</color>
+    <color name="red">#FF5252</color>
+    <color name="grey">#757575</color>
 </resources>
