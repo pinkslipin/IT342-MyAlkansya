@@ -31,6 +31,23 @@ android {
         }
     }
     
+    // Add this packaging block to handle duplicate files
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0",
+                "META-INF/*.kotlin_module"
+            )
+        }
+    }
+    
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
@@ -82,8 +99,15 @@ dependencies {
     // Chart library for data visualization
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
     
-    // REPLACE Apache POI with Android-friendly CSV library
-    implementation("com.github.doyaaaaaken:kotlin-csv:1.9.2")  // Kotlin CSV library
+    // Google Sheets API dependencies
+    implementation("com.google.api-client:google-api-client-android:2.2.0")
+    implementation("com.google.apis:google-api-services-sheets:v4-rev20220927-2.0.0")
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.19.0")
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    
+    // Keep CSV library as fallback
+    implementation("com.github.doyaaaaaken:kotlin-csv:1.9.2")
 
     // UI components
     implementation ("androidx.constraintlayout:constraintlayout:2.1.4")

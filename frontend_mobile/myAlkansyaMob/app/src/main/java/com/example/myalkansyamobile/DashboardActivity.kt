@@ -22,6 +22,7 @@ import com.example.myalkansyamobile.api.MonthlySummaryResponse
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.api.SavingsGoalProgressResponse
 import com.example.myalkansyamobile.databinding.ActivityDashboardBinding
+import com.example.myalkansyamobile.ui.ExportActivity
 import com.example.myalkansyamobile.utils.ExportService
 import com.example.myalkansyamobile.utils.SessionManager
 import com.github.mikephil.charting.components.Legend
@@ -118,7 +119,9 @@ class DashboardActivity : AppCompatActivity() {
         }
 
         binding.btnExportData.setOnClickListener {
-            checkStoragePermission()
+            // Replace direct export call with navigation to Export Activity
+            val intent = Intent(this, ExportActivity::class.java)
+            startActivity(intent)
         }
 
         binding.btnBack.setOnClickListener {

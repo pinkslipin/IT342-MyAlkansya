@@ -1,5 +1,6 @@
 package com.example.myalkansyamobile.utils
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -20,13 +21,20 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Service class to handle exporting data to CSV files
+ * Service class to handle exporting financial data
+ * Primary export is now to Google Sheets with CSV as fallback
  */
 class ExportService(private val context: Context) {
+    private val sheetsHelper = GoogleSheetsHelper(context)
+    private val TAG = "ExportService"
+
+    // Request code for Google Sign-in
+    companion object {
+        const val RC_SIGN_IN = 9001
+    }
 
     /**
-     * Exports financial data to CSV files and shares them
-     * Uses generic Any type to accommodate different response types
+     * Exports financial data to Google Sheets if possible, otherwise falls back to CSV
      */
     suspend fun exportAndShareFinancialData(
         incomes: Any? = null,
@@ -35,6 +43,21 @@ class ExportService(private val context: Context) {
         savingsGoals: Any? = null,
         financialSummary: FinancialSummaryResponse? = null
     ) {
+        // Check if user is signed in with Google
+        if (sheetsHelper.isUserSignedIn()) {
+            // Try exporting to Google Sheets
+            val sheetsUrl = exportToGoogleSheets(
+                incomes, expenses, budgets, savingsGoals, financialSummary
+            )
+            
+            if (sheetsUrl != null) {
+                // Open the Google Sheet in browser
+                openGoogleSheet(sheetsUrl)
+                return
+            }
+        }
+        
+        // If Google Sheets export failed or user not signed in, fall back to CSV
         val uri = exportToCSV(incomes, expenses, budgets, savingsGoals, financialSummary)
         
         if (uri != null) {
@@ -47,10 +70,27 @@ class ExportService(private val context: Context) {
     }
 
     /**
-     * Exports financial data to CSV file
-     * @return URI of the created file or null if export failed
+     * Export data specifically to Google Sheets
+     * This method can throw GoogleSheetsHelper.SheetsPermissionRequiredException
+     * which contains an Intent that must be launched to get additional permissions
      */
-    private suspend fun exportToCSV(
+    suspend fun exportToGoogleSheets(
+        incomes: Any? = null,
+        expenses: Any? = null,
+        budgets: Any? = null,
+        savingsGoals: Any? = null,
+        financialSummary: FinancialSummaryResponse? = null
+    ): String? = withContext(Dispatchers.IO) {
+        // No try-catch here - let the exception propagate to the activity
+        sheetsHelper.createAndPopulateSheet(
+            incomes, expenses, budgets, savingsGoals, financialSummary
+        )
+    }
+
+    /**
+     * Export data specifically to CSV file
+     */
+    suspend fun exportToCSV(
         incomes: Any? = null,
         expenses: Any? = null,
         budgets: Any? = null,
@@ -310,16 +350,46 @@ class ExportService(private val context: Context) {
         } catch (e: Exception) {
             e.printStackTrace()
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "CSV Export failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
             null
         }
     }
+
+    /**
+     * Get Google Sign-in intent for activity to start
+     */
+    fun getGoogleSignInIntent(): Intent {
+        return sheetsHelper.getGoogleSignInIntent()
+    }
     
+    /**
+     * Check if user is signed into Google
+     */
+    fun isUserSignedInWithGoogle(): Boolean {
+        return sheetsHelper.isUserSignedIn()
+    }
+    
+    /**
+     * Opens a Google Sheet URL
+     */
+    private fun openGoogleSheet(url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+        
+        // Show success message
+        Toast.makeText(
+            context, 
+            "Financial data exported to Google Sheets", 
+            Toast.LENGTH_LONG
+        ).show()
+    }
+
     /**
      * Share the exported CSV file
      */
-    private fun shareCSVFile(uri: Uri) {
+    fun shareCSVFile(uri: Uri) {
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/csv"
             putExtra(Intent.EXTRA_STREAM, uri)

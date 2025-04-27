@@ -27,6 +27,7 @@ class SessionManager(context: Context) {
         const val IS_LOGGED_IN = "is_logged_in"
         const val HAS_ANALYTICS_ACCESS = "has_analytics_access"
         const val TOKEN_EXPIRY = "token_expiry"
+        const val KEY_EMAIL = "email"
     }
 
     // Create full login session
@@ -269,6 +270,14 @@ class SessionManager(context: Context) {
     // Fetch user email
     fun getUserEmail(): String? {
         return prefs.getString(USER_EMAIL, null)
+    }
+
+    /**
+     * Retrieve the user's email from shared preferences
+     * @return The user's email or null if not found
+     */
+    fun fetchUserEmail(): String? {
+        return prefs.getString(KEY_EMAIL, null)
     }
 
     // Save user ID
