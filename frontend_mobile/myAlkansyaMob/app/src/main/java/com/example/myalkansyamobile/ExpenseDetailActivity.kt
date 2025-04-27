@@ -2,6 +2,7 @@ package com.example.myalkansyamobile
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
@@ -152,10 +153,19 @@ class ExpenseDetailActivity : AppCompatActivity() {
     }
     
     private fun deleteExpense() {
+        // Show a loading dialog first
+        val loadingDialog = AlertDialog.Builder(this)
+            .setTitle("Deleting Expense")
+            .setMessage("Please wait...")
+            .setCancelable(false)
+            .create()
+        loadingDialog.show()
+        
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken()
                 if (token == null) {
+                    loadingDialog.dismiss()
                     Toast.makeText(this@ExpenseDetailActivity, "Authentication required", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
@@ -164,16 +174,28 @@ class ExpenseDetailActivity : AppCompatActivity() {
                     RetrofitClient.expenseApiService.deleteExpense(expenseId, "Bearer $token")
                 }
                 
+                // Immediately dismiss the dialog
+                loadingDialog.dismiss()
+                
                 if (response.isSuccessful) {
+                    // Show success toast
                     Toast.makeText(this@ExpenseDetailActivity, "Expense deleted successfully", Toast.LENGTH_SHORT).show()
+                    
+                    // Set result and immediately finish the activity
                     setResult(RESULT_OK)
                     finish()
                 } else {
-                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                    Toast.makeText(this@ExpenseDetailActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                    // Handle error case with better message extraction
+                    try {
+                        val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                        Toast.makeText(this@ExpenseDetailActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(this@ExpenseDetailActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 
             } catch (e: Exception) {
+                loadingDialog.dismiss()
                 Toast.makeText(this@ExpenseDetailActivity, "Error deleting expense: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
@@ -189,9 +211,17 @@ class ExpenseDetailActivity : AppCompatActivity() {
     
     override fun onResume() {
         super.onResume()
-        // Reload expense details when coming back to this activity
+        // Only reload expense details if we didn't just delete the expense
+        // and if we have a valid expense ID
         if (expenseId != 0) {
-            loadExpenseDetails()
+            // We need to be careful not to try loading a deleted expense
+            try {
+                loadExpenseDetails()
+            } catch (e: Exception) {
+                // If this fails, don't crash - just finish the activity
+                Log.e("ExpenseDetailActivity", "Error loading expense details: ${e.message}")
+                finish()
+            }
         }
     }
     

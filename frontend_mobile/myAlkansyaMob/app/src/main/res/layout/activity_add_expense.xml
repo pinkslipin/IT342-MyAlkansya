@@ -81,6 +81,27 @@
                 android:spinnerMode="dropdown" />
         </LinearLayout>
 
+        <!-- Currency Conversion Info -->
+        <TextView
+            android:id="@+id/tvConversionInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/green_700"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tvCurrencyWarning"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/warning_color"
+            android:textSize="14sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
+
         <!-- Buttons -->
         <Button
             android:id="@+id/btnAddExpense"

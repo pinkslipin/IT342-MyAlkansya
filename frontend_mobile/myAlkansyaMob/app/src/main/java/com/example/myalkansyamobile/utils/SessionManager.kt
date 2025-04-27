@@ -5,8 +5,10 @@ import android.content.SharedPreferences
 import android.util.Log
 import android.util.Base64
 import com.example.myalkansyamobile.api.RetrofitClient
+import com.example.myalkansyamobile.api.ChangeCurrencyRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 
 class SessionManager(context: Context) {
     private var prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -318,6 +320,40 @@ class SessionManager(context: Context) {
         return prefs.getString(USER_CURRENCY, "PHP")  // Default to PHP instead of USD
     }
 
+    /**
+     * Updates the user's preferred currency and triggers a backend currency conversion
+     * 
+     * @param newCurrency The new currency code
+     * @return true if successful, false otherwise
+     */
+    suspend fun updateCurrency(newCurrency: String): Boolean {
+        val oldCurrency = getCurrency() ?: "USD"
+        // Skip if no change
+        if (oldCurrency == newCurrency) return true
+        
+        try {
+            val token = getToken() ?: return false
+            
+            // Call backend to convert all financial data
+            val response = withContext(Dispatchers.IO) {
+                RetrofitClient.userApiService.changeCurrency(
+                    "Bearer $token",
+                    ChangeCurrencyRequest(newCurrency, oldCurrency)
+                )
+            }
+            
+            if (response.isSuccessful) {
+                // Update locally stored currency preference
+                prefs.edit().putString(USER_CURRENCY, newCurrency).apply()
+                return true
+            }
+            return false
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
     // Save profile picture URL
     fun saveProfilePicture(pictureUrl: String) {
         editor.putString(USER_PROFILE_PIC, pictureUrl)
@@ -338,5 +374,31 @@ class SessionManager(context: Context) {
     fun clearSession() {
         editor.clear()
         editor.apply()
+    }
+
+    /**
+     * Determines if an error should be treated as an authentication error
+     */
+    fun isAuthError(response: Response<*>): Boolean {
+        // Check for 401 Unauthorized or 403 Forbidden
+        if (response.code() == 401 || response.code() == 403) {
+            return true
+        }
+        
+        // Check error message for auth-related keywords
+        val errorBody = response.errorBody()?.string()?.lowercase() ?: ""
+        return errorBody.contains("authentication required") || 
+               errorBody.contains("unauthorized") ||
+               errorBody.contains("unauthenticated") ||
+               errorBody.contains("session expired") ||
+               errorBody.contains("invalid token") ||
+               errorBody.contains("not logged in")
+    }
+
+    /**
+     * Handle 404 Not Found errors differently from authentication errors 
+     */
+    fun isResourceNotFound(response: Response<*>): Boolean {
+        return response.code() == 404
     }
 }

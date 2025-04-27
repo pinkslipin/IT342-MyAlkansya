@@ -201,4 +201,46 @@ class ProfileViewModel : ViewModel() {
         
         return tempFile
     }
+
+    // Method to update profile data without triggering LiveData
+    suspend fun updateProfileData(
+        sessionManager: SessionManager,
+        firstname: String,
+        lastname: String,
+        email: String,
+        currency: String
+    ): Boolean {
+        return try {
+            val token = sessionManager.getToken() ?: return false
+            
+            val profileUpdateRequest = ProfileUpdateRequest(
+                firstname = firstname,
+                lastname = lastname, 
+                email = email,
+                currency = currency
+            )
+            
+            val response = RetrofitClient.userApiService.updateUser(
+                "Bearer $token", 
+                profileUpdateRequest
+            ).execute()
+            
+            if (response.isSuccessful && response.body() != null) {
+                val updatedProfile = response.body()!!
+                
+                // Update session data
+                sessionManager.saveFirstName(updatedProfile.firstname)
+                sessionManager.saveLastName(updatedProfile.lastname)
+                sessionManager.saveEmail(updatedProfile.email)
+                sessionManager.saveCurrency(updatedProfile.currency ?: "USD")
+                
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ProfileViewModel", "Error updating profile: ${e.message}", e)
+            false
+        }
+    }
 }

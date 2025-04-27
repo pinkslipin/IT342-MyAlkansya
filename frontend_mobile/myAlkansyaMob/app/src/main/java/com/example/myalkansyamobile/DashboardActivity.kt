@@ -497,6 +497,7 @@ class DashboardActivity : AppCompatActivity() {
             currencyFormat.currency = Currency.getInstance("USD")
         }
 
+        // Format all financial values using user's preferred currency
         binding.tvTotalIncome.text = currencyFormat.format(summary.totalIncome)
         binding.tvTotalExpenses.text = currencyFormat.format(summary.totalExpenses)
         binding.tvTotalBudget.text = currencyFormat.format(summary.totalBudget)

@@ -7,6 +7,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myalkansyamobile.R
 import com.example.myalkansyamobile.model.Expense
+import com.example.myalkansyamobile.utils.CurrencyUtils
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -17,6 +18,7 @@ class ExpenseAdapter(private val expenseList: List<Expense>, private val onItemC
         val categoryTextView: TextView = itemView.findViewById(R.id.txtCategory)
         val dateTextView: TextView = itemView.findViewById(R.id.txtDate)
         val amountTextView: TextView = itemView.findViewById(R.id.txtAmount)
+        val originalAmountTextView: TextView? = itemView.findViewById(R.id.txtOriginalAmount) // May be null
 
         init {
             itemView.setOnClickListener {
@@ -37,9 +39,23 @@ class ExpenseAdapter(private val expenseList: List<Expense>, private val onItemC
         holder.dateTextView.text = expense.date.toString()
         
         // Format the amount with currency
-        val formattedAmount = NumberFormat.getCurrencyInstance(Locale.US).format(expense.amount)
-            .replace("$", "${expense.currency} ")  // Replace $ with the actual currency
+        val formattedAmount = CurrencyUtils.formatWithCurrency(expense.amount, expense.currency)
         holder.amountTextView.text = formattedAmount
+        
+        // Show original amount if available
+        if (holder.originalAmountTextView != null && 
+            expense.originalAmount != null && 
+            expense.originalCurrency != null) {
+            
+            holder.originalAmountTextView.visibility = View.VISIBLE
+            val formattedOriginal = CurrencyUtils.formatWithCurrency(
+                expense.originalAmount, 
+                expense.originalCurrency
+            )
+            holder.originalAmountTextView.text = "($formattedOriginal)"
+        } else if (holder.originalAmountTextView != null) {
+            holder.originalAmountTextView.visibility = View.GONE
+        }
     }
 
     override fun getItemCount(): Int {

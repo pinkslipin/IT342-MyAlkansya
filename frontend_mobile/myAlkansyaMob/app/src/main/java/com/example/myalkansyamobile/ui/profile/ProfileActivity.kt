@@ -1,6 +1,7 @@
 package com.example.myalkansyamobile.ui.profile
 
 import android.app.Activity
+import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -12,6 +13,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -22,6 +24,7 @@ import com.example.myalkansyamobile.UserResponse
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.databinding.ActivityProfileBinding
 import com.example.myalkansyamobile.model.ProfileModel
+import com.example.myalkansyamobile.model.ProfileUpdateRequest
 import com.example.myalkansyamobile.utils.SessionManager
 import com.example.myalkansyamobile.viewmodel.ProfileViewModel
 import kotlinx.coroutines.Dispatchers
@@ -285,7 +288,7 @@ class ProfileActivity : AppCompatActivity() {
         val email = binding.etEmail.text.toString().trim()
 
         // Get the selected currency's code part (e.g., "USD" from "USD - US Dollar")
-        val selectedCurrencyText = currencyDropdown.text.toString()
+        val selectedCurrencyText = binding.spinnerCurrency.text.toString()
         val currencyCode = selectedCurrencyText.split(" - ").firstOrNull() ?: "USD"
 
         // Validate inputs
@@ -301,14 +304,179 @@ class ProfileActivity : AppCompatActivity() {
             email // Use the edited email
         }
 
-        // Update profile via ViewModel
+        // Check if currency has changed - compare with session manager's stored currency
+        val currentCurrency = sessionManager.getCurrency() ?: "USD"
+        val isCurrencyChanged = currencyCode != currentCurrency
+        
+        if (isCurrencyChanged) {
+            // Show confirmation dialog for currency change
+            showCurrencyChangeConfirmation(firstName, lastName, emailToUpdate, currencyCode)
+        } else {
+            // Just update profile without currency conversion
+            updateProfileWithoutCurrencyConversion(firstName, lastName, emailToUpdate, currencyCode)
+        }
+    }
+    
+    private fun showCurrencyChangeConfirmation(
+        firstName: String,
+        lastName: String,
+        email: String,
+        newCurrency: String
+    ) {
+        val currentCurrency = sessionManager.getCurrency() ?: "USD"
+        
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Currency Conversion")
+            .setMessage("Changing your currency from $currentCurrency to $newCurrency will convert all your financial data. This may take a moment. Continue?")
+            .setPositiveButton("Convert") { _, _ ->
+                performCurrencyConversionAndUpdate(firstName, lastName, email, newCurrency)
+            }
+            .setNegativeButton("Cancel") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .create()
+            
+        dialog.show()
+    }
+    
+    private fun performCurrencyConversionAndUpdate(
+        firstName: String,
+        lastName: String,
+        email: String,
+        newCurrency: String
+    ) {
+        val progressDialog = ProgressDialog(this).apply {
+            setTitle("Updating Currency")
+            setMessage("Converting all your financial data to $newCurrency. This may take a moment...")
+            setCancelable(false)
+            show()
+        }
+        
+        lifecycleScope.launch {
+            try {
+                // First update the user profile data without changing currency
+                val profileUpdateSuccess = withContext(Dispatchers.IO) {
+                    try {
+                        // Just update user profile info first
+                        val token = sessionManager.getToken() ?: return@withContext false
+                        val updateRequest = ProfileUpdateRequest(
+                            firstname = firstName,
+                            lastname = lastName,
+                            email = email,
+                            // Keep current currency until conversion is done
+                            currency = sessionManager.getCurrency() ?: "USD"
+                        )
+                        
+                        val response = RetrofitClient.userApiService.updateUser(
+                            "Bearer $token",
+                            updateRequest
+                        ).execute()
+                        
+                        response.isSuccessful && response.body() != null
+                    } catch (e: Exception) {
+                        Log.e("ProfileActivity", "Error updating user data: ${e.message}", e)
+                        false
+                    }
+                }
+                
+                if (!profileUpdateSuccess) {
+                    progressDialog.dismiss()
+                    Toast.makeText(
+                        this@ProfileActivity,
+                        "Failed to update profile information. Please try again.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return@launch
+                }
+                
+                // Then perform the currency conversion using SessionManager
+                val conversionSuccess = withContext(Dispatchers.IO) {
+                    sessionManager.updateCurrency(newCurrency)
+                }
+                
+                progressDialog.dismiss()
+                
+                if (conversionSuccess) {
+                    Toast.makeText(
+                        this@ProfileActivity,
+                        "Profile updated and all financial data converted to $newCurrency.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    
+                    // Refresh the profile data
+                    loadProfileData()
+                    
+                    // Return to view mode
+                    toggleEditMode(false)
+                    
+                    // Set result to refresh data in other activities
+                    setResult(Activity.RESULT_OK)
+                } else {
+                    Toast.makeText(
+                        this@ProfileActivity,
+                        "Profile updated but currency conversion failed. Please try from Settings.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    
+                    // Refresh profile data anyway
+                    loadProfileData()
+                    
+                    // Return to view mode
+                    toggleEditMode(false)
+                }
+            } catch (e: Exception) {
+                progressDialog.dismiss()
+                Log.e("ProfileActivity", "Currency conversion error: ${e.message}", e)
+                
+                Toast.makeText(
+                    this@ProfileActivity,
+                    "Error: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
+    private fun updateProfileWithoutCurrencyConversion(
+        firstName: String,
+        lastName: String,
+        email: String,
+        currency: String
+    ) {
+        // Show progress dialog
+        val progressDialog = ProgressDialog(this)
+        progressDialog.setMessage("Updating profile...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+        
+        // Update profile via ViewModel - no currency conversion
         viewModel.updateProfile(
             sessionManager = sessionManager,
             firstname = firstName,
             lastname = lastName,
-            email = emailToUpdate,
-            currency = currencyCode
+            email = email,
+            currency = currency
         )
+        
+        // Handle result via observer
+        viewModel.updateSuccess.observe(this) { success ->
+            progressDialog.dismiss()
+            if (success) {
+                Toast.makeText(
+                    this@ProfileActivity,
+                    "Profile updated successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+                loadProfileData()
+                toggleEditMode(false)
+            } else {
+                Toast.makeText(
+                    this@ProfileActivity,
+                    "Failed to update profile. Please try again.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 
     private fun setupCurrencyDropdown() {

@@ -1,17 +1,25 @@
 package com.example.myalkansyamobile.model
 
+import com.google.gson.annotations.SerializedName
 import com.example.myalkansyamobile.api.ExpenseResponse
 import java.io.Serializable
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 data class Expense(
-    val id: Int = 0,
-    var subject: String = "",
-    var category: String = "",
-    var date: LocalDate = LocalDate.now(),
-    var amount: Double = 0.0,
-    var currency: String = "PHP"
+    val id: Int,
+    val subject: String,
+    val category: String,
+    val date: LocalDate,
+    val amount: Double,
+    val currency: String,
+    
+    // Add these fields to support preferred currency conversion
+    @SerializedName("originalAmount")
+    val originalAmount: Double? = null,
+    
+    @SerializedName("originalCurrency")
+    val originalCurrency: String? = null
 ) : Serializable {
     // For API serialization
     fun getDateAsString(): String {

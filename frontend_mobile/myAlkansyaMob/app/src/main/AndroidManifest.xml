@@ -182,6 +182,16 @@
             android:exported="false"
             android:label="Currency Converter" />
 
+        <!-- Settings Activity -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:parentActivityName=".HomePageActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".HomePageActivity" />
+        </activity>
+
         <!-- File Provider Declaration -->
         <provider
             android:name="androidx.core.content.FileProvider"

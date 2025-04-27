@@ -79,6 +79,8 @@ class HomePageActivity : AppCompatActivity() {
     private var budgetCategories: List<String> = listOf()
     private var userCurrency: String = "PHP" // Default currency
 
+    private val SETTINGS_REQUEST_CODE = 1001
+
     // Create API services
     private val userApiService: UserApiService
     private val expenseApiService: ExpenseApiService
@@ -192,6 +194,14 @@ class HomePageActivity : AppCompatActivity() {
                 Log.d("HomePageActivity", "User name appears to have changed - refreshing data")
                 fetchUserData()
             }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == SETTINGS_REQUEST_CODE && resultCode == RESULT_OK) {
+            // Currency was changed - reload all data
+            fetchUserData()
         }
     }
 

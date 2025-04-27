@@ -22,7 +22,7 @@
     <color name="error_color">#DC3545</color>
     <color name="info_background">#E3F2FD</color>
     <color name="primary_dark">#106b3e</color>
-    <color name="warning_color">#FF9800</color>
+    <color name="warning_color">#FFC107</color>
     <color name="green_700">#388E3C</color>
     <color name="background_light">#FEF6EA</color>
     

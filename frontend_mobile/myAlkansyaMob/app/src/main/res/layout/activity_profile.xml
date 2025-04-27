@@ -192,12 +192,21 @@
                             android:layout_marginBottom="8dp"
                             android:visibility="gone" />
 
+                        <!-- Currency Section -->
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Preferred Currency"
+                            android:textColor="@color/green"
+                            android:textStyle="bold"
+                            android:layout_marginTop="16dp"
+                            android:layout_marginBottom="4dp" />
+
                         <com.google.android.material.textfield.TextInputLayout
                             android:id="@+id/tilCurrency"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="16dp"
-                            android:hint="Preferred Currency"
+                            android:layout_marginBottom="8dp"
                             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
 
                             <AutoCompleteTextView
@@ -205,8 +214,18 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:inputType="none"
-                                android:focusable="false"/>
+                                android:hint="Select Currency" />
                         </com.google.android.material.textfield.TextInputLayout>
+
+                        <TextView
+                            android:id="@+id/tvCurrencyInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Changing your currency will convert all your financial data."
+                            android:textColor="@color/warning_color"
+                            android:textStyle="italic"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="16dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
