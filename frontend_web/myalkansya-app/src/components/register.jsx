@@ -38,7 +38,7 @@ const Register = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:8080/api/users/register", {
+      const response = await axios.post("https://it-342-my-alkansya-gilt.vercel.app/api/users/register", {
         firstname,
         lastname,
         email,
@@ -62,14 +62,14 @@ const Register = () => {
 
   const handleGoogleSignUp = () => {
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `http://localhost:8080/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
+    window.location.href = `https://it-342-my-alkansya-gilt.vercel.app/oauth2/authorization/google?redirect_uri=${encodeURIComponent(
       window.location.origin
     )}`;
   };
 
   const handleFacebookSignUp = () => {
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `http://localhost:8080/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(
+    window.location.href = `https://it-342-my-alkansya-gilt.vercel.app/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(
       window.location.origin
     )}`;
   };
