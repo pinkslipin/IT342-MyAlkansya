@@ -153,7 +153,7 @@ export const getCurrencyEmoji = (code) => {
 export const fetchAvailableCurrencies = async (setAvailableCurrencies) => {
   try {
     console.log("Fetching available currencies...");
-    const response = await fetch("http://localhost:8080/api/currency/rates/USD", {
+    const response = await fetch("https://myalkansya-sia.as.r.appspot.com/api/currency/rates/USD", {
       headers: { 
         'Accept': 'application/json'
       }

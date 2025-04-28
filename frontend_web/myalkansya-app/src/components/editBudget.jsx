@@ -38,7 +38,7 @@ const EditBudget = () => {
         };
 
         // Fetch budget data
-        const response = await axios.get(`http://localhost:8080/api/budgets/${budgetId}`, config);
+        const response = await axios.get(`https://myalkansya-sia.as.r.appspot.com/api/budgets/${budgetId}`, config);
         
         // Format numeric values to 2 decimal places when setting initial data
         const data = response.data;
@@ -112,7 +112,7 @@ const EditBudget = () => {
         totalSpent: parseFloat(formData.totalSpent || 0)
       };
 
-      await axios.put(`http://localhost:8080/api/budgets/update/${budgetId}`, submissionData, config);
+      await axios.put(`https://myalkansya-sia.as.r.appspot.com/api/budgets/update/${budgetId}`, submissionData, config);
       navigate("/budget"); // Redirect to the Budget page after successful update
     } catch (err) {
       console.error("Error editing budget:", err);
@@ -142,7 +142,7 @@ const EditBudget = () => {
         },
       };
 
-      await axios.delete(`http://localhost:8080/api/budgets/delete/${budgetId}`, config);
+      await axios.delete(`https://myalkansya-sia.as.r.appspot.com/api/budgets/delete/${budgetId}`, config);
       navigate("/budget"); // Redirect to the Budget page after successful deletion
     } catch (err) {
       console.error("Error deleting budget:", err);

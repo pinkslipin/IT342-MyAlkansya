@@ -82,7 +82,7 @@ const CurrencyConverter = () => {
   const [conversionData, setConversionData] = useState(null);
 
   // API base URL - adjust this to match your backend location
-  const API_BASE_URL = "http://localhost:8080";
+  const API_BASE_URL = "https://myalkansya-sia.as.r.appspot.com";
 
   // Fetch available currencies when component mounts
   useEffect(() => {

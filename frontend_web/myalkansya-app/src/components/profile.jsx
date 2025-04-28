@@ -81,7 +81,7 @@ const Profile = () => {
         return;
       }
 
-      const response = await axios.get("http://localhost:8080/api/users/me", {
+      const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       
@@ -107,7 +107,7 @@ const Profile = () => {
         if (userData.profilePicture.startsWith('http')) {
           setProfileImage(userData.profilePicture);
         } else {
-          const baseUrl = "http://localhost:8080";
+          const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
           const path = userData.profilePicture.startsWith('/') 
             ? userData.profilePicture 
             : `/${userData.profilePicture}`;
@@ -193,7 +193,7 @@ const Profile = () => {
       }
 
       const response = await axios.put(
-        "http://localhost:8080/api/users/update",
+        "https://myalkansya-sia.as.r.appspot.com/api/users/update",
         updatedData,
         {
           headers: { 
@@ -259,7 +259,7 @@ const Profile = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       
-      await axios.put("http://localhost:8080/api/users/change-password", 
+      await axios.put("https://myalkansya-sia.as.r.appspot.com/api/users/change-password", 
         {
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword
@@ -322,7 +322,7 @@ const Profile = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const response = await axios.post(
-        "http://localhost:8080/api/users/uploadProfilePicture",
+        "https://myalkansya-sia.as.r.appspot.com/api/users/uploadProfilePicture",
         formData,
         {
           headers: {
@@ -336,7 +336,7 @@ const Profile = () => {
         if (response.data.profilePicture.startsWith('http')) {
           setProfileImage(response.data.profilePicture);
         } else {
-          const baseUrl = "http://localhost:8080";
+          const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
           const path = response.data.profilePicture.startsWith('/') 
             ? response.data.profilePicture 
             : `/${response.data.profilePicture}`;

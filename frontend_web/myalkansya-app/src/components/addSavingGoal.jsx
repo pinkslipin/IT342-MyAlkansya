@@ -35,7 +35,7 @@ const AddSavingGoal = () => {
       }
 
       console.log("Fetching user profile data...");
-      const response = await axios.get("http://localhost:8080/api/users/me", {
+      const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -91,7 +91,7 @@ const AddSavingGoal = () => {
       console.log(`Converting ${amount} from ${fromCurrency} to ${toCurrency}`);
       
       const response = await axios.get(
-        `http://localhost:8080/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
+        `https://myalkansya-sia.as.r.appspot.com/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
         {
           headers: { Authorization: `Bearer ${authToken}` }
         }
@@ -274,7 +274,7 @@ const AddSavingGoal = () => {
         },
       };
 
-      await axios.post("http://localhost:8080/api/savings-goals/postSavingsGoal", submissionData, config);
+      await axios.post("https://myalkansya-sia.as.r.appspot.com/api/savings-goals/postSavingsGoal", submissionData, config);
       navigate("/savingsgoal"); // Redirect to the Savings Goal page after successful addition
     } catch (err) {
       console.error("Error adding savings goal:", err);

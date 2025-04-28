@@ -12,7 +12,7 @@ const SavingsGoal = () => {
   const [itemsPerPage] = useState(8); // Set to 10 items per page
   const navigate = useNavigate();
 
-  const apiUrl = "http://localhost:8080/api/savings-goals";
+  const apiUrl = "https://myalkansya-sia.as.r.appspot.com/api/savings-goals";
 
   // Fetch all savings goals
   const fetchSavingsGoals = async () => {

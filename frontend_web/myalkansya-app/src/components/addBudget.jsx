@@ -34,7 +34,7 @@ const AddBudget = () => {
       }
 
       console.log("Fetching user profile data...");
-      const response = await axios.get("http://localhost:8080/api/users/me", {
+      const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -88,7 +88,7 @@ const AddBudget = () => {
       const authToken = localStorage.getItem("authToken");
       
       const response = await axios.get(
-        `http://localhost:8080/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
+        `https://myalkansya-sia.as.r.appspot.com/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
         {
           headers: { Authorization: `Bearer ${authToken}` }
         }
@@ -223,7 +223,7 @@ const AddBudget = () => {
         },
       };
 
-      await axios.post("http://localhost:8080/api/budgets/create", submissionData, config);
+      await axios.post("https://myalkansya-sia.as.r.appspot.com/api/budgets/create", submissionData, config);
       navigate("/budget"); // Redirect to the Budget page after successful addition
     } catch (err) {
       console.error("Error adding budget:", err);

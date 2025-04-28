@@ -33,7 +33,7 @@ const AddIncome = () => {
       }
 
       console.log("Fetching user profile data...");
-      const response = await axios.get("http://localhost:8080/api/users/me", {
+      const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -85,7 +85,7 @@ const AddIncome = () => {
       const authToken = localStorage.getItem("authToken");
       
       const response = await axios.get(
-        `http://localhost:8080/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
+        `https://myalkansya-sia.as.r.appspot.com/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
         {
           headers: { Authorization: `Bearer ${authToken}` }
         }
@@ -220,7 +220,7 @@ const AddIncome = () => {
         },
       };
 
-      await axios.post("http://localhost:8080/api/incomes/postIncome", submissionData, config);
+      await axios.post("https://myalkansya-sia.as.r.appspot.com/api/incomes/postIncome", submissionData, config);
       navigate("/income"); // Redirect to the Income page after successful addition
     } catch (err) {
       console.error("Error adding income:", err);
