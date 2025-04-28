@@ -1,7 +1,12 @@
 package edu.cit.myalkansya.security;
 
-import edu.cit.myalkansya.entity.UserEntity;
-import edu.cit.myalkansya.repository.UserRepository;
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Optional;
+import java.util.logging.Logger;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
@@ -9,15 +14,11 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
+import edu.cit.myalkansya.entity.UserEntity;
+import edu.cit.myalkansya.repository.UserRepository;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Logger;
 
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -77,7 +78,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             
             // If still no redirect_uri, fallback to default frontend URL
             if (redirectUri == null || redirectUri.isEmpty()) {
-                redirectUri = "https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app"; // Default frontend URL
+                if ("google".equals(provider)) {
+                    redirectUri = "https://myalkansya-sia.as.r.appspot.com/login/oauth2/code/google";
+                } else if ("facebook".equals(provider)) {
+                    redirectUri = "https://myalkansya-sia.as.r.appspot.com/login/oauth2/code/facebook";
+                } else {
+                    redirectUri = "https://myalkansya-sia.as.r.appspot.com"; // Default fallback
+                }
             }
             
             // Clean up any trailing slashes and add a token parameter
