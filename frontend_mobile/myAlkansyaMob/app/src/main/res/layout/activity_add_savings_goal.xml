@@ -109,10 +109,22 @@
                         android:layout_height="match_parent"
                         android:layout_marginStart="8dp"
                         android:background="@drawable/spinner_background"
-                        android:entries="@array/currency_options"
                         android:paddingStart="12dp"
                         android:paddingEnd="12dp" />
                 </LinearLayout>
+
+                <!-- Currency Warning -->
+                <TextView
+                    android:id="@+id/tvCurrencyWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#FFA500"
+                    android:text="Note: This will be converted to your default currency"
+                    android:textStyle="italic"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <!-- Current Amount -->
                 <TextView
@@ -158,6 +170,25 @@
                     android:drawableEnd="@drawable/ic_calendar"
                     android:drawablePadding="8dp"
                     android:layout_marginBottom="28dp" />
+
+                <!-- Error Message -->
+                <TextView
+                    android:id="@+id/tvError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="#FF0000"
+                    android:visibility="gone"
+                    tools:text="Error message here" />
+
+                <!-- Progress Bar -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:visibility="gone"
+                    android:indeterminateTint="#18864F" />
 
                 <!-- Save Button -->
                 <Button

@@ -2,6 +2,7 @@ package com.example.myalkansyamobile
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
@@ -13,23 +14,35 @@ import com.example.myalkansyamobile.adapters.BudgetAdapter
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.databinding.ActivityBudgetListBinding
 import com.example.myalkansyamobile.model.Budget
+import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.SessionManager
 import kotlinx.coroutines.launch
 import java.util.*
 
 class BudgetActivity : AppCompatActivity() {
     private lateinit var binding: ActivityBudgetListBinding
+    private lateinit var adapter: BudgetAdapter
     private lateinit var sessionManager: SessionManager
-    private lateinit var budgetAdapter: BudgetAdapter
-    private var currentPage = 1
-    private var itemsPerPage = 10
-    private val budgets = mutableListOf<Budget>()
+    private var userDefaultCurrency = "PHP"
+    
+    private val budgetList = mutableListOf<Budget>()
+    private val displayBudgetList = mutableListOf<Budget>()
+    
+    private val months = arrayOf(
+        "All Months", "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    )
     
     private val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    private val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1 // January is 0
+    private val years = arrayOf(
+        "All Years",
+        (currentYear - 1).toString(),
+        currentYear.toString(),
+        (currentYear + 1).toString()
+    )
     
-    private var selectedMonth = currentMonth
-    private var selectedYear = currentYear
+    private var filterMonth = 0 // 0 means all months
+    private var filterYear = 0 // 0 means all years
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,218 +50,206 @@ class BudgetActivity : AppCompatActivity() {
         setContentView(binding.root)
         
         sessionManager = SessionManager(this)
+        userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         
+        setupUI()
         setupRecyclerView()
-        setupFilterSpinners()
-        setupAddButton()
-        setupPagination()
-        setupBackNavigation()
-        
-        // Initial data load
         fetchBudgets()
     }
     
-    private fun setupRecyclerView() {
-        budgetAdapter = BudgetAdapter(budgets) { budget ->
-            // Handle edit click
-            val intent = Intent(this, EditBudgetActivity::class.java)
-            intent.putExtra("BUDGET_ID", budget.id)
-            startActivity(intent)
+    private fun setupUI() {
+        // Set up back button
+        binding.btnBack.setOnClickListener {
+            finish()
         }
         
-        binding.recyclerBudgets.apply {
-            layoutManager = LinearLayoutManager(this@BudgetActivity)
-            adapter = budgetAdapter
+        // Set up add budget button
+        binding.btnAddBudget.setOnClickListener {
+            startActivity(Intent(this, AddBudgetActivity::class.java))
         }
-    }
-    
-    private fun setupFilterSpinners() {
-        // Month spinner
-        val months = arrayOf(
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        )
         
+        // Set up month spinner
         val monthAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, months)
         monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerMonth.adapter = monthAdapter
-        binding.spinnerMonth.setSelection(currentMonth - 1) // Set to current month (0-indexed)
         
-        // Year spinner
-        val years = arrayOf(
-            (currentYear - 1).toString(),
-            currentYear.toString(),
-            (currentYear + 1).toString(),
-            (currentYear + 2).toString()
-        )
+        // Default to current month
+        val currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+        binding.spinnerMonth.setSelection(currentMonth)
+        filterMonth = currentMonth
         
+        binding.spinnerMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                filterMonth = position
+                applyFilters()
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        
+        // Set up year spinner
         val yearAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, years)
         yearAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.spinnerYear.adapter = yearAdapter
-        binding.spinnerYear.setSelection(1) // Set to current year
         
-        // Set listeners
-        binding.spinnerMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedMonth = position + 1 // Months are 1-indexed
-                fetchBudgets()
-            }
-            
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
+        // Default to current year
+        binding.spinnerYear.setSelection(2) // Current year is at index 2
+        filterYear = currentYear
         
         binding.spinnerYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedYear = years[position].toInt()
-                fetchBudgets()
+                filterYear = if (position == 0) 0 else years[position].toInt()
+                applyFilters()
             }
             
             override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
     
-    private fun setupAddButton() {
-        binding.btnAddBudget.setOnClickListener {
-            val intent = Intent(this, AddBudgetActivity::class.java)
-            startActivity(intent)
-        }
-    }
-    
-    private fun setupPagination() {
-        binding.btnPrevPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage--
-                updatePaginationUI()
-                displayCurrentPageItems()
-            }
-        }
+    private fun setupRecyclerView() {
+        adapter = BudgetAdapter(
+            displayBudgetList,
+            { budget -> // Click listener for edit
+                val intent = Intent(this, EditBudgetActivity::class.java)
+                intent.putExtra("BUDGET_ID", budget.id)
+                startActivity(intent)
+            },
+            userDefaultCurrency
+        )
         
-        binding.btnNextPage.setOnClickListener {
-            val totalPages = calculateTotalPages()
-            if (currentPage < totalPages) {
-                currentPage++
-                updatePaginationUI()
-                displayCurrentPageItems()
-            }
-        }
+        binding.recyclerBudgets.layoutManager = LinearLayoutManager(this)
+        binding.recyclerBudgets.adapter = adapter
     }
     
-    private fun setupBackNavigation() {
-        binding.btnBack.setOnClickListener {
-            // Navigate back to homepage
-            val intent = Intent(this, HomePageActivity::class.java)
-            startActivity(intent)
-            finish() // Optional: finish this activity to avoid back stack issues
+    override fun onResume() {
+        super.onResume()
+        
+        // Check if currency preference changed
+        val currentCurrency = sessionManager.getCurrency() ?: "PHP"
+        if (currentCurrency != userDefaultCurrency) {
+            userDefaultCurrency = currentCurrency
+            // Update adapter with new currency
+            adapter.updateDefaultCurrency(userDefaultCurrency)
+            // Re-fetch budgets with new currency
+            fetchBudgets()
+        } else {
+            // Just refresh the budget list when returning to this activity
+            fetchBudgets()
         }
     }
     
     private fun fetchBudgets() {
-        showLoading(true)
+        val token = sessionManager.fetchAuthToken()
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(this, "Please login again", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SignInActivity::class.java))
+            finish()
+            return
+        }
+        
+        binding.progressLoading.visibility = View.VISIBLE
         
         lifecycleScope.launch {
             try {
-                val token = sessionManager.fetchAuthToken() ?: ""
-                if (token.isBlank()) {
-                    Toast.makeText(this@BudgetActivity, "Please login again", Toast.LENGTH_SHORT).show()
-                    navigateToLogin()
-                    return@launch
-                }
-                
-                val response = RetrofitClient.budgetApiService.getBudgetsByMonth(
-                    selectedMonth,
-                    selectedYear,
-                    "Bearer $token"
-                )
-                
-                showLoading(false)
+                val response = RetrofitClient.budgetApiService.getUserBudgets("Bearer $token")
                 
                 if (response.isSuccessful && response.body() != null) {
-                    budgets.clear()
-                    budgets.addAll(response.body()!!)
+                    // Store original list
+                    budgetList.clear()
+                    budgetList.addAll(response.body()!!)
                     
-                    // Reset to page 1 when filter changes
-                    currentPage = 1
-                    updatePaginationUI()
-                    displayCurrentPageItems()
+                    // Process budgets for display with correct currency
+                    processBudgetsForDisplay(token)
                     
-                    if (budgets.isEmpty()) {
-                        showEmptyState(true)
-                    } else {
-                        showEmptyState(false)
-                    }
+                    // Apply filters
+                    applyFilters()
+                    
+                    binding.progressLoading.visibility = View.GONE
                 } else {
+                    binding.progressLoading.visibility = View.GONE
                     Toast.makeText(this@BudgetActivity, "Failed to fetch budgets", Toast.LENGTH_SHORT).show()
-                    showEmptyState(true)
                 }
             } catch (e: Exception) {
-                showLoading(false)
-                showEmptyState(true)
+                binding.progressLoading.visibility = View.GONE
                 Toast.makeText(this@BudgetActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
     
-    private fun displayCurrentPageItems() {
-        val startIndex = (currentPage - 1) * itemsPerPage
-        val endIndex = minOf(startIndex + itemsPerPage, budgets.size)
+    private suspend fun processBudgetsForDisplay(token: String) {
+        displayBudgetList.clear()
         
-        if (startIndex <= endIndex) {
-            val currentPageItems = budgets.subList(startIndex, endIndex)
-            budgetAdapter.updateData(currentPageItems)
+        try {
+            for (budget in budgetList) {
+                // Create a display copy of the budget
+                val displayBudget = if (budget.currency != userDefaultCurrency) {
+                    try {
+                        // Try to convert the amount
+                        val convertedBudget = CurrencyUtils.convertCurrency(
+                            budget.monthlyBudget,
+                            budget.currency,
+                            userDefaultCurrency,
+                            token
+                        )
+                        
+                        val convertedSpent = CurrencyUtils.convertCurrency(
+                            budget.totalSpent,
+                            budget.currency,
+                            userDefaultCurrency,
+                            token
+                        )
+                        
+                        if (convertedBudget != null && convertedSpent != null) {
+                            // Create a new budget with converted amounts
+                            // IMPORTANT: Preserve true original values when available
+                            val trueOriginalAmount = budget.originalAmount ?: budget.monthlyBudget
+                            val trueOriginalCurrency = budget.originalCurrency ?: budget.currency
+                            
+                            Budget(
+                                id = budget.id,
+                                category = budget.category,
+                                monthlyBudget = convertedBudget,
+                                totalSpent = convertedSpent,
+                                currency = userDefaultCurrency,
+                                budgetMonth = budget.budgetMonth,
+                                budgetYear = budget.budgetYear,
+                                originalAmount = trueOriginalAmount,
+                                originalCurrency = trueOriginalCurrency
+                            )
+                        } else {
+                            // Conversion failed, use original
+                            budget
+                        }
+                    } catch (e: Exception) {
+                        Log.e("BudgetActivity", "Currency conversion error: ${e.message}")
+                        // On error, use original
+                        budget
+                    }
+                } else {
+                    // Same currency as default, no conversion needed
+                    budget
+                }
+                
+                displayBudgetList.add(displayBudget)
+            }
+            
+            // Update UI
+            adapter.notifyDataSetChanged()
+        } catch (e: Exception) {
+            Toast.makeText(this@BudgetActivity, "Error processing budgets: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
     
-    private fun calculateTotalPages(): Int {
-        return (budgets.size + itemsPerPage - 1) / itemsPerPage
-    }
-    
-    private fun updatePaginationUI() {
-        val totalPages = calculateTotalPages().coerceAtLeast(1)
-        binding.tvPagination.text = "$currentPage of $totalPages"
-        binding.btnPrevPage.isEnabled = currentPage > 1
-        binding.btnNextPage.isEnabled = currentPage < totalPages
-    }
-    
-    private fun showLoading(isLoading: Boolean) {
-        binding.progressLoading.visibility = if (isLoading) View.VISIBLE else View.GONE
-        binding.recyclerBudgets.visibility = if (isLoading) View.GONE else View.VISIBLE
-        binding.layoutHeaders.visibility = if (isLoading) View.GONE else View.VISIBLE
-        binding.layoutPagination.visibility = if (isLoading) View.GONE else View.VISIBLE
-    }
-    
-    private fun showEmptyState(isEmpty: Boolean) {
-        binding.tvEmptyState.visibility = if (isEmpty) View.VISIBLE else View.GONE
-        binding.recyclerBudgets.visibility = if (isEmpty) View.GONE else View.VISIBLE
-        binding.layoutHeaders.visibility = if (isEmpty) View.GONE else View.VISIBLE
-        binding.layoutPagination.visibility = if (isEmpty) View.GONE else View.VISIBLE
-    }
-    
-    private fun showNoBudgetsMessage() {
-        showEmptyState(true)
-    }
-    
-    private fun hideNoBudgetsMessage() {
-        showEmptyState(false)
-    }
-    
-    private fun getMonthName(month: Int): String {
-        val months = arrayOf(
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        )
-        return months[month - 1]
-    }
-    
-    private fun navigateToLogin() {
-        val intent = Intent(this, SignInActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
-    }
-    
-    override fun onResume() {
-        super.onResume()
-        // Refresh data when returning to activity
-        fetchBudgets()
+    private fun applyFilters() {
+        val filteredList = displayBudgetList.filter { budget ->
+            val monthMatches = filterMonth == 0 || budget.budgetMonth == filterMonth
+            val yearMatches = filterYear == 0 || budget.budgetYear == filterYear
+            monthMatches && yearMatches
+        }
+        
+        adapter.updateData(filteredList)
+        
+        // Show empty state if needed
+        binding.tvEmptyState.visibility = if (filteredList.isEmpty()) View.VISIBLE else View.GONE
     }
 }

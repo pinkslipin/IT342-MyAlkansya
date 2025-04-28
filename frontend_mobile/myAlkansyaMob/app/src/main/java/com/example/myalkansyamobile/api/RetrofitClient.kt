@@ -80,7 +80,7 @@ interface AnalyticsApiService {
 
 object RetrofitClient {
     // Base URL for API requests - Make sure there's no trailing /api/
-    private const val BASE_URL = "http://10.0.2.2:8080/"  // Android emulator URL for localhost
+    private val BASE_URL = ApiConstants.BASE_URL
     // private const val BASE_URL = "http://192.168.1.x:8080/" // For physical device
     
     // Create logging interceptor

@@ -28,9 +28,9 @@ class ExportActivity : AppCompatActivity() {
     private lateinit var binding: ActivityExportBinding
     private lateinit var sessionManager: SessionManager
     private lateinit var exportService: ExportService
-    
+
     private val TAG = "ExportActivity"
-    
+
     // Activity result launcher for Sheets API permission intent
     private val sheetsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -49,18 +49,18 @@ class ExportActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityExportBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+
         // Setup toolbar
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.title = "Export Data"
-        
+
         sessionManager = SessionManager(this)
         exportService = ExportService(this)
-        
+
         setupUI()
     }
-    
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == android.R.id.home) {
             finish()
@@ -68,34 +68,34 @@ class ExportActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-    
+
     private fun setupUI() {
         // Update account info
         // Fix for the getEmail() unresolved reference error
         val accountInfo = getUserEmailFromSession() ?: "your Google account"
         binding.tvAccountInfo.text = "You'll use $accountInfo for Sheets export"
-        
+
         // Export to Google Sheets button
         binding.btnExportToSheets.setOnClickListener {
             fetchDataAndExportToGoogleSheets()
         }
-        
+
         // Export to CSV button
         binding.btnExportToCSV.setOnClickListener {
             exportToCSV()
         }
     }
-    
+
     // Helper method to get email from session
     private fun getUserEmailFromSession(): String? {
         // Replace with the actual method your SessionManager uses to get the user's email
         return sessionManager.fetchUserEmail()
     }
-    
+
     private fun fetchDataAndExportToGoogleSheets() {
         binding.progressBar.visibility = View.VISIBLE
         binding.btnExportToSheets.isEnabled = false
-        
+
         // Show loading dialog
         val dialog = AlertDialog.Builder(this)
             .setTitle("Exporting Data")
@@ -103,7 +103,7 @@ class ExportActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         dialog.show()
-        
+
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken() ?: ""
@@ -116,46 +116,55 @@ class ExportActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
-                
+
                 // Fetch real user data for export
                 dialog.setMessage("Fetching income data...")
                 val incomes = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedIncomes = withContext(Dispatchers.IO) {
                         RetrofitClient.incomeApiService.getIncomes(bearerToken)
                     }
+                    // Log safely without causing type inference issues
+                    Log.d(TAG, "Fetched incomes successfully")
+                    fetchedIncomes
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching incomes for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.model.Income>()
+                    emptyList<Any>()
                 }
-                
+
                 dialog.setMessage("Fetching expense data...")
                 val expenses = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedExpenses = withContext(Dispatchers.IO) {
                         RetrofitClient.expenseApiService.getExpenses(bearerToken)
                     }
+                    Log.d(TAG, "Fetched expenses successfully")
+                    fetchedExpenses
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching expenses for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.api.ExpenseResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 dialog.setMessage("Fetching budget data...")
                 val budgets = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedBudgets = withContext(Dispatchers.IO) {
                         RetrofitClient.budgetApiService.getUserBudgets(bearerToken)
                     }
+                    Log.d(TAG, "Fetched budgets successfully")
+                    fetchedBudgets
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching budgets for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.BudgetResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 dialog.setMessage("Fetching savings goals...")
                 val savingsGoals = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedGoals = withContext(Dispatchers.IO) {
                         RetrofitClient.savingsGoalApiService.getAllSavingsGoals(bearerToken)
                     }
+                    Log.d(TAG, "Fetched savings goals successfully")
+                    fetchedGoals
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching savings goals for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.api.SavingsGoalResponse>()
+                    emptyList<Any>()
                 }
 
                 dialog.setMessage("Fetching financial summary...")
@@ -173,28 +182,27 @@ class ExportActivity : AppCompatActivity() {
                     Log.e(TAG, "Error fetching financial summary for export: ${e.message}")
                     null
                 }
-                
+
                 dialog.setMessage("Creating Google Sheet...")
-                
+
                 // Now attempt to export to Google Sheets
-                // Fix for type inference issues - explicitly specify types
                 try {
                     val sheetsUrl = exportService.exportToGoogleSheets(
-                        incomes = incomes as Any,
-                        expenses = expenses as Any,
-                        budgets = budgets as Any,
-                        savingsGoals = savingsGoals as Any,
+                        incomes = incomes,
+                        expenses = expenses,
+                        budgets = budgets,
+                        savingsGoals = savingsGoals,
                         financialSummary = financialSummary
                     )
-                    
+
                     dialog.dismiss()
-                    
+
                     if (sheetsUrl != null) {
                         // Success! Open the Google Sheet
                         val intent = Intent(Intent.ACTION_VIEW)
                         intent.data = android.net.Uri.parse(sheetsUrl)
                         startActivity(intent)
-                        
+
                         showMessage("Data successfully exported to Google Sheets")
                     } else {
                         showMessage("Failed to create Google Sheet")
@@ -208,7 +216,7 @@ class ExportActivity : AppCompatActivity() {
                     dialog.dismiss()
                     Log.e(TAG, "Error exporting to Google Sheets", e)
                     showMessage("Export to Google Sheets failed: ${e.message}")
-                    
+
                     // Offer CSV export as fallback
                     AlertDialog.Builder(this@ExportActivity)
                         .setTitle("Google Sheets Export Failed")
@@ -217,7 +225,7 @@ class ExportActivity : AppCompatActivity() {
                         .setNegativeButton("No", null)
                         .show()
                 }
-                
+
             } catch (e: SocketTimeoutException) {
                 dialog.dismiss()
                 showMessage("Connection timed out. Please check your internet connection.")
@@ -231,11 +239,11 @@ class ExportActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun exportToCSV() {
         binding.progressBar.visibility = View.VISIBLE
         binding.btnExportToCSV.isEnabled = false
-        
+
         // Show loading dialog
         val dialog = AlertDialog.Builder(this)
             .setTitle("Creating CSV Export")
@@ -243,7 +251,7 @@ class ExportActivity : AppCompatActivity() {
             .setCancelable(false)
             .create()
         dialog.show()
-        
+
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken() ?: ""
@@ -256,44 +264,52 @@ class ExportActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
-                
+
                 // Fetch user data (same as before)
                 val incomes = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedIncomes = withContext(Dispatchers.IO) {
                         RetrofitClient.incomeApiService.getIncomes(bearerToken)
                     }
+                    Log.d(TAG, "Fetched incomes successfully")
+                    fetchedIncomes
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching incomes", e)
-                    emptyList<com.example.myalkansyamobile.model.Income>()
+                    emptyList<Any>()
                 }
-                
+
                 val expenses = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedExpenses = withContext(Dispatchers.IO) {
                         RetrofitClient.expenseApiService.getExpenses(bearerToken)
                     }
+                    Log.d(TAG, "Fetched expenses successfully")
+                    fetchedExpenses
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching expenses", e)
-                    emptyList<com.example.myalkansyamobile.api.ExpenseResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 val budgets = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedBudgets = withContext(Dispatchers.IO) {
                         RetrofitClient.budgetApiService.getUserBudgets(bearerToken)
                     }
+                    Log.d(TAG, "Fetched budgets successfully")
+                    fetchedBudgets
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching budgets", e)
-                    emptyList<com.example.myalkansyamobile.BudgetResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 val savingsGoals = try {
-                    withContext(Dispatchers.IO) {
+                    val fetchedGoals = withContext(Dispatchers.IO) {
                         RetrofitClient.savingsGoalApiService.getAllSavingsGoals(bearerToken)
                     }
+                    Log.d(TAG, "Fetched savings goals successfully")
+                    fetchedGoals
                 } catch (e: Exception) {
                     Log.e(TAG, "Error fetching savings goals", e)
-                    emptyList<com.example.myalkansyamobile.api.SavingsGoalResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 val financialSummary = try {
                     val currentMonth = java.util.Calendar.getInstance().get(java.util.Calendar.MONTH) + 1
                     val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
@@ -306,24 +322,24 @@ class ExportActivity : AppCompatActivity() {
                     Log.e(TAG, "Error fetching financial summary", e)
                     null
                 }
-                
-                // Fix for type inference issues - explicitly specify types
+
+                // Export to CSV
                 val uri = exportService.exportToCSV(
-                    incomes = incomes as Any,
-                    expenses = expenses as Any,
-                    budgets = budgets as Any, 
-                    savingsGoals = savingsGoals as Any,
+                    incomes = incomes,
+                    expenses = expenses,
+                    budgets = budgets,
+                    savingsGoals = savingsGoals,
                     financialSummary = financialSummary
                 )
-                
+
                 dialog.dismiss()
-                
+
                 if (uri != null) {
                     exportService.shareCSVFile(uri)
                 } else {
                     showMessage("Failed to create CSV file")
                 }
-                
+
             } catch (e: Exception) {
                 dialog.dismiss()
                 Log.e(TAG, "CSV Export failed", e)
@@ -334,7 +350,7 @@ class ExportActivity : AppCompatActivity() {
             }
         }
     }
-    
+
     private fun showMessage(message: String) {
         Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG).show()
     }

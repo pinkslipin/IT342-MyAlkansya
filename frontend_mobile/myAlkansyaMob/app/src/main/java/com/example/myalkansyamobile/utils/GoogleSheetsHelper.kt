@@ -57,10 +57,10 @@ class GoogleSheetsHelper(private val context: Context) {
 
     // Create and populate a Google Sheet
     suspend fun createAndPopulateSheet(
-        incomes: Any? = null,
-        expenses: Any? = null,
-        budgets: Any? = null,
-        savingsGoals: Any? = null,
+        incomes: List<*>? = null,
+        expenses: List<*>? = null,
+        budgets: List<*>? = null,
+        savingsGoals: List<*>? = null,
         financialSummary: FinancialSummaryResponse? = null
     ): String? = withContext(Dispatchers.IO) {
         try {
@@ -162,41 +162,48 @@ class GoogleSheetsHelper(private val context: Context) {
                 incomeValues.add(listOf<Any>()) // Empty row
                 incomeValues.add(listOf("ID", "Source", "Date", "Amount", "Currency"))
                 
+                Log.d(TAG, "Processing incomes list with ${incomes.size} items")
+                
                 // Process the income data based on its type
-                when (incomes) {
-                    is List<*> -> {
-                        for (income in incomes) {
-                            when (income) {
-                                is Map<*, *> -> {
-                                    val id = income["id"]?.toString() ?: ""
-                                    val source = income["source"]?.toString() ?: ""
-                                    val date = income["date"]?.toString() ?: ""
-                                    val amount = income["amount"]?.toString() ?: "0.00"
-                                    val incomeCurrency = income["currency"]?.toString() ?: currency
-                                    
-                                    incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
-                                }
-                                is Income -> {
-                                    incomeValues.add(listOf(
-                                        income.id.toString(),
-                                        income.source,
-                                        income.date,
-                                        income.amount.toString(),
-                                        income.currency ?: currency
-                                    ))
-                                }
-                                else -> {
-                                    // Try to extract fields by reflection
-                                    val id = getFieldValue(income, "id") ?: ""
-                                    val source = getFieldValue(income, "source") ?: ""
-                                    val date = getFieldValue(income, "date") ?: ""
-                                    val amount = getFieldValue(income, "amount") ?: "0.00"
-                                    val incomeCurrency = getFieldValue(income, "currency") ?: currency
-                                    
-                                    incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
-                                }
+                for (income in incomes) {
+                    try {
+                        Log.d(TAG, "Processing income item of type: ${income?.javaClass?.name}")
+                        when (income) {
+                            is Map<*, *> -> {
+                                val id = income["id"]?.toString() ?: ""
+                                val source = income["source"]?.toString() ?: ""
+                                val date = income["date"]?.toString() ?: ""
+                                val amount = income["amount"]?.toString() ?: "0.00"
+                                val incomeCurrency = income["currency"]?.toString() ?: currency
+                                
+                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
+                                Log.d(TAG, "Added income from Map: $id, $source, $amount")
+                            }
+                            is Income -> {
+                                incomeValues.add(listOf(
+                                    income.id.toString(),
+                                    income.source,
+                                    income.date,
+                                    income.amount.toString(),
+                                    income.currency ?: currency
+                                ))
+                                Log.d(TAG, "Added income from Income object: ${income.id}, ${income.source}, ${income.amount}")
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(income, "id") ?: ""
+                                val source = getFieldValue(income, "source") ?: ""
+                                val date = getFieldValue(income, "date") ?: ""
+                                val amount = getFieldValue(income, "amount") ?: "0.00"
+                                val incomeCurrency = getFieldValue(income, "currency") ?: currency
+                                
+                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
+                                Log.d(TAG, "Added income via reflection: $id, $source, $amount")
                             }
                         }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing income item: ${e.message}", e)
+                        // Continue with next item rather than failing entire export
                     }
                 }
                 
@@ -206,6 +213,8 @@ class GoogleSheetsHelper(private val context: Context) {
                 // Apply formatting to the Income sheet
                 val rowCount = incomeValues.size
                 formatDataSheet(sheetsService, spreadsheetId, "Income", rowCount)
+            } else {
+                Log.w(TAG, "Income list is null, skipping income export")
             }
             
             // Populate Expenses sheet if data exists
@@ -218,42 +227,38 @@ class GoogleSheetsHelper(private val context: Context) {
                 expenseValues.add(listOf("ID", "Subject", "Category", "Date", "Amount", "Currency"))
                 
                 // Process the expense data based on its type
-                when (expenses) {
-                    is List<*> -> {
-                        for (expense in expenses) {
-                            when (expense) {
-                                is Map<*, *> -> {
-                                    val id = expense["id"]?.toString() ?: ""
-                                    val subject = expense["subject"]?.toString() ?: ""
-                                    val category = expense["category"]?.toString() ?: ""
-                                    val date = expense["date"]?.toString() ?: ""
-                                    val amount = expense["amount"]?.toString() ?: "0.00"
-                                    val expenseCurrency = expense["currency"]?.toString() ?: currency
-                                    
-                                    expenseValues.add(listOf(id, subject, category, date, amount, expenseCurrency))
-                                }
-                                is ExpenseResponse -> {
-                                    expenseValues.add(listOf(
-                                        expense.id.toString(),
-                                        expense.subject,
-                                        expense.category,
-                                        expense.date,
-                                        expense.amount.toString(),
-                                        expense.currency ?: currency
-                                    ))
-                                }
-                                else -> {
-                                    // Try to extract fields by reflection
-                                    val id = getFieldValue(expense, "id") ?: ""
-                                    val subject = getFieldValue(expense, "subject") ?: ""
-                                    val category = getFieldValue(expense, "category") ?: ""
-                                    val date = getFieldValue(expense, "date") ?: ""
-                                    val amount = getFieldValue(expense, "amount") ?: "0.00"
-                                    val expenseCurrency = getFieldValue(expense, "currency") ?: currency
-                                    
-                                    expenseValues.add(listOf(id, subject, category, date, amount, expenseCurrency))
-                                }
-                            }
+                for (expense in expenses) {
+                    when (expense) {
+                        is Map<*, *> -> {
+                            val id = expense["id"]?.toString() ?: ""
+                            val subject = expense["subject"]?.toString() ?: ""
+                            val category = expense["category"]?.toString() ?: ""
+                            val date = expense["date"]?.toString() ?: ""
+                            val amount = expense["amount"]?.toString() ?: "0.00"
+                            val expenseCurrency = expense["currency"]?.toString() ?: currency
+                            
+                            expenseValues.add(listOf(id, subject, category, date, amount, expenseCurrency))
+                        }
+                        is ExpenseResponse -> {
+                            expenseValues.add(listOf(
+                                expense.id.toString(),
+                                expense.subject,
+                                expense.category,
+                                expense.date,
+                                expense.amount.toString(),
+                                expense.currency ?: currency
+                            ))
+                        }
+                        else -> {
+                            // Try to extract fields by reflection
+                            val id = getFieldValue(expense, "id") ?: ""
+                            val subject = getFieldValue(expense, "subject") ?: ""
+                            val category = getFieldValue(expense, "category") ?: ""
+                            val date = getFieldValue(expense, "date") ?: ""
+                            val amount = getFieldValue(expense, "amount") ?: "0.00"
+                            val expenseCurrency = getFieldValue(expense, "currency") ?: currency
+                            
+                            expenseValues.add(listOf(id, subject, category, date, amount, expenseCurrency))
                         }
                     }
                 }
@@ -275,54 +280,61 @@ class GoogleSheetsHelper(private val context: Context) {
                 budgetValues.add(listOf<Any>()) // Empty row
                 budgetValues.add(listOf("ID", "Category", "Monthly Budget", "Total Spent", "Month", "Year", "Progress"))
                 
+                Log.d(TAG, "Processing budgets list with ${budgets.size} items")
+                
                 // Process the budget data based on its type
-                when (budgets) {
-                    is List<*> -> {
-                        for (budget in budgets) {
-                            when (budget) {
-                                is Map<*, *> -> {
-                                    val id = budget["id"]?.toString() ?: ""
-                                    val category = budget["category"]?.toString() ?: ""
-                                    val monthlyBudget = budget["monthlyBudget"]?.toString() ?: "0.00"
-                                    val totalSpent = budget["totalSpent"]?.toString() ?: "0.00"
-                                    val month = budget["budgetMonth"]?.toString() ?: ""
-                                    val year = budget["budgetYear"]?.toString() ?: ""
-                                    
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                    
-                                    budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
-                                }
-                                is BudgetResponse -> {
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                    
-                                    budgetValues.add(listOf(
-                                        budget.id.toString(),
-                                        budget.category,
-                                        budget.monthlyBudget.toString(),
-                                        budget.totalSpent.toString(),
-                                        budget.budgetMonth.toString(),
-                                        budget.budgetYear.toString(),
-                                        progressFormula
-                                    ))
-                                }
-                                else -> {
-                                    // Try to extract fields by reflection
-                                    val id = getFieldValue(budget, "id") ?: ""
-                                    val category = getFieldValue(budget, "category") ?: ""
-                                    val monthlyBudget = getFieldValue(budget, "monthlyBudget") ?: "0.00"
-                                    val totalSpent = getFieldValue(budget, "totalSpent") ?: "0.00"
-                                    val month = getFieldValue(budget, "budgetMonth") ?: ""
-                                    val year = getFieldValue(budget, "budgetYear") ?: ""
-                                    
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                    
-                                    budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
-                                }
+                for (budget in budgets) {
+                    try {
+                        Log.d(TAG, "Processing budget item of type: ${budget?.javaClass?.name}")
+                        when (budget) {
+                            is Map<*, *> -> {
+                                val id = budget["id"]?.toString() ?: ""
+                                val category = budget["category"]?.toString() ?: ""
+                                val monthlyBudget = budget["monthlyBudget"]?.toString() ?: "0.00"
+                                val totalSpent = budget["totalSpent"]?.toString() ?: "0.00"
+                                val month = budget["budgetMonth"]?.toString() ?: ""
+                                val year = budget["budgetYear"]?.toString() ?: ""
+                                
+                                // Calculate progress as a formula
+                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
+                                
+                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
+                                Log.d(TAG, "Added budget from Map: $id, $category, $monthlyBudget")
+                            }
+                            is BudgetResponse -> {
+                                // Calculate progress as a formula
+                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
+                                
+                                budgetValues.add(listOf(
+                                    budget.id.toString(),
+                                    budget.category,
+                                    budget.monthlyBudget.toString(),
+                                    budget.totalSpent.toString(),
+                                    budget.budgetMonth.toString(),
+                                    budget.budgetYear.toString(),
+                                    progressFormula
+                                ))
+                                Log.d(TAG, "Added budget from BudgetResponse: ${budget.id}, ${budget.category}, ${budget.monthlyBudget}")
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(budget, "id") ?: ""
+                                val category = getFieldValue(budget, "category") ?: ""
+                                val monthlyBudget = getFieldValue(budget, "monthlyBudget") ?: "0.00"
+                                val totalSpent = getFieldValue(budget, "totalSpent") ?: "0.00"
+                                val month = getFieldValue(budget, "budgetMonth") ?: ""
+                                val year = getFieldValue(budget, "budgetYear") ?: ""
+                                
+                                // Calculate progress as a formula
+                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
+                                
+                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
+                                Log.d(TAG, "Added budget via reflection: $id, $category, $monthlyBudget")
                             }
                         }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error processing budget item: ${e.message}", e)
+                        // Continue with next item rather than failing entire export
                     }
                 }
                 
@@ -332,6 +344,8 @@ class GoogleSheetsHelper(private val context: Context) {
                 // Apply formatting to the Budget sheet
                 val rowCount = budgetValues.size
                 formatBudgetSheet(sheetsService, spreadsheetId, rowCount)
+            } else {
+                Log.w(TAG, "Budget list is null, skipping budget export")
             }
             
             // Populate SavingsGoal sheet if data exists
@@ -344,49 +358,45 @@ class GoogleSheetsHelper(private val context: Context) {
                 savingsValues.add(listOf("ID", "Goal", "Target Amount", "Current Amount", "Target Date", "Progress"))
                 
                 // Process the savings goals data based on its type
-                when (savingsGoals) {
-                    is List<*> -> {
-                        for (goal in savingsGoals) {
-                            when (goal) {
-                                is Map<*, *> -> {
-                                    val id = goal["id"]?.toString() ?: ""
-                                    val name = goal["goal"]?.toString() ?: ""
-                                    val targetAmount = goal["targetAmount"]?.toString() ?: "0.00"
-                                    val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
-                                    val targetDate = goal["targetDate"]?.toString() ?: ""
-                                    
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                                    
-                                    savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
-                                }
-                                is SavingsGoalResponse -> {
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                                    
-                                    savingsValues.add(listOf(
-                                        goal.id.toString(),
-                                        goal.goal,
-                                        goal.targetAmount.toString(),
-                                        goal.currentAmount.toString(),
-                                        goal.targetDate,
-                                        progressFormula
-                                    ))
-                                }
-                                else -> {
-                                    // Try to extract fields by reflection
-                                    val id = getFieldValue(goal, "id") ?: ""
-                                    val name = getFieldValue(goal, "goal") ?: ""
-                                    val targetAmount = getFieldValue(goal, "targetAmount") ?: "0.00"
-                                    val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
-                                    val targetDate = getFieldValue(goal, "targetDate") ?: ""
-                                    
-                                    // Calculate progress as a formula
-                                    val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                                    
-                                    savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
-                                }
-                            }
+                for (goal in savingsGoals) {
+                    when (goal) {
+                        is Map<*, *> -> {
+                            val id = goal["id"]?.toString() ?: ""
+                            val name = goal["goal"]?.toString() ?: ""
+                            val targetAmount = goal["targetAmount"]?.toString() ?: "0.00"
+                            val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
+                            val targetDate = goal["targetDate"]?.toString() ?: ""
+                            
+                            // Calculate progress as a formula
+                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
+                            
+                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
+                        }
+                        is SavingsGoalResponse -> {
+                            // Calculate progress as a formula
+                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
+                            
+                            savingsValues.add(listOf(
+                                goal.id.toString(),
+                                goal.goal,
+                                goal.targetAmount.toString(),
+                                goal.currentAmount.toString(),
+                                goal.targetDate,
+                                progressFormula
+                            ))
+                        }
+                        else -> {
+                            // Try to extract fields by reflection
+                            val id = getFieldValue(goal, "id") ?: ""
+                            val name = getFieldValue(goal, "goal") ?: ""
+                            val targetAmount = getFieldValue(goal, "targetAmount") ?: "0.00"
+                            val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
+                            val targetDate = getFieldValue(goal, "targetDate") ?: ""
+                            
+                            // Calculate progress as a formula
+                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
+                            
+                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
                         }
                     }
                 }
@@ -453,7 +463,7 @@ class GoogleSheetsHelper(private val context: Context) {
         // ... existing code ...
     }
     
-    // Format data sheets
+    // Format data sheets with better error handling
     private fun formatDataSheet(sheetsService: Sheets, spreadsheetId: String, sheetName: String, rowCount: Int) {
         try {
             val sheetId = getSheetIdByName(sheetsService, spreadsheetId, sheetName) ?: return
@@ -475,8 +485,21 @@ class GoogleSheetsHelper(private val context: Context) {
                     .setFields("userEnteredFormat(textFormat)")
             ))
             
+            // Execute requests in smaller batches to avoid server errors
+            try {
+                val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
+                sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+                Log.d(TAG, "Applied basic formatting to $sheetName sheet")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error applying basic formatting to $sheetName sheet: ${e.message}", e)
+                // Continue with remaining formatting - don't exit early
+            }
+            
+            // Additional formatting in separate batches
+            val additionalRequests = mutableListOf<Request>()
+            
             // Apply background color to header
-            requests.add(Request().setUpdateCells(
+            additionalRequests.add(Request().setUpdateCells(
                 UpdateCellsRequest()
                     .setRange(GridRange()
                         .setSheetId(sheetId)
@@ -492,73 +515,70 @@ class GoogleSheetsHelper(private val context: Context) {
                     .setFields("userEnteredFormat.backgroundColor")
             ))
             
-            // Format the column headers
-            requests.add(Request().setUpdateCells(
-                UpdateCellsRequest()
-                    .setRange(GridRange()
-                        .setSheetId(sheetId)
-                        .setStartRowIndex(2)
-                        .setEndRowIndex(3))
-                    .setRows(listOf(RowData()
-                        .setValues(listOf(CellData()
-                            .setUserEnteredFormat(CellFormat()
-                                .setBackgroundColor(Color()
-                                    .setRed(0.9f)
-                                    .setGreen(0.9f)
-                                    .setBlue(0.9f)))))))
-                    .setFields("userEnteredFormat.backgroundColor")
-            ))
-            
-            // Auto-resize columns
-            requests.add(Request().setAutoResizeDimensions(
-                AutoResizeDimensionsRequest()
-                    .setDimensions(DimensionRange()
-                        .setSheetId(sheetId)
-                        .setDimension("COLUMNS")
-                        .setStartIndex(0)
-                        .setEndIndex(10))
-            ))
-            
-            // Add alternating row colors
-            requests.add(Request().setAddBanding(
-                AddBandingRequest()
-                    .setBandedRange(BandedRange()
-                        .setRange(GridRange()
-                            .setSheetId(sheetId)
-                            .setStartRowIndex(3)
-                            .setEndRowIndex(rowCount)
-                            .setStartColumnIndex(0)
-                            .setEndColumnIndex(10))
-                        .setRowProperties(BandingProperties()
-                            .setFirstBandColor(Color().setRed(0.95f).setGreen(0.95f).setBlue(0.95f))
-                            .setSecondBandColor(Color().setRed(1.0f).setGreen(1.0f).setBlue(1.0f)))
-                    )
-            ))
-            
-            // Format currency columns if applicable
-            if (sheetName == "Income" || sheetName == "Expenses") {
-                // Assuming amount is in column D for incomes and E for expenses
-                val amountColumnIndex = if (sheetName == "Income") 3 else 4
-                
-                requests.add(Request().setRepeatCell(
-                    RepeatCellRequest()
-                        .setRange(GridRange()
-                            .setSheetId(sheetId)
-                            .setStartRowIndex(3)
-                            .setEndRowIndex(rowCount)
-                            .setStartColumnIndex(amountColumnIndex)
-                            .setEndColumnIndex(amountColumnIndex + 1))
-                        .setCell(CellData()
-                            .setUserEnteredFormat(CellFormat()
-                                .setNumberFormat(NumberFormat()
-                                    .setType("CURRENCY"))))
-                        .setFields("userEnteredFormat.numberFormat")
-                ))
+            // Execute this batch separately
+            try {
+                val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(additionalRequests)
+                sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+                Log.d(TAG, "Applied header color to $sheetName sheet")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error applying header color to $sheetName sheet: ${e.message}", e)
+                // Continue with remaining formatting
             }
             
-            // Execute all formatting requests
-            val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
-            sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+            // Format currency columns in separate batches if applicable
+            if (sheetName == "Income" || sheetName == "Expenses" || sheetName == "Budget" || sheetName == "SavingsGoal") {
+                try {
+                    val currencyRequests = mutableListOf<Request>()
+                    // Assuming amount is in column D for incomes and E for expenses
+                    val amountColumnIndex = when (sheetName) {
+                        "Income" -> 3  // Column D
+                        "Expenses" -> 4 // Column E
+                        "Budget" -> 2 // Column C - Monthly Budget
+                        "SavingsGoal" -> 2 // Column C - Target Amount
+                        else -> 3 
+                    }
+                    
+                    currencyRequests.add(Request().setRepeatCell(
+                        RepeatCellRequest()
+                            .setRange(GridRange()
+                                .setSheetId(sheetId)
+                                .setStartRowIndex(3)
+                                .setEndRowIndex(rowCount)
+                                .setStartColumnIndex(amountColumnIndex)
+                                .setEndColumnIndex(amountColumnIndex + 1))
+                            .setCell(CellData()
+                                .setUserEnteredFormat(CellFormat()
+                                    .setNumberFormat(NumberFormat()
+                                        .setType("CURRENCY"))))
+                            .setFields("userEnteredFormat.numberFormat")
+                    ))
+                    
+                    val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(currencyRequests)
+                    sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+                    Log.d(TAG, "Applied currency formatting to $sheetName sheet")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error applying currency formatting to $sheetName sheet: ${e.message}", e)
+                }
+            }
+
+            // Auto-resize columns as last batch
+            try {
+                val resizeRequests = mutableListOf<Request>()
+                resizeRequests.add(Request().setAutoResizeDimensions(
+                    AutoResizeDimensionsRequest()
+                        .setDimensions(DimensionRange()
+                            .setSheetId(sheetId)
+                            .setDimension("COLUMNS")
+                            .setStartIndex(0)
+                            .setEndIndex(10))
+                ))
+                
+                val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(resizeRequests)
+                sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
+                Log.d(TAG, "Resized columns in $sheetName sheet")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error resizing columns in $sheetName sheet: ${e.message}", e)
+            }
             
             Log.d(TAG, "Formatted $sheetName sheet successfully")
         } catch (e: Exception) {

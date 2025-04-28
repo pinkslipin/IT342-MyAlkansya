@@ -11,7 +11,11 @@ data class SavingsGoal(
     val targetAmount: Double,
     val currentAmount: Double,
     val targetDate: Date,
-    val currency: String = "PHP"
+    val currency: String = "PHP",
+    // Added fields to track original values before currency conversion
+    val originalTargetAmount: Double? = null,
+    val originalCurrentAmount: Double? = null,
+    val originalCurrency: String? = null
 ) {
     fun getFormattedTargetAmount(): String {
         val formatter = NumberFormat.getCurrencyInstance()
@@ -74,4 +78,11 @@ data class SavingsGoal(
         formatter.currency = Currency.getInstance(currency)
         return formatter.format(getRemainingAmount())
     }
+    
+    // Helper method to get the original amounts if available
+    fun getEffectiveTargetAmount(): Double = originalTargetAmount ?: targetAmount
+    
+    fun getEffectiveCurrentAmount(): Double = originalCurrentAmount ?: currentAmount
+    
+    fun getEffectiveCurrency(): String = originalCurrency ?: currency
 }

@@ -1,91 +1,89 @@
 package com.example.myalkansyamobile.adapters
 
-import android.content.Context
-import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myalkansyamobile.R
-import com.example.myalkansyamobile.databinding.ItemBudgetBinding
 import com.example.myalkansyamobile.model.Budget
 import java.text.NumberFormat
 import java.util.*
 
 class BudgetAdapter(
-    private var budgets: List<Budget>,
-    private val onEditClick: (Budget) -> Unit
+    private var budgetList: List<Budget>,
+    private val onItemClick: (Budget) -> Unit,
+    private var defaultCurrency: String = "PHP"
 ) : RecyclerView.Adapter<BudgetAdapter.BudgetViewHolder>() {
 
-    fun updateData(newBudgets: List<Budget>) {
-        budgets = newBudgets
-        notifyDataSetChanged()
+    class BudgetViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        // Fixed the ID references to match the actual IDs in item_budget.xml
+        val textCategory: TextView = view.findViewById(R.id.tvCategory)
+        val textBudget: TextView = view.findViewById(R.id.tvBudgetAmount)
+        val textSpent: TextView = view.findViewById(R.id.tvSpentAmount)
+        val progressBar: ProgressBar = view.findViewById(R.id.progressBar)
+        val percentageText: TextView = view.findViewById(R.id.tvPercentage)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BudgetViewHolder {
-        val binding = ItemBudgetBinding.inflate(
-            LayoutInflater.from(parent.context),
-            parent,
-            false
-        )
-        return BudgetViewHolder(binding)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_budget, parent, false)
+        return BudgetViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: BudgetViewHolder, position: Int) {
-        val budget = budgets[position]
-        holder.bind(budget)
-
-        // Set click listener on edit button
-        holder.binding.btnEdit.setOnClickListener {
-            onEditClick(budget)
+        val budget = budgetList[position]
+        
+        holder.textCategory.text = budget.category
+        
+        // Format amounts with appropriate currency symbols
+        val formatter = getCurrencyFormatter(budget.currency)
+        holder.textBudget.text = formatter.format(budget.monthlyBudget)
+        holder.textSpent.text = formatter.format(budget.totalSpent)
+        
+        // Set progress bar value
+        val progressPercentage = budget.getSpendingPercentage()
+        holder.progressBar.progress = progressPercentage
+        
+        // Set percentage text
+        holder.percentageText.text = "$progressPercentage%"
+        
+        // Set text color based on spending behavior
+        val context = holder.itemView.context
+        if (budget.totalSpent > budget.monthlyBudget) {
+            holder.textSpent.setTextColor(context.getColor(R.color.red))
+            holder.percentageText.setTextColor(context.getColor(R.color.red))
+        } else {
+            holder.textSpent.setTextColor(context.getColor(R.color.green))
+            holder.percentageText.setTextColor(context.getColor(R.color.green))
         }
-
-        // Optionally set click listener on the whole item too
+        
+        // Set click listener
         holder.itemView.setOnClickListener {
-            onEditClick(budget)
+            onItemClick(budget)
         }
     }
 
-    override fun getItemCount(): Int = budgets.size
-
-    inner class BudgetViewHolder(val binding: ItemBudgetBinding) :
-        RecyclerView.ViewHolder(binding.root) {
-
-        fun bind(budget: Budget) {
-            // Format currency based on the budget's currency
-            val currencyFormat = NumberFormat.getCurrencyInstance()
-            currencyFormat.currency = Currency.getInstance(budget.currency)
-
-            binding.tvCategory.text = budget.category
-            binding.tvBudgetAmount.text = currencyFormat.format(budget.monthlyBudget)
-            binding.tvSpentAmount.text = currencyFormat.format(budget.totalSpent)
-            
-            // Calculate percentage (extend Budget class if needed)
-            val percentage = calculateSpendingPercentage(budget)
-            
-            // Set color based on percentage (only if progress views exist)
-            val progressColor = when {
-                percentage > 90 -> Color.RED
-                percentage > 70 -> Color.parseColor("#FFC107") // Yellow
-                else -> Color.parseColor("#18864F") // Green
-            }
-            
-            // Check if these views exist before using them
-            try {
-                binding.progressBar?.progress = percentage
-                binding.progressBar?.progressTintList = android.content.res.ColorStateList.valueOf(progressColor)
-                binding.tvPercentage?.text = "$percentage%"
-                binding.tvPercentage?.setTextColor(progressColor)
-            } catch (e: Exception) {
-                // Views not present in layout
-            }
+    override fun getItemCount() = budgetList.size
+    
+    fun updateData(newList: List<Budget>) {
+        budgetList = newList
+        notifyDataSetChanged()
+    }
+    
+    fun updateDefaultCurrency(newCurrency: String) {
+        defaultCurrency = newCurrency
+        notifyDataSetChanged()
+    }
+    
+    private fun getCurrencyFormatter(currencyCode: String): NumberFormat {
+        val formatter = NumberFormat.getCurrencyInstance()
+        try {
+            formatter.currency = Currency.getInstance(currencyCode)
+        } catch (e: Exception) {
+            formatter.currency = Currency.getInstance(defaultCurrency)
         }
-        
-        private fun calculateSpendingPercentage(budget: Budget): Int {
-            // Add this method as a fallback if Budget doesn't have getSpendingPercentage()
-            return if (budget.monthlyBudget > 0)
-                (budget.totalSpent * 100 / budget.monthlyBudget).toInt().coerceIn(0, 100)
-            else
-                0
-        }
+        return formatter
     }
 }

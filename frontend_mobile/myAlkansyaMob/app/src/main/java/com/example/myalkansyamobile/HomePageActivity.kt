@@ -72,7 +72,7 @@ data class BudgetResponse(
 class HomePageActivity : AppCompatActivity() {
     private lateinit var binding: ActivityHomepageBinding
     private lateinit var sessionManager: SessionManager
-    private val baseUrl = "http://10.0.2.2:8080/" // Use 10.0.2.2 for Android emulator to reach localhost
+    private val baseUrl = "https://myalkansya-sia.as.r.appspot.com/" // Production server URL
 
     private var allExpenses: List<ExpenseResponse> = listOf()
     private var allBudgets: List<BudgetResponse> = listOf()

@@ -39,7 +39,10 @@ data class SavingsGoalRequest(
     val targetAmount: Double,
     val currentAmount: Double,
     val targetDate: String,
-    val currency: String = "PHP"
+    val currency: String = "PHP",
+    val originalTargetAmount: Double? = null,
+    val originalCurrentAmount: Double? = null,
+    val originalCurrency: String? = null
 )
 
 data class SavingsGoalResponse(
@@ -48,5 +51,8 @@ data class SavingsGoalResponse(
     val targetAmount: Double,
     val currentAmount: Double,
     val targetDate: String,
-    val currency: String
+    val currency: String,
+    val originalTargetAmount: Double? = null,
+    val originalCurrentAmount: Double? = null,
+    val originalCurrency: String? = null
 )

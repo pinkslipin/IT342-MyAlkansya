@@ -177,12 +177,12 @@ class DashboardActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
-                
+
                 // Fetch real user data for export
                 val selectedMonth = binding.spinnerMonth.selectedItemPosition
                 val selectedYear = if (binding.spinnerYear.selectedItemPosition == 0)
                     currentYear else binding.spinnerYear.selectedItem.toString().toInt()
-                
+
                 // Fetch incomes
                 val incomes = try {
                     withContext(Dispatchers.IO) {
@@ -190,9 +190,9 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.e("DashboardActivity", "Error fetching incomes for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.model.Income>()
+                    emptyList<Any>()
                 }
-                
+
                 // Fetch expenses
                 val expenses = try {
                     withContext(Dispatchers.IO) {
@@ -200,9 +200,9 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.e("DashboardActivity", "Error fetching expenses for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.api.ExpenseResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 // Fetch budgets
                 val budgets = try {
                     withContext(Dispatchers.IO) {
@@ -210,9 +210,9 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.e("DashboardActivity", "Error fetching budgets for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.BudgetResponse>()
+                    emptyList<Any>()
                 }
-                
+
                 // Fetch savings goals
                 val savingsGoals = try {
                     withContext(Dispatchers.IO) {
@@ -220,7 +220,7 @@ class DashboardActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     Log.e("DashboardActivity", "Error fetching savings goals for export: ${e.message}")
-                    emptyList<com.example.myalkansyamobile.api.SavingsGoalResponse>()
+                    emptyList<Any>()
                 }
 
                 // Fetch financial summary
@@ -236,7 +236,7 @@ class DashboardActivity : AppCompatActivity() {
                     Log.e("DashboardActivity", "Error fetching financial summary for export: ${e.message}")
                     null
                 }
-                
+
                 // Now export the real data
                 exportService.exportAndShareFinancialData(
                     incomes = incomes,
@@ -257,7 +257,7 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun loadDashboardData() {
         showLoading(true)
-        
+
         val token = sessionManager.getToken()
         val isValid = sessionManager.isTokenValid()
         Log.d("DashboardActivity", "Token exists: ${!token.isNullOrEmpty()}, Is valid (client-side): $isValid")
@@ -279,7 +279,7 @@ class DashboardActivity : AppCompatActivity() {
                     binding.spinnerYear.selectedItem.toString().toInt()
 
                 val bearerToken = "Bearer $validToken"
-                
+
                 // First try a basic token validation to ensure our auth is working
                 val isTokenValid = try {
                     withContext(Dispatchers.IO) {
@@ -289,7 +289,7 @@ class DashboardActivity : AppCompatActivity() {
                     Log.e("DashboardActivity", "Token validation error: ${e.message}")
                     false
                 }
-                
+
                 if (!isTokenValid) {
                     Log.w("DashboardActivity", "Token validation failed, redirecting to login")
                     handleExpiredToken()
@@ -305,7 +305,7 @@ class DashboardActivity : AppCompatActivity() {
                     Log.w("DashboardActivity", "Monthly summary error: ${e.message}")
                     emptyList<MonthlySummaryResponse>()
                 }
-                
+
                 val categoryDataResult = try {
                     withContext(Dispatchers.IO) {
                         RetrofitClient.analyticsApiService.getExpenseCategories(
@@ -318,7 +318,7 @@ class DashboardActivity : AppCompatActivity() {
                     Log.w("DashboardActivity", "Category data error: ${e.message}")
                     emptyList<CategoryExpenseResponse>()
                 }
-                
+
                 val financialSummaryResult = try {
                     withContext(Dispatchers.IO) {
                         RetrofitClient.analyticsApiService.getFinancialSummary(
@@ -340,7 +340,7 @@ class DashboardActivity : AppCompatActivity() {
                         currency = sessionManager.getCurrency() ?: "USD"
                     )
                 }
-                
+
                 val savingsGoalsProgressResult = try {
                     withContext(Dispatchers.IO) {
                         RetrofitClient.analyticsApiService.getSavingsGoalsProgress(bearerToken)
@@ -351,20 +351,20 @@ class DashboardActivity : AppCompatActivity() {
                 }
 
                 // Check if we got any real data
-                val hasData = monthlySummaryResult.isNotEmpty() || 
-                              categoryDataResult.isNotEmpty() || 
-                              financialSummaryResult.totalIncome > 0 || 
-                              financialSummaryResult.totalExpenses > 0 ||
-                              savingsGoalsProgressResult.isNotEmpty()
-                
+                val hasData = monthlySummaryResult.isNotEmpty() ||
+                        categoryDataResult.isNotEmpty() ||
+                        financialSummaryResult.totalIncome > 0 ||
+                        financialSummaryResult.totalExpenses > 0 ||
+                        savingsGoalsProgressResult.isNotEmpty()
+
                 // Update UI with whatever data we managed to get
                 updateFinancialSummaryCards(financialSummaryResult)
                 setupMonthlyChart(monthlySummaryResult)
                 setupCategoryPieChart(categoryDataResult)
                 setupSavingsGoalsProgressChart(savingsGoalsProgressResult)
-                
+
                 showLoading(false)
-                
+
                 if (!hasData) {
                     Toast.makeText(
                         this@DashboardActivity,
@@ -374,7 +374,7 @@ class DashboardActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e("DashboardActivity", "Dashboard data load error: ${e.message}", e)
-                
+
                 // Check if this is an authentication error
                 if (isAuthError(e)) {
                     handleExpiredToken()
@@ -382,7 +382,7 @@ class DashboardActivity : AppCompatActivity() {
                     // Show empty data for non-auth errors
                     showEmptyData()
                     showLoading(false)
-                    
+
                     Toast.makeText(
                         this@DashboardActivity,
                         "Could not load financial data. Please try again later.",
@@ -408,11 +408,11 @@ class DashboardActivity : AppCompatActivity() {
                     currency = sessionManager.getCurrency() ?: "USD"
                 )
             )
-            
+
             setupMonthlyChart(emptyList<MonthlySummaryResponse>())
             setupCategoryPieChart(emptyList<CategoryExpenseResponse>())
             setupSavingsGoalsProgressChart(emptyList<SavingsGoalProgressResponse>())
-            
+
             // Show empty state message
             binding.tvNoSavingsGoals.visibility = View.VISIBLE
             binding.tvNoSavingsGoals.text = "No financial data found. Add transactions to see insights."
@@ -424,27 +424,27 @@ class DashboardActivity : AppCompatActivity() {
 
     private fun isAuthError(e: Exception): Boolean {
         val errorMsg = e.message?.lowercase() ?: ""
-        return errorMsg.contains("401") || 
-               errorMsg.contains("403") ||
-               errorMsg.contains("authentication required") || 
-               errorMsg.contains("session expired") ||
-               errorMsg.contains("unauthorized") ||
-               errorMsg.contains("unauthenticated")
+        return errorMsg.contains("401") ||
+                errorMsg.contains("403") ||
+                errorMsg.contains("authentication required") ||
+                errorMsg.contains("session expired") ||
+                errorMsg.contains("unauthorized") ||
+                errorMsg.contains("unauthenticated")
     }
 
     private fun handleExpiredToken() {
         showLoading(false)
-        
+
         // Clear the expired token
         sessionManager.clearToken()
-        
+
         // Show a friendly message
         Toast.makeText(
             this@DashboardActivity,
             "Your session has expired. Please sign in again.",
             Toast.LENGTH_LONG
         ).show()
-        
+
         // Redirect to login
         val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -455,18 +455,18 @@ class DashboardActivity : AppCompatActivity() {
     private fun handleDataLoadError(e: Exception) {
         showLoading(false)
         Log.e("DashboardActivity", "Data load error", e)
-        
+
         val errorMessage = e.message ?: ""
-        if (errorMessage.contains("Authentication required") || 
-            errorMessage.contains("401") || 
+        if (errorMessage.contains("Authentication required") ||
+            errorMessage.contains("401") ||
             errorMessage.contains("Session expired")) {
-            
+
             Toast.makeText(
                 this@DashboardActivity,
                 "Your session has expired. Please sign in again.",
                 Toast.LENGTH_LONG
             ).show()
-            
+
             sessionManager.clearToken()
             val intent = Intent(this@DashboardActivity, SignInActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -474,17 +474,17 @@ class DashboardActivity : AppCompatActivity() {
             finish()
             return
         }
-        
+
         val errorMsg = if (BuildConfig.DEBUG) {
             "Error: ${e.message}\n\n" +
-            "This might be because:\n" +
-            "1. Backend API is not implemented yet\n" +
-            "2. Server is unreachable\n" +
-            "3. Data format doesn't match expected format"
+                    "This might be because:\n" +
+                    "1. Backend API is not implemented yet\n" +
+                    "2. Server is unreachable\n" +
+                    "3. Data format doesn't match expected format"
         } else {
             "Failed to load dashboard data. Please try again later."
         }
-        
+
         AlertDialog.Builder(this)
             .setTitle("Data Load Error")
             .setMessage(errorMsg)
