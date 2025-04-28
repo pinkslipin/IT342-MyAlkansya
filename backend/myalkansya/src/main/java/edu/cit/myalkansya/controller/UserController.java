@@ -39,11 +39,6 @@ import org.springframework.web.bind.annotation.*;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import java.util.Base64;
-import com.google.cloud.storage.BlobId;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
-
 // Add this import with your other imports
 import edu.cit.myalkansya.dto.PasswordChangeRequest;
 import edu.cit.myalkansya.dto.ChangeCurrencyRequest;
