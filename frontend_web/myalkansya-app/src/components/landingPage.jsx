@@ -1,7 +1,5 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import myAlkansyaLogo from "/public/assets/myAlkansyaLogo.png";
-import myAlkansyaTextLogo from "/public/assets/myAlkansyaTextLogo.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -25,11 +23,12 @@ const LandingPage = () => {
       <nav className="bg-[#18864F] p-4 w-full">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <img src={myAlkansyaLogo} alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
-            <img src={myAlkansyaTextLogo} alt="MyAlkansya Text Logo" className="h-6" />
+            {/* Updated image paths relative to the public folder */}
+            <img src="/assets/myAlkansyaLogo.png" alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
+            <img src="/assets/myAlkansyaTextLogo.png" alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
-            <button 
+            <button
               className="bg-[#FFC107] text-white font-bold py-2 px-4 rounded"
               onClick={() => navigate("/login")}
             >
@@ -56,13 +55,13 @@ const LandingPage = () => {
                 <span className="text-[#FFC107]">My</span>
                 <span className="text-[#18864F]">Alkansya</span>
               </div>
-              
+
               <p className="text-lg mb-8 text-gray-700 text-center md:text-left">
-                Your personal finance manager that helps you track income, expenses, 
+                Your personal finance manager that helps you track income, expenses,
                 budget effectively and achieve your savings goals.
               </p>
-              
-              <button 
+
+              <button
                 onClick={() => navigate("/register")}
                 className="bg-[#FFC107] hover:bg-[#e5ac00] text-[#18864F] text-xl font-bold py-4 px-8 rounded-lg flex items-center transition duration-300 shadow-md"
               >
@@ -72,26 +71,27 @@ const LandingPage = () => {
                 </svg>
               </button>
             </div>
-            
+
             {/* Right side: Decorative elements */}
             <div className="flex justify-center items-center">
               <div className="relative">
                 {/* Main logo in green background */}
                 <div className="bg-[#18864F] p-10 rounded-full shadow-xl">
-                  <img 
-                    src={myAlkansyaLogo} 
-                    alt="MyAlkansya Logo" 
+                  {/* Updated image path relative to the public folder */}
+                  <img
+                    src="/assets/myAlkansyaLogo.png"
+                    alt="MyAlkansya Logo"
                     className="h-48 w-48"
                   />
                 </div>
-                
+
                 {/* Decorative circles */}
                 <div className="absolute -top-6 -left-6 bg-[#FFC107]/30 w-16 h-16 rounded-full"></div>
                 <div className="absolute -bottom-4 -right-4 bg-[#FFC107]/60 w-24 h-24 rounded-full"></div>
               </div>
             </div>
           </div>
-          
+
           {/* Features Section */}
           <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg hover:bg-[#FAFDF7] transform hover:scale-105 transition-all duration-300 cursor-pointer">
@@ -103,7 +103,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-bold text-[#18864F] mb-2">Track Finances</h3>
               <p className="text-gray-600">Monitor your income and expenses in one place</p>
             </div>
-            
+
             <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg hover:bg-[#FAFDF7] transform hover:scale-105 transition-all duration-300 cursor-pointer">
               <div className="bg-[#EDFBE9] p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#18864F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,7 +113,7 @@ const LandingPage = () => {
               <h3 className="text-xl font-bold text-[#18864F] mb-2">Budget Planning</h3>
               <p className="text-gray-600">Create and manage budgets easily</p>
             </div>
-            
+
             <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg hover:bg-[#FAFDF7] transform hover:scale-105 transition-all duration-300 cursor-pointer">
               <div className="bg-[#EDFBE9] p-3 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#18864F]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
