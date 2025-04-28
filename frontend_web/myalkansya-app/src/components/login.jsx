@@ -42,9 +42,16 @@ const Login = () => {
     window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
   };
 
+  // const handleFacebookLogin = () => {
+  //   localStorage.setItem("frontendRedirectUrl", window.location.origin);
+  //   window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+  // };
+
   const handleFacebookLogin = () => {
+    // Store the frontend URL. The backend's success handler might need this later.
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+    // Initiate login via backend. Do NOT send redirect_uri from frontend here.
+    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook`;
   };
 
   return (
