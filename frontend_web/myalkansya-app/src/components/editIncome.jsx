@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import axios from "axios";
-import trashIcon from "../assets/trash.png"; // Import the trash icon
+import trashIcon from "/assets/trash.png";  // Import the trash icon
 import { getCurrencyName, fetchAvailableCurrencies } from "./getCurrency";
 
 const EditIncome = () => {
