@@ -79,11 +79,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             // If still no redirect_uri, fallback to default frontend URL
             if (redirectUri == null || redirectUri.isEmpty()) {
                 if ("google".equals(provider)) {
-                    redirectUri = "https://myalkansya-sia.as.r.appspot.com/login/oauth2/code/google";
+                    redirectUri = "https://myalkansya.vercel.app";
                 } else if ("facebook".equals(provider)) {
-                    redirectUri = "https://myalkansya-sia.as.r.appspot.com/login/oauth2/code/facebook";
+                    redirectUri = "https://myalkansya.vercel.app";
                 } else {
-                    redirectUri = "https://myalkansya-sia.as.r.appspot.com"; // Default fallback
+                    redirectUri = "https://myalkansya.vercel.app"; // Default fallback
                 }
             }
             
@@ -101,7 +101,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         } else {
             // If email is null, redirect to login page with error
             logger.warning("Email not found in OAuth2 user data");
-            response.sendRedirect("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/login?error=auth_failed");
+            response.sendRedirect("https://myalkansya.vercel.app/login?error=auth_failed");
         }
     }
     
