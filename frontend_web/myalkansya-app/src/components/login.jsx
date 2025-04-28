@@ -18,7 +18,7 @@ const Login = () => {
     setSuccess("");
 
     try {
-      const response = await axios.post("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/users/login", {
+      const response = await axios.post("https://myalkansya-sia.as.r.appspot.com/api/users/login", {
         email,
         password,
       });
@@ -41,12 +41,12 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
   };
 
   const handleFacebookLogin = () => {
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
+    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
   };
 
   return (

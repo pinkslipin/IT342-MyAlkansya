@@ -112,10 +112,10 @@ const HomePage = () => {
           },
         };
 
-        const userResponse = await axios.get("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/users/me", config);
+        const userResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", config);
         setUser(userResponse.data);
 
-        const expensesResponse = await axios.get("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/expenses/getExpenses", config);
+        const expensesResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpenses", config);
         let filteredExpenses = expensesResponse.data;
         if (selectedMonth > 0 || selectedYear > 0) {
           filteredExpenses = filteredExpenses.filter(expense => {
@@ -134,7 +134,7 @@ const HomePage = () => {
         // After filtering expenses
         setFilteredExpenses(filteredExpenses);
 
-        const incomesResponse = await axios.get("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/incomes/getIncomes", config);
+        const incomesResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/incomes/getIncomes", config);
         let filteredIncomes = incomesResponse.data;
         if (selectedMonth > 0 || selectedYear > 0) {
           filteredIncomes = filteredIncomes.filter(income => {
@@ -153,7 +153,7 @@ const HomePage = () => {
         // After filtering incomes
         setFilteredIncomes(filteredIncomes);
 
-        const budgetsResponse = await axios.get("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/budgets/user", config);
+        const budgetsResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/budgets/user", config);
         let filteredBudgets = budgetsResponse.data;
         if (selectedMonth > 0 || selectedYear > 0) {
           filteredBudgets = filteredBudgets.filter(budget => {
@@ -196,7 +196,7 @@ const HomePage = () => {
         }
 
         // Add this in your first useEffect where you fetch data, after the budget data fetching
-        const savingsGoalsResponse = await axios.get("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/savings-goals/getSavingsGoals", config);
+        const savingsGoalsResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/savings-goals/getSavingsGoals", config);
         setSavingsGoalsData(savingsGoalsResponse.data);
 
         setLoading(false);
@@ -239,7 +239,7 @@ const HomePage = () => {
         
         // Get monthly data for the selected year
         const monthlyResponse = await axios.get(
-          `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/analytics/monthly-summary?year=${selectedYear}`,
+          `https://myalkansya-sia.as.r.appspot.com/api/analytics/monthly-summary?year=${selectedYear}`,
           config
         );
         
@@ -267,7 +267,7 @@ const HomePage = () => {
         
         // Get expense categories data
         const categoriesResponse = await axios.get(
-          `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`,
+          `https://myalkansya-sia.as.r.appspot.com/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`,
           config
         );
         
@@ -292,8 +292,8 @@ const HomePage = () => {
 
         // Inside your prepareChartData function
         console.log("API URLs:", {
-          monthlyUrl: `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/analytics/monthly-summary?year=${selectedYear}`,
-          categoriesUrl: `https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`
+          monthlyUrl: `https://myalkansya-sia.as.r.appspot.com/api/analytics/monthly-summary?year=${selectedYear}`,
+          categoriesUrl: `https://myalkansya-sia.as.r.appspot.com/api/analytics/expense-categories?month=${selectedMonth}&year=${selectedYear}`
         });
 
         // After your API calls
