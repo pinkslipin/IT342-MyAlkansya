@@ -29,8 +29,13 @@ const Sidebar = ({ activePage }) => {
 
         // Universal profile picture handling - works with both uploaded and OAuth pictures
         if (response.data.profilePicture) {
+          // If it's a Base64 image
+          if (response.data.profilePicture.startsWith('data:')) {
+            console.log("Sidebar: Using Base64 profile picture");
+            setProfileImage(response.data.profilePicture);
+          }
           // If it's already a full URL (like from Google/Facebook)
-          if (response.data.profilePicture.startsWith('http')) {
+          else if (response.data.profilePicture.startsWith('http')) {
             console.log("Sidebar: Using external provider profile picture");
             setProfileImage(response.data.profilePicture);
           } 

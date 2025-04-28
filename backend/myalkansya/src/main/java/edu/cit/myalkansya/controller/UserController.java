@@ -13,6 +13,7 @@ import edu.cit.myalkansya.security.JwtUtil;
 import edu.cit.myalkansya.security.GoogleTokenVerifier;
 import edu.cit.myalkansya.security.FacebookTokenVerifier;
 import edu.cit.myalkansya.service.CurrencyConversionService;
+import edu.cit.myalkansya.dto.ProfilePictureUploadDTO;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -37,7 +38,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
-
+import java.util.Base64;
 // Add this import with your other imports
 import edu.cit.myalkansya.dto.PasswordChangeRequest;
 import edu.cit.myalkansya.dto.ChangeCurrencyRequest;
@@ -449,33 +450,31 @@ public class UserController {
     }
     
     @PostMapping("/uploadProfilePicture")
-    public ResponseEntity<?> uploadProfilePicture(@RequestParam("profilePicture") MultipartFile file,
-                                                 @RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> uploadProfilePicture(@RequestBody ProfilePictureUploadDTO uploadDTO,
+                                             @RequestHeader("Authorization") String token) {
         try {
-            if (file.isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please upload a file");
-            }
-            
             String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
-            String profilePictureUrl = userService.uploadProfilePicture(email, file);
             
-            // Get the updated user to return all necessary info
-            UserEntity user = userService.findByEmail(email).orElseThrow(() -> new NoSuchElementException("User not found"));
+            // Decode base64 string to byte array
+            byte[] imageBytes = Base64.getDecoder().decode(uploadDTO.getProfilePicture());
             
+            String base64Image = userService.uploadProfilePictureBase64(email, 
+                                                                  imageBytes, 
+                                                                  uploadDTO.getFileName(),
+                                                                  uploadDTO.getContentType());
+        
+            UserEntity user = userService.findByEmail(email)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+                
             Map<String, Object> responseData = new HashMap<>();
             responseData.put("message", "Profile picture uploaded successfully");
-            responseData.put("profilePicture", profilePictureUrl);
+            responseData.put("profilePicture", "data:" + uploadDTO.getContentType() + ";base64," + base64Image);
             responseData.put("userId", user.getUserId());
-            
+                
             return ResponseEntity.ok(responseData);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-        } catch (IOException e) {
-            logger.severe("Error uploading profile picture: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to upload profile picture: " + e.getMessage());
         } catch (Exception e) {
-            logger.severe("Unexpected error uploading profile picture: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("An unexpected error occurred: " + e.getMessage());
         }
@@ -544,6 +543,25 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/{userId}/profilePicture")
+    public ResponseEntity<?> getProfilePicture(@PathVariable int userId) {
+        try {
+            String base64Image = userService.getProfilePictureBase64(userId);
+            if (base64Image != null) {
+                Map<String, String> response = new HashMap<>();
+                response.put("profilePicture", base64Image);
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to retrieve profile picture: " + e.getMessage());
         }
     }
 }

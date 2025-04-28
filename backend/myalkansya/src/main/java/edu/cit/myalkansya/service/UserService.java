@@ -16,9 +16,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+
 
 @Service
 public class UserService {
@@ -140,6 +142,38 @@ public class UserService {
         userRepo.save(user);
         
         return profilePictureUrl;
+    }
+
+    @Transactional
+    public String uploadProfilePictureBase64(String email, byte[] imageBytes, String fileName, String contentType) {
+        Optional<UserEntity> userOpt = userRepo.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            throw new NoSuchElementException("User not found");
+        }
+
+        UserEntity user = userOpt.get();
+        
+        // Store the image bytes directly in the database
+        user.setProfileImageData(imageBytes);
+        
+        // Keep track of the image content type
+        user.setProfilePicture("data:" + contentType + ";base64,user-profile-picture");
+        
+        userRepo.save(user);
+        
+        return user.getProfileImageBase64();
+    }
+
+    // Add a method to retrieve profile picture as Base64
+    public String getProfilePictureBase64(int userId) {
+        UserEntity user = userRepo.findById(userId)
+            .orElseThrow(() -> new NoSuchElementException("User not found"));
+        
+        if (user.getProfileImageData() != null) {
+            return Base64.getEncoder().encodeToString(user.getProfileImageData());
+        }
+        
+        return null;
     }
 
     @Transactional
