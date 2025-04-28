@@ -77,7 +77,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
             
             // If still no redirect_uri, fallback to default frontend URL
             if (redirectUri == null || redirectUri.isEmpty()) {
-                redirectUri = "http://localhost:5173"; // Default frontend URL
+                redirectUri = "https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app"; // Default frontend URL
             }
             
             // Clean up any trailing slashes and add a token parameter
@@ -94,7 +94,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         } else {
             // If email is null, redirect to login page with error
             logger.warning("Email not found in OAuth2 user data");
-            response.sendRedirect("http://localhost:5173/login?error=auth_failed");
+            response.sendRedirect("https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app/login?error=auth_failed");
         }
     }
     

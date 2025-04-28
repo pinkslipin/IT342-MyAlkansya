@@ -1,5 +1,7 @@
 package edu.cit.myalkansya.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -10,15 +12,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
 import edu.cit.myalkansya.security.CustomOAuth2UserService;
 import edu.cit.myalkansya.security.OAuth2LoginSuccessHandler;
-
-import java.util.List;
 
 @Configuration
 public class SecurityConfig {
@@ -48,7 +47,7 @@ public class SecurityConfig {
                 )
             )
             .logout(logout -> logout
-                .logoutSuccessUrl("http://localhost:5173/login") // Redirect to frontend after logout
+                .logoutSuccessUrl("https://myalkansya.vercel.app/login") // Redirect to frontend after logout
                 .permitAll()
             )
             .csrf(csrf -> csrf.disable()); 
@@ -67,9 +66,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
+                "https://myalkansya.vercel.app/",
                 "http://localhost:5173",  // Frontend
+                "https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app",
                 "http://10.0.2.2:8080",   // Android emulator
-                "http://localhost:8080"   // Local testing
+                "http://localhost:8080",  // Local testing
+                "https://myalkansya-sia.as.r.appspot.com"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

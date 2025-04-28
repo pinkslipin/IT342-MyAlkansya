@@ -20,7 +20,7 @@ const TopBar = () => {
           return;
         }
 
-        const response = await axios.get("http://localhost:8080/api/users/me", {
+        const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         
@@ -35,7 +35,7 @@ const TopBar = () => {
           } 
           // If it's a path to our own API (uploaded pictures)
           else {
-            const baseUrl = "http://localhost:8080";
+            const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
             const path = response.data.profilePicture.startsWith('/') 
               ? response.data.profilePicture 
               : `/${response.data.profilePicture}`;

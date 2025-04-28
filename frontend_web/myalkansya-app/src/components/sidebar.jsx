@@ -24,7 +24,7 @@ const Sidebar = ({ activePage }) => {
           },
         };
 
-        const response = await axios.get("http://localhost:8080/api/users/me", config);
+        const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", config);
         setUser(response.data);
 
         // Universal profile picture handling - works with both uploaded and OAuth pictures
@@ -36,7 +36,7 @@ const Sidebar = ({ activePage }) => {
           } 
           // If it's a path to our own API (uploaded pictures)
           else {
-            const baseUrl = "http://localhost:8080";
+            const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
             const path = response.data.profilePicture.startsWith('/') 
               ? response.data.profilePicture 
               : `/${response.data.profilePicture}`;
