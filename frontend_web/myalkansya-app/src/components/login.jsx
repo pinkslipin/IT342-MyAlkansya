@@ -55,7 +55,7 @@ const Login = () => {
           <div className="flex items-center">
             {/* Updated image paths relative to the public folder */}
             <img src="/assets/myAlkansyaLogo.png" alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
-            <img src="/assets/myAlkansyaTextLogo.png" alt="MyAlkansya Text Logo" className="h-6" />
+            <img src="/assets/MyAlkansyaTextLogo.png" alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
           <button
