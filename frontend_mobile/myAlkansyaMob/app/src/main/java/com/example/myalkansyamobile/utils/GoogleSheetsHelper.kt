@@ -160,7 +160,7 @@ class GoogleSheetsHelper(private val context: Context) {
                 // Add header row
                 incomeValues.add(listOf("INCOME RECORDS"))
                 incomeValues.add(listOf<Any>()) // Empty row
-                incomeValues.add(listOf("ID", "Source", "Date", "Amount", "Currency"))
+                incomeValues.add(listOf("ID", "Source", "Date", "Amount", "Currency")) // Removed any Progress column
                 
                 Log.d(TAG, "Processing incomes list with ${incomes.size} items")
                 
@@ -176,7 +176,7 @@ class GoogleSheetsHelper(private val context: Context) {
                                 val amount = income["amount"]?.toString() ?: "0.00"
                                 val incomeCurrency = income["currency"]?.toString() ?: currency
                                 
-                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
+                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency)) // No progress value
                                 Log.d(TAG, "Added income from Map: $id, $source, $amount")
                             }
                             is Income -> {
@@ -186,7 +186,7 @@ class GoogleSheetsHelper(private val context: Context) {
                                     income.date,
                                     income.amount.toString(),
                                     income.currency ?: currency
-                                ))
+                                )) // No progress value
                                 Log.d(TAG, "Added income from Income object: ${income.id}, ${income.source}, ${income.amount}")
                             }
                             else -> {
@@ -197,7 +197,7 @@ class GoogleSheetsHelper(private val context: Context) {
                                 val amount = getFieldValue(income, "amount") ?: "0.00"
                                 val incomeCurrency = getFieldValue(income, "currency") ?: currency
                                 
-                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency))
+                                incomeValues.add(listOf(id, source, date, amount, incomeCurrency)) // No progress value
                                 Log.d(TAG, "Added income via reflection: $id, $source, $amount")
                             }
                         }
@@ -278,7 +278,7 @@ class GoogleSheetsHelper(private val context: Context) {
                 // Add header row
                 budgetValues.add(listOf("BUDGET RECORDS"))
                 budgetValues.add(listOf<Any>()) // Empty row
-                budgetValues.add(listOf("ID", "Category", "Monthly Budget", "Total Spent", "Month", "Year", "Progress"))
+                budgetValues.add(listOf("ID", "Category", "Monthly Budget", "Total Spent", "Month", "Year")) // Removed Progress column
                 
                 Log.d(TAG, "Processing budgets list with ${budgets.size} items")
                 
@@ -295,24 +295,19 @@ class GoogleSheetsHelper(private val context: Context) {
                                 val month = budget["budgetMonth"]?.toString() ?: ""
                                 val year = budget["budgetYear"]?.toString() ?: ""
                                 
-                                // Calculate progress as a formula
-                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                
-                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
+                                // No longer add progress formula
+                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year))
                                 Log.d(TAG, "Added budget from Map: $id, $category, $monthlyBudget")
                             }
                             is BudgetResponse -> {
-                                // Calculate progress as a formula
-                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                
+                                // No longer add progress formula
                                 budgetValues.add(listOf(
                                     budget.id.toString(),
                                     budget.category,
                                     budget.monthlyBudget.toString(),
                                     budget.totalSpent.toString(),
                                     budget.budgetMonth.toString(),
-                                    budget.budgetYear.toString(),
-                                    progressFormula
+                                    budget.budgetYear.toString()
                                 ))
                                 Log.d(TAG, "Added budget from BudgetResponse: ${budget.id}, ${budget.category}, ${budget.monthlyBudget}")
                             }
@@ -325,10 +320,8 @@ class GoogleSheetsHelper(private val context: Context) {
                                 val month = getFieldValue(budget, "budgetMonth") ?: ""
                                 val year = getFieldValue(budget, "budgetYear") ?: ""
                                 
-                                // Calculate progress as a formula
-                                val progressFormula = "IFERROR(E${budgetValues.size + 1}/D${budgetValues.size + 1}, 0)"
-                                
-                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year, progressFormula))
+                                // No longer add progress formula
+                                budgetValues.add(listOf(id, category, monthlyBudget, totalSpent, month, year))
                                 Log.d(TAG, "Added budget via reflection: $id, $category, $monthlyBudget")
                             }
                         }
@@ -355,7 +348,7 @@ class GoogleSheetsHelper(private val context: Context) {
                 // Add header row
                 savingsValues.add(listOf("SAVINGS GOALS"))
                 savingsValues.add(listOf<Any>()) // Empty row
-                savingsValues.add(listOf("ID", "Goal", "Target Amount", "Current Amount", "Target Date", "Progress"))
+                savingsValues.add(listOf("ID", "Goal", "Target Amount", "Current Amount", "Target Date")) // Removed Progress column
                 
                 // Process the savings goals data based on its type
                 for (goal in savingsGoals) {
@@ -367,22 +360,17 @@ class GoogleSheetsHelper(private val context: Context) {
                             val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
                             val targetDate = goal["targetDate"]?.toString() ?: ""
                             
-                            // Calculate progress as a formula
-                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                            
-                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
+                            // No longer add progress formula
+                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate))
                         }
                         is SavingsGoalResponse -> {
-                            // Calculate progress as a formula
-                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                            
+                            // No longer add progress formula
                             savingsValues.add(listOf(
                                 goal.id.toString(),
                                 goal.goal,
                                 goal.targetAmount.toString(),
                                 goal.currentAmount.toString(),
-                                goal.targetDate,
-                                progressFormula
+                                goal.targetDate
                             ))
                         }
                         else -> {
@@ -393,10 +381,8 @@ class GoogleSheetsHelper(private val context: Context) {
                             val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
                             val targetDate = getFieldValue(goal, "targetDate") ?: ""
                             
-                            // Calculate progress as a formula
-                            val progressFormula = "IFERROR(D${savingsValues.size + 1}/C${savingsValues.size + 1}, 0)"
-                            
-                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate, progressFormula))
+                            // No longer add progress formula
+                            savingsValues.add(listOf(id, name, targetAmount, currentAmount, targetDate))
                         }
                     }
                 }
@@ -589,109 +575,48 @@ class GoogleSheetsHelper(private val context: Context) {
     // Format budget sheet with conditional formatting for progress column
     private fun formatBudgetSheet(sheetsService: Sheets, spreadsheetId: String, rowCount: Int) {
         try {
-            // First apply basic formatting from the data sheet method
+            // First apply the same basic formatting as other sheets to ensure consistency
             formatDataSheet(sheetsService, spreadsheetId, "Budget", rowCount)
             
+            // Apply additional budget-specific formatting
             val sheetId = getSheetIdByName(sheetsService, spreadsheetId, "Budget") ?: return
             
-            val requests = mutableListOf<Request>()
+            // Apply number formatting to budget and spent columns (columns C and D)
+            val currencyFormatRequest = BatchUpdateSpreadsheetRequest().setRequests(
+                listOf(
+                    Request().setRepeatCell(
+                        RepeatCellRequest()
+                            .setRange(
+                                GridRange()
+                                    .setSheetId(sheetId)
+                                    .setStartRowIndex(3) // Skip headers
+                                    .setEndRowIndex(rowCount)
+                                    .setStartColumnIndex(2) // Column C
+                                    .setEndColumnIndex(4) // Column D (exclusive)
+                            )
+                            .setCell(
+                                CellData()
+                                    .setUserEnteredFormat(
+                                        CellFormat()
+                                            .setNumberFormat(
+                                                NumberFormat()
+                                                    .setType("CURRENCY")
+                                            )
+                                    )
+                            )
+                            .setFields("userEnteredFormat.numberFormat")
+                    )
+                )
+            )
             
-            // Format currency columns (Monthly Budget and Total Spent)
-            requests.add(Request().setRepeatCell(
-                RepeatCellRequest()
-                    .setRange(GridRange()
-                        .setSheetId(sheetId)
-                        .setStartRowIndex(3)
-                        .setEndRowIndex(rowCount)
-                        .setStartColumnIndex(2) // Column C - Monthly Budget
-                        .setEndColumnIndex(4)) // Column D - Total Spent
-                    .setCell(CellData()
-                        .setUserEnteredFormat(CellFormat()
-                            .setNumberFormat(NumberFormat()
-                                .setType("CURRENCY"))))
-                    .setFields("userEnteredFormat.numberFormat")
-            ))
+            sheetsService.spreadsheets().batchUpdate(spreadsheetId, currencyFormatRequest).execute()
             
-            // Format the progress column as percentage
-            requests.add(Request().setRepeatCell(
-                RepeatCellRequest()
-                    .setRange(GridRange()
-                        .setSheetId(sheetId)
-                        .setStartRowIndex(3)
-                        .setEndRowIndex(rowCount)
-                        .setStartColumnIndex(6) // Column G - Progress
-                        .setEndColumnIndex(7))
-                    .setCell(CellData()
-                        .setUserEnteredFormat(CellFormat()
-                            .setNumberFormat(NumberFormat()
-                                .setType("PERCENT")
-                                .setPattern("0.00%"))))
-                    .setFields("userEnteredFormat.numberFormat")
-            ))
-            
-            // Define the range for conditional formatting
-            val progressRange = GridRange()
-                .setSheetId(sheetId)
-                .setStartRowIndex(3)
-                .setEndRowIndex(rowCount)
-                .setStartColumnIndex(6)
-                .setEndColumnIndex(7)
-            
-            // Add conditional formatting rules for the progress column
-            // Rule 1: Red for > 100% (over budget)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_GREATER")
-                                .setValues(listOf(ConditionValue().setUserEnteredValue("1"))))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(0.9f).setGreen(0.4f).setBlue(0.4f))
-                                .setTextFormat(TextFormat().setForegroundColor(Color().setRed(1.0f).setGreen(1.0f).setBlue(1.0f))))))
-            ))
-            
-            // Rule 2: Yellow for > 80% (approaching budget)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_BETWEEN")
-                                .setValues(listOf(
-                                    ConditionValue().setUserEnteredValue("0.8"),
-                                    ConditionValue().setUserEnteredValue("1")
-                                )))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(1.0f).setGreen(0.85f).setBlue(0.4f)))))
-            ))
-            
-            // Rule 3: Green for < 80% (well within budget)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_LESS")
-                                .setValues(listOf(ConditionValue().setUserEnteredValue("0.8"))))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(0.5f).setGreen(0.8f).setBlue(0.5f)))))
-            ))
-            
-            // Execute all formatting requests
-            val batchUpdateRequest = BatchUpdateSpreadsheetRequest().setRequests(requests)
-            sheetsService.spreadsheets().batchUpdate(spreadsheetId, batchUpdateRequest).execute()
-            
-            Log.d(TAG, "Formatted Budget sheet successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Error formatting Budget sheet: ${e.message}", e)
         }
     }
     
-    // Format savings goals sheet with progress formatting
+    // Format savings goals sheet
     private fun formatSavingsSheet(sheetsService: Sheets, spreadsheetId: String, rowCount: Int) {
         try {
             // First apply basic formatting from the data sheet method
@@ -715,75 +640,6 @@ class GoogleSheetsHelper(private val context: Context) {
                             .setNumberFormat(NumberFormat()
                                 .setType("CURRENCY"))))
                     .setFields("userEnteredFormat.numberFormat")
-            ))
-            
-            // Format the progress column as percentage
-            requests.add(Request().setRepeatCell(
-                RepeatCellRequest()
-                    .setRange(GridRange()
-                        .setSheetId(sheetId)
-                        .setStartRowIndex(3)
-                        .setEndRowIndex(rowCount)
-                        .setStartColumnIndex(5) // Column F - Progress
-                        .setEndColumnIndex(6))
-                    .setCell(CellData()
-                        .setUserEnteredFormat(CellFormat()
-                            .setNumberFormat(NumberFormat()
-                                .setType("PERCENT")
-                                .setPattern("0.00%"))))
-                    .setFields("userEnteredFormat.numberFormat")
-            ))
-            
-            // Define the range for conditional formatting
-            val progressRange = GridRange()
-                .setSheetId(sheetId)
-                .setStartRowIndex(3)
-                .setEndRowIndex(rowCount)
-                .setStartColumnIndex(5)
-                .setEndColumnIndex(6)
-            
-            // Add conditional formatting rules for the progress column
-            // Rule 1: Green for > 90% (almost at goal)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_GREATER")
-                                .setValues(listOf(ConditionValue().setUserEnteredValue("0.9"))))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(0.4f).setGreen(0.8f).setBlue(0.4f))
-                                .setTextFormat(TextFormat().setForegroundColor(Color().setRed(0.0f).setGreen(0.0f).setBlue(0.0f))))))
-            ))
-            
-            // Rule 2: Yellow for 50-90% (good progress)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_BETWEEN")
-                                .setValues(listOf(
-                                    ConditionValue().setUserEnteredValue("0.5"),
-                                    ConditionValue().setUserEnteredValue("0.9")
-                                )))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(1.0f).setGreen(0.85f).setBlue(0.4f)))))
-            ))
-            
-            // Rule 3: Red for < 50% (needs attention)
-            requests.add(Request().setAddConditionalFormatRule(
-                AddConditionalFormatRuleRequest()
-                    .setRule(ConditionalFormatRule()
-                        .setRanges(listOf(progressRange))
-                        .setBooleanRule(BooleanRule()
-                            .setCondition(BooleanCondition()
-                                .setType("NUMBER_LESS")
-                                .setValues(listOf(ConditionValue().setUserEnteredValue("0.5"))))
-                            .setFormat(CellFormat()
-                                .setBackgroundColor(Color().setRed(0.9f).setGreen(0.4f).setBlue(0.4f)))))
             ))
             
             // Execute all formatting requests
