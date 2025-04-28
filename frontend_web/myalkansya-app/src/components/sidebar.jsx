@@ -62,7 +62,7 @@ const Sidebar = ({ activePage }) => {
       {/* Logo */}
       <div className="p-4">
         <img
-          src="/assets/myAlkansyaLogo.png" // Replace with your logo path
+          src="/public/assets/myAlkansyaLogo.png" // Replace with your logo path
           alt="Logo"
           className="w-20 h-20 mx-auto"
         />
