@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import myAlkansyaLogo from "../assets/myAlkansyaLogo.png";
-import myAlkansyaTextLogo from "../assets/MyAlkansyaTextLogo.png";
+import myAlkansyaLogo from "/public/assets/myAlkansyaLogo.png";
+import myAlkansyaTextLogo from "/public/assets/myAlkansyaTextLogo.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();
