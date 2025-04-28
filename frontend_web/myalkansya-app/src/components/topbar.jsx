@@ -28,13 +28,16 @@ const TopBar = () => {
 
         // Universal profile picture handling - works with both uploaded and OAuth pictures
         if (response.data.profilePicture) {
-          // If it's already a full URL (like from Google/Facebook)
-          if (response.data.profilePicture.startsWith('http')) {
+          if (response.data.profilePicture.startsWith('data:')) {
+            // It's a Base64 image
+            console.log("TopBar: Using Base64 profile picture");
+            setProfileImage(response.data.profilePicture);
+          } else if (response.data.profilePicture.startsWith('http')) {
+            // It's a URL (OAuth provider)
             console.log("TopBar: Using external provider profile picture");
             setProfileImage(response.data.profilePicture);
-          } 
-          // If it's a path to our own API (uploaded pictures)
-          else {
+          } else {
+            // Legacy path-based images
             const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
             const path = response.data.profilePicture.startsWith('/') 
               ? response.data.profilePicture 

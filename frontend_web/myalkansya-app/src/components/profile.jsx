@@ -104,9 +104,14 @@ const Profile = () => {
       
       // Set profile image if available
       if (userData.profilePicture) {
-        if (userData.profilePicture.startsWith('http')) {
+        if (userData.profilePicture.startsWith('data:')) {
+          // It's a Base64 image
+          setProfileImage(userData.profilePicture);
+        } else if (userData.profilePicture.startsWith('http')) {
+          // It's a URL (OAuth provider)
           setProfileImage(userData.profilePicture);
         } else {
+          // Legacy path-based images (if any still exist)
           const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
           const path = userData.profilePicture.startsWith('/') 
             ? userData.profilePicture 
@@ -316,47 +321,54 @@ const Profile = () => {
     setError("");
     setUploading(true);
     
-    const formData = new FormData();
-    formData.append("profilePicture", tempProfilePicture);
-  
     try {
+      // Convert file to base64
+      const base64Image = await fileToBase64(tempProfilePicture);
+      
       const authToken = localStorage.getItem("authToken");
       const response = await axios.post(
         "https://myalkansya-sia.as.r.appspot.com/api/users/uploadProfilePicture",
-        formData,
+        {
+          profilePicture: base64Image,
+          fileName: tempProfilePicture.name,
+          contentType: tempProfilePicture.type
+        },
         {
           headers: {
             Authorization: `Bearer ${authToken}`,
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
       
       if (response.data.profilePicture) {
-        if (response.data.profilePicture.startsWith('http')) {
-          setProfileImage(response.data.profilePicture);
-        } else {
-          const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
-          const path = response.data.profilePicture.startsWith('/') 
-            ? response.data.profilePicture 
-            : `/${response.data.profilePicture}`;
-          
-          const finalUrl = `${baseUrl}${path}?t=${new Date().getTime()}`;
-          setProfileImage(finalUrl);
-        }
+        setProfileImage(response.data.profilePicture);
+        setSuccess("Profile picture updated successfully");
         
-        setUser(prev => ({...prev, profilePicture: response.data.profilePicture}));
+        // Update the user object
+        if (user) {
+          setUser({
+            ...user,
+            profilePicture: response.data.profilePicture
+          });
+        }
       }
-      
-      setSuccess("Profile picture uploaded successfully!");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err) {
-      console.error("Error uploading profile picture:", err);
-      setError("Failed to upload profile picture. Please try again later.");
+    } catch (error) {
+      setError("Failed to upload profile picture: " + (error.response?.data?.message || error.message));
     } finally {
       setUploading(false);
       setTempProfilePicture(null);
     }
+  };
+
+  // Helper function to convert File to base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result.split(',')[1]); // Remove data:image/jpeg;base64, prefix
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleImageError = () => {

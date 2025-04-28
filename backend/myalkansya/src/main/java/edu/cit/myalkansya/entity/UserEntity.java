@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Base64;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -60,6 +61,15 @@ public class UserEntity {
     @JsonIgnoreProperties("user") // Prevents infinite recursion in JSON response
     private List<SavingsGoalEntity> savingsGoals = new ArrayList<>();
     
+    // Add this field to store the image bytes
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] profileImageData;
+
+    // Add a transient field to handle Base64 conversion for API responses
+    @Transient
+    private String profileImageBase64;
+
     // Getters and Setters
     public int getUserId() {
         return userId;
@@ -245,5 +255,29 @@ public class UserEntity {
 
     public void setOriginalCurrency(String originalCurrency) {
         this.originalCurrency = originalCurrency;
+    }
+
+    // Getters and setters for the new fields
+    public byte[] getProfileImageData() {
+        return profileImageData;
+    }
+
+    public void setProfileImageData(byte[] profileImageData) {
+        this.profileImageData = profileImageData;
+    }
+
+    public String getProfileImageBase64() {
+        if (profileImageData != null) {
+            return Base64.getEncoder().encodeToString(profileImageData);
+        }
+        return null;
+    }
+
+    public void setProfileImageBase64(String profileImageBase64) {
+        this.profileImageBase64 = profileImageBase64;
+        // You might want to automatically decode and set profileImageData here
+        if (profileImageBase64 != null && !profileImageBase64.isEmpty()) {
+            this.profileImageData = Base64.getDecoder().decode(profileImageBase64);
+        }
     }
 }
