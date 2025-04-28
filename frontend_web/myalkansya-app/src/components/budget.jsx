@@ -14,7 +14,7 @@ const Budget = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Current year
   const navigate = useNavigate();
 
-  const apiUrl = "http://localhost:8080/api/budgets";
+  const apiUrl = "https://myalkansya-sia.as.r.appspot.com/api/budgets";
 
   // Fetch budgets for the selected month and year
   const fetchBudgets = async () => {

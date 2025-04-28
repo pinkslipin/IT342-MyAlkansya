@@ -20,7 +20,7 @@ const Expense = () => {
   const [selectedYear, setSelectedYear] = useState(currentYear); // Default to current year
   const navigate = useNavigate();
 
-  const apiUrl = "http://localhost:8080/api/expenses";
+  const apiUrl = "https://myalkansya-sia.as.r.appspot.com/api/expenses";
 
   // Generate array of months for dropdown
   const months = [

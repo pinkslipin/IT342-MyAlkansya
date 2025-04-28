@@ -36,7 +36,7 @@ const AddExpense = () => {
       }
 
       // Get user profile to get their currency
-      const userResponse = await axios.get("http://localhost:8080/api/users/me", {
+      const userResponse = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -88,7 +88,7 @@ const AddExpense = () => {
       const authToken = localStorage.getItem("authToken");
       
       const response = await axios.get(
-        `http://localhost:8080/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
+        `https://myalkansya-sia.as.r.appspot.com/api/currency/rate?from=${fromCurrency}&to=${toCurrency}`,
         {
           headers: { Authorization: `Bearer ${authToken}` }
         }
@@ -216,7 +216,7 @@ const AddExpense = () => {
         },
       };
 
-      await axios.post("http://localhost:8080/api/expenses/postExpense", submissionData, config);
+      await axios.post("https://myalkansya-sia.as.r.appspot.com/api/expenses/postExpense", submissionData, config);
       navigate("/expense"); // Redirect to the Expense page after successful addition
     } catch (err) {
       console.error("Error adding expense:", err);

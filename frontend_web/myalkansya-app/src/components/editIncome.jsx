@@ -36,7 +36,7 @@ const EditIncome = () => {
         };
 
         // Fetch income data
-        const response = await axios.get(`http://localhost:8080/api/incomes/getIncome/${incomeId}`, config);
+        const response = await axios.get(`https://myalkansya-sia.as.r.appspot.com/api/incomes/getIncome/${incomeId}`, config);
         
         // Format numeric values to 2 decimal places when setting initial data
         const data = response.data;
@@ -106,7 +106,7 @@ const EditIncome = () => {
         amount: parseFloat(formData.amount)
       };
 
-      await axios.put(`http://localhost:8080/api/incomes/putIncome/${incomeId}`, submissionData, config);
+      await axios.put(`https://myalkansya-sia.as.r.appspot.com/api/incomes/putIncome/${incomeId}`, submissionData, config);
       navigate("/income"); // Redirect to the Income page after successful update
     } catch (err) {
       console.error("Error editing income:", err);
@@ -132,7 +132,7 @@ const EditIncome = () => {
         },
       };
 
-      await axios.delete(`http://localhost:8080/api/incomes/deleteIncome/${incomeId}`, config);
+      await axios.delete(`https://myalkansya-sia.as.r.appspot.com/api/incomes/deleteIncome/${incomeId}`, config);
       navigate("/income"); // Redirect to the Income page after successful deletion
     } catch (err) {
       console.error("Error deleting income:", err);

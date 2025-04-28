@@ -21,7 +21,7 @@ const Income = () => {
   
   const navigate = useNavigate();
 
-  const apiUrl = "http://localhost:8080/api/incomes";
+  const apiUrl = "https://myalkansya-sia.as.r.appspot.com/api/incomes";
 
   // Generate array of months for dropdown
   const months = [

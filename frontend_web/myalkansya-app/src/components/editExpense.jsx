@@ -37,7 +37,7 @@ const EditExpense = () => {
         };
 
         // Fetch expense data
-        const response = await axios.get(`http://localhost:8080/api/expenses/getExpense/${expenseId}`, config);
+        const response = await axios.get(`https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpense/${expenseId}`, config);
         
         // Format numeric values to 2 decimal places when setting initial data
         const data = response.data;
@@ -107,7 +107,7 @@ const EditExpense = () => {
         amount: parseFloat(formData.amount)
       };
 
-      await axios.put(`http://localhost:8080/api/expenses/putExpense/${expenseId}`, submissionData, config);
+      await axios.put(`https://myalkansya-sia.as.r.appspot.com/api/expenses/putExpense/${expenseId}`, submissionData, config);
       navigate("/expense"); // Redirect to the Expense page after successful update
     } catch (err) {
       console.error("Error editing expense:", err);
@@ -133,7 +133,7 @@ const EditExpense = () => {
         },
       };
 
-      await axios.delete(`http://localhost:8080/api/expenses/deleteExpense/${expenseId}`, config);
+      await axios.delete(`https://myalkansya-sia.as.r.appspot.com/api/expenses/deleteExpense/${expenseId}`, config);
       navigate("/expense"); // Redirect to the Expense page after successful deletion
     } catch (err) {
       console.error("Error deleting expense:", err);

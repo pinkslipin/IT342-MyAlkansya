@@ -37,7 +37,7 @@ const EditSavingGoal = () => {
         };
 
         // Fetch savings goal data
-        const response = await axios.get(`http://localhost:8080/api/savings-goals/getSavingsGoal/${goalId}`, config);
+        const response = await axios.get(`https://myalkansya-sia.as.r.appspot.com/api/savings-goals/getSavingsGoal/${goalId}`, config);
         
         // Format numeric values to 2 decimal places when setting initial data
         const data = response.data;
@@ -112,7 +112,7 @@ const EditSavingGoal = () => {
         currentAmount: parseFloat(formData.currentAmount)
       };
 
-      await axios.put(`http://localhost:8080/api/savings-goals/putSavingsGoal/${goalId}`, submissionData, config);
+      await axios.put(`https://myalkansya-sia.as.r.appspot.com/api/savings-goals/putSavingsGoal/${goalId}`, submissionData, config);
       navigate("/savingsgoal"); // Redirect to the Savings Goal page after successful update
     } catch (err) {
       console.error("Error editing savings goal:", err);
@@ -138,7 +138,7 @@ const EditSavingGoal = () => {
         },
       };
 
-      await axios.delete(`http://localhost:8080/api/savings-goals/deleteSavingsGoal/${goalId}`, config);
+      await axios.delete(`https://myalkansya-sia.as.r.appspot.com/api/savings-goals/deleteSavingsGoal/${goalId}`, config);
       navigate("/savingsgoal"); // Redirect to the Savings Goal page after successful deletion
     } catch (err) {
       console.error("Error deleting savings goal:", err);
