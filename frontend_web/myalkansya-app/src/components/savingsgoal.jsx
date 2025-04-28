@@ -3,7 +3,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
-import editIcon from "../assets/edit.png"; // Import the edit icon
+import editIcon from "/assets/edit.png"; // Import the edit icon
 
 const SavingsGoal = () => {
   const [savingsGoals, setSavingsGoals] = useState([]);

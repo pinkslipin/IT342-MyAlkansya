@@ -86,7 +86,7 @@ const TopBar = () => {
         onClick={() => navigate("/home")}
       >
         <img
-          src="/src/assets/MyAlkansyaTextLogo.png"
+          src="/public/assets/MyAlkansyaTextLogo.png"
           alt="MyAlkansya Logo"
           className="h-10"
         />

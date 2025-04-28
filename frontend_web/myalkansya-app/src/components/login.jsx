@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import myAlkansyaLogo from "../assets/myAlkansyaLogo.png"; // Import the main logo
-import myAlkansyaTextLogo from "../assets/MyAlkansyaTextLogo.png"; // Import the text logo
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -55,8 +53,9 @@ const Login = () => {
       <nav className="bg-[#18864F] p-4 w-full">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <img src={myAlkansyaLogo} alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
-            <img src={myAlkansyaTextLogo} alt="MyAlkansya Text Logo" className="h-6" />
+            {/* Updated image paths relative to the public folder */}
+            <img src="/assets/myAlkansyaLogo.png" alt="MyAlkansya Logo" className="h-10 w-10 mr-2" />
+            <img src="/assets/myAlkansyaTextLogo.png" alt="MyAlkansya Text Logo" className="h-6" />
           </div>
           <div className="space-x-2">
           <button
