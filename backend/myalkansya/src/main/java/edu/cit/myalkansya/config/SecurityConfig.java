@@ -50,6 +50,7 @@ public class SecurityConfig {
                 .logoutSuccessUrl("https://myalkansya.vercel.app/login") // Redirect to frontend after logout
                 .permitAll()
             )
+            .requiresChannel(channel -> channel.anyRequest().requiresSecure())
             .csrf(csrf -> csrf.disable()); 
 
         return http.build();

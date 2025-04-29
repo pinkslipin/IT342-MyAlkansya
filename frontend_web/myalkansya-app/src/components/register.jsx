@@ -65,12 +65,18 @@ const Register = () => {
     )}`;
   };
 
+  // const handleFacebookSignUp = () => {
+  //   localStorage.setItem("frontendRedirectUrl", window.location.origin);
+  //   window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(
+  //     window.location.origin
+  //   )}`;
+  // };
+
   const handleFacebookSignUp = () => {
-    localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(
-      window.location.origin
-    )}`;
-  };
+    const redirectUri = window.location.origin;
+    localStorage.setItem("frontendRedirectUrl", redirectUri);
+    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(redirectUri)}`;
+  };  
 
   return (
     <div className="min-h-screen bg-[#FEF6EA] flex flex-col">
