@@ -1,14 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Import useEffect
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // State for toggling password visibility
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+
+  // Ensure FB SDK is loaded before trying to use it
+  useEffect(() => {
+    if (window.FB) {
+      // Optional: Check login status on component mount
+      // FB.getLoginStatus(function(response) {
+      //   console.log('FB Login Status:', response);
+      // });
+    } else {
+      console.warn("Facebook SDK not loaded yet.");
+    }
+  }, []);
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,19 +50,50 @@ const Login = () => {
     }
   };
 
+  // New function to handle Facebook Login
+  const handleFacebookLogin = () => {
+    setError("");
+    setSuccess("");
+
+    if (!window.FB) {
+      setError("Facebook SDK is not available. Please try again later.");
+      return;
+    }
+
+    window.FB.login(async (response) => {
+      console.log("Facebook login response:", response);
+      if (response.authResponse) {
+        // User logged in and authorized the app
+        const accessToken = response.authResponse.accessToken;
+        try {
+          // Send the access token to your backend
+          const backendResponse = await axios.post("https://myalkansya-sia.as.r.appspot.com/api/users/facebook", {
+            accessToken: accessToken
+          });
+
+          const { token, user } = backendResponse.data;
+          localStorage.setItem("authToken", token);
+          setSuccess(`Welcome via Facebook, ${user.firstname} ${user.lastname}!`);
+
+          setTimeout(() => {
+            navigate("/home");
+          }, 2000);
+
+        } catch (err) {
+          console.error("Backend Facebook login error:", err);
+          setError(err.response?.data?.message || "Facebook login failed on our server. Please try again.");
+        }
+      } else {
+        // User cancelled login or did not fully authorize
+        console.log('User cancelled login or did not fully authorize.');
+        setError("Facebook login was cancelled or not authorized.");
+      }
+    }, { scope: 'email,public_profile' }); // Request email and basic profile info
+  };
+
   const handleGoogleLogin = () => {
     localStorage.setItem("frontendRedirectUrl", window.location.origin);
     window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/google?redirect_uri=${encodeURIComponent(window.location.origin)}`;
-  };
-
-  // const handleFacebookLogin = () => {
-  //   localStorage.setItem("frontendRedirectUrl", window.location.origin);
-  //   window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(window.location.origin)}`;
-  // };
-
-  const handleFacebookLogin = () => {
-    const redirectUri = window.location.origin;
-    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(redirectUri)}`;
   };
 
   return (
@@ -142,16 +186,25 @@ const Login = () => {
               </div>
             </div>
 
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {success && <p className="text-green-500 text-sm">{success}</p>}
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            {success && <p className="text-green-500 text-sm mb-4">{success}</p>}
 
             <button
               type="submit"
-              className="w-full bg-[#18864F] text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition duration-300"
+              className="w-full bg-[#18864F] text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition duration-300 mb-4"
             >
               SIGN IN
             </button>
           </form>
+
+          {/* Updated Facebook Login Button */}
+          <button
+            type="button"
+            onClick={handleFacebookLogin}
+            className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-300 mt-2" // Applied similar styles, kept blue color
+          >
+            Login with Facebook
+          </button>
 
           <div className="flex items-center my-6">
             <div className="flex-grow border-t border-gray-300"></div>
@@ -173,17 +226,6 @@ const Login = () => {
                 <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path>
               </svg>
               Sign in with Google
-            </button>
-            <button
-              type="button"
-              onClick={handleFacebookLogin}
-              className="w-full flex items-center justify-center bg-white border border-gray-300 rounded-md p-2 hover:bg-gray-50 transition duration-300"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-600" viewBox="0 0 48 48">
-                <path fill="#3F51B5" d="M42,37c0,2.762-2.238,5-5,5H11c-2.761,0-5-2.238-5-5V11c0-2.762,2.239-5,5-5h26c2.762,0,5,2.238,5,5V37z"></path>
-                <path fill="#FFF" d="M34.368,25H31v13h-5V25h-3v-4h3v-2.41c0.002-3.508,1.459-5.59,5.592-5.59H35v4h-2.287C31.104,17,31,17.6,31,18.723V21h4L34.368,25z"></path>
-              </svg>
-              Sign in with Facebook
             </button>
           </div>
 

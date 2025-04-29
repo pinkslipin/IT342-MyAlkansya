@@ -7,7 +7,31 @@
     <link rel="icon" type="image/png" href="/assets/myAlkansyaLogo.png" />
   </head>
   <body>
-    <div id="app"></div>
+    <div id="root"></div>
+
+    <script>
+      window.fbAsyncInit = function() {
+        FB.init({
+          // Replace {your-app-id} with your actual Facebook App ID
+          appId            : '953547133647991', 
+          cookie           : true,  // Enable cookies to allow the server to access the session.
+          xfbml            : true,  // Parse social plugins on this page.
+          version          : 'v19.0' // Use the latest graph API version.
+        });
+          
+        FB.AppEvents.logPageView();   
+          
+      };
+    
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+    </script>
+    
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
