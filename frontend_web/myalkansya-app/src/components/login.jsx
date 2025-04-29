@@ -48,10 +48,8 @@ const Login = () => {
   // };
 
   const handleFacebookLogin = () => {
-    // Store the frontend URL. The backend's success handler might need this later.
-    localStorage.setItem("frontendRedirectUrl", window.location.origin);
-    // Initiate login via backend. Do NOT send redirect_uri from frontend here.
-    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook`;
+    const redirectUri = window.location.origin;
+    window.location.href = `https://myalkansya-sia.as.r.appspot.com/oauth2/authorization/facebook?redirect_uri=${encodeURIComponent(redirectUri)}`;
   };
 
   return (
