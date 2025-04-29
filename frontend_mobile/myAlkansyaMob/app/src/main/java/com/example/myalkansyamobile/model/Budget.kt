@@ -11,6 +11,9 @@ data class Budget(
     val currency: String = "PHP",
     val budgetMonth: Int = 0,  // 1-12 for January-December
     val budgetYear: Int = 0,
+    // Added fields to track original values before currency conversion
+    val originalAmount: Double? = null,
+    val originalCurrency: String? = null,
     // User relationship is ignored here as it's not needed on the mobile side
     // We'll get only budgets for the logged-in user
     

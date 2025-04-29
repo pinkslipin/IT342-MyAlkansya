@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.example.myalkansyamobile.BudgetResponse
@@ -35,6 +36,7 @@ class ExportService(private val context: Context) {
 
     /**
      * Exports financial data to Google Sheets if possible, otherwise falls back to CSV
+     * Accepts Any? type parameters to handle various response types
      */
     suspend fun exportAndShareFinancialData(
         incomes: Any? = null,
@@ -47,7 +49,11 @@ class ExportService(private val context: Context) {
         if (sheetsHelper.isUserSignedIn()) {
             // Try exporting to Google Sheets
             val sheetsUrl = exportToGoogleSheets(
-                incomes, expenses, budgets, savingsGoals, financialSummary
+                incomes = incomes,
+                expenses = expenses,
+                budgets = budgets,
+                savingsGoals = savingsGoals,
+                financialSummary = financialSummary
             )
             
             if (sheetsUrl != null) {
@@ -58,7 +64,13 @@ class ExportService(private val context: Context) {
         }
         
         // If Google Sheets export failed or user not signed in, fall back to CSV
-        val uri = exportToCSV(incomes, expenses, budgets, savingsGoals, financialSummary)
+        val uri = exportToCSV(
+            incomes = incomes,
+            expenses = expenses,
+            budgets = budgets,
+            savingsGoals = savingsGoals,
+            financialSummary = financialSummary
+        )
         
         if (uri != null) {
             shareCSVFile(uri)
@@ -73,6 +85,8 @@ class ExportService(private val context: Context) {
      * Export data specifically to Google Sheets
      * This method can throw GoogleSheetsHelper.SheetsPermissionRequiredException
      * which contains an Intent that must be launched to get additional permissions
+     * 
+     * Modified to accept Any? type parameters
      */
     suspend fun exportToGoogleSheets(
         incomes: Any? = null,
@@ -81,14 +95,47 @@ class ExportService(private val context: Context) {
         savingsGoals: Any? = null,
         financialSummary: FinancialSummaryResponse? = null
     ): String? = withContext(Dispatchers.IO) {
+        // Cast the Any? params to List<*>? safely for Google Sheets helper
+        val incomesList = toSafeList(incomes)
+        val expensesList = toSafeList(expenses)
+        val budgetsList = toSafeList(budgets)
+        val savingsGoalsList = toSafeList(savingsGoals)
+        
         // No try-catch here - let the exception propagate to the activity
         sheetsHelper.createAndPopulateSheet(
-            incomes, expenses, budgets, savingsGoals, financialSummary
+            incomesList, expensesList, budgetsList, savingsGoalsList, financialSummary
         )
     }
 
     /**
+     * Safely converts Any? to List<*>?
+     * Handles various types of input including retrofit responses, collections, and single objects
+     */
+    private fun toSafeList(data: Any?): List<*>? {
+        return when {
+            data == null -> null
+            data is List<*> -> data
+            data is Array<*> -> data.toList()
+            data is Collection<*> -> data.toList()
+            // For retrofit responses that might be wrapped
+            data.javaClass.simpleName.contains("Response") -> {
+                try {
+                    val bodyField = data.javaClass.getDeclaredField("body")
+                    bodyField.isAccessible = true
+                    val body = bodyField.get(data)
+                    if (body is List<*>) body else listOf(data)
+                } catch (e: Exception) {
+                    Log.w("ExportService", "Failed to extract list from response: ${e.message}")
+                    listOf(data)  // Fallback to treating as single object
+                }
+            }
+            else -> listOf(data)  // If it's a single object, wrap it in a list
+        }
+    }
+
+    /**
      * Export data specifically to CSV file
+     * Modified to accept Any? type parameters
      */
     suspend fun exportToCSV(
         incomes: Any? = null,
@@ -118,6 +165,12 @@ class ExportService(private val context: Context) {
                 currencyFormat.currency = Currency.getInstance("USD")
             }
             
+            // Convert the Any? params to List<*>? safely
+            val incomesList = toSafeList(incomes)
+            val expensesList = toSafeList(expenses)
+            val budgetsList = toSafeList(budgets)
+            val savingsGoalsList = toSafeList(savingsGoals)
+            
             // Generate CSV content
             writer.open(file, append = false) {
                 // Write header
@@ -146,195 +199,163 @@ class ExportService(private val context: Context) {
                 writeRow(listOf()) // empty row for spacing
                 
                 // Income Section - Handle different potential types with safe casting
-                if (incomes != null) {
+                if (incomesList != null && incomesList.isNotEmpty()) {
                     writeRow("INCOME RECORDS")
                     writeRow(listOf("ID", "Source", "Amount", "Date", "Currency"))
                     
-                    when (incomes) {
-                        is List<*> -> {
-                            for (income in incomes) {
-                                when (income) {
-                                    is Map<*, *> -> {
-                                        val id = income["id"]?.toString() ?: ""
-                                        val source = income["source"]?.toString() ?: ""
-                                        val amount = income["amount"]?.toString() ?: "0.00"
-                                        val date = income["date"]?.toString() ?: ""
-                                        val incomeCurrency = income["currency"]?.toString() ?: currency
-                                        writeRow(listOf(id, source, amount, date, incomeCurrency))
-                                    }
-                                    is Income -> {
-                                        writeRow(listOf(
-                                            income.id.toString(),
-                                            income.source,
-                                            income.amount.toString(),
-                                            income.date.toString(),
-                                            income.currency
-                                        ))
-                                    }
-                                    else -> {
-                                        // Try to extract fields by reflection
-                                        val id = getFieldValue(income, "id") ?: ""
-                                        val source = getFieldValue(income, "source") ?: ""
-                                        val amount = getFieldValue(income, "amount") ?: "0.00"
-                                        val date = getFieldValue(income, "date") ?: ""
-                                        val incomeCurrency = getFieldValue(income, "currency") ?: currency
-                                        writeRow(listOf(id, source, amount, date, incomeCurrency))
-                                    }
-                                }
+                    for (income in incomesList) {
+                        when (income) {
+                            is Map<*, *> -> {
+                                val id = income["id"]?.toString() ?: ""
+                                val source = income["source"]?.toString() ?: ""
+                                val amount = income["amount"]?.toString() ?: "0.00"
+                                val date = income["date"]?.toString() ?: ""
+                                val incomeCurrency = income["currency"]?.toString() ?: currency
+                                writeRow(listOf(id, source, amount, date, incomeCurrency))
                             }
-                        }
-                        else -> {
-                            // Handle single item or other types
-                            writeRow(listOf("N/A", "Unable to process", "0.00", "N/A", currency))
+                            is Income -> {
+                                writeRow(listOf(
+                                    income.id.toString(),
+                                    income.source,
+                                    income.amount.toString(),
+                                    income.date.toString(),
+                                    income.currency
+                                ))
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(income, "id") ?: ""
+                                val source = getFieldValue(income, "source") ?: ""
+                                val amount = getFieldValue(income, "amount") ?: "0.00"
+                                val date = getFieldValue(income, "date") ?: ""
+                                val incomeCurrency = getFieldValue(income, "currency") ?: currency
+                                writeRow(listOf(id, source, amount, date, incomeCurrency))
+                            }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
                 
                 // Expense Section - Handle different potential types with safe casting
-                if (expenses != null) {
+                if (expensesList != null && expensesList.isNotEmpty()) {
                     writeRow("EXPENSE RECORDS")
                     writeRow(listOf("ID", "Subject", "Category", "Amount", "Date", "Currency"))
                     
-                    when (expenses) {
-                        is List<*> -> {
-                            for (expense in expenses) {
-                                when (expense) {
-                                    is Map<*, *> -> {
-                                        val id = expense["id"]?.toString() ?: ""
-                                        val subject = expense["subject"]?.toString() ?: ""
-                                        val category = expense["category"]?.toString() ?: ""
-                                        val amount = expense["amount"]?.toString() ?: "0.00"
-                                        val date = expense["date"]?.toString() ?: ""
-                                        val expenseCurrency = expense["currency"]?.toString() ?: currency
-                                        writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
-                                    }
-                                    is ExpenseResponse -> {
-                                        writeRow(listOf(
-                                            expense.id.toString(),
-                                            expense.subject,
-                                            expense.category,
-                                            expense.amount.toString(),
-                                            expense.date,
-                                            expense.currency ?: currency
-                                        ))
-                                    }
-                                    else -> {
-                                        // Try to extract fields by reflection
-                                        val id = getFieldValue(expense, "id") ?: ""
-                                        val subject = getFieldValue(expense, "subject") ?: ""
-                                        val category = getFieldValue(expense, "category") ?: ""
-                                        val amount = getFieldValue(expense, "amount") ?: "0.00"
-                                        val date = getFieldValue(expense, "date") ?: ""
-                                        val expenseCurrency = getFieldValue(expense, "currency") ?: currency
-                                        writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
-                                    }
-                                }
+                    for (expense in expensesList) {
+                        when (expense) {
+                            is Map<*, *> -> {
+                                val id = expense["id"]?.toString() ?: ""
+                                val subject = expense["subject"]?.toString() ?: ""
+                                val category = expense["category"]?.toString() ?: ""
+                                val amount = expense["amount"]?.toString() ?: "0.00"
+                                val date = expense["date"]?.toString() ?: ""
+                                val expenseCurrency = expense["currency"]?.toString() ?: currency
+                                writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
                             }
-                        }
-                        else -> {
-                            // Handle single item or other types
-                            writeRow(listOf("N/A", "Unable to process", "N/A", "0.00", "N/A", currency))
+                            is ExpenseResponse -> {
+                                writeRow(listOf(
+                                    expense.id.toString(),
+                                    expense.subject,
+                                    expense.category,
+                                    expense.amount.toString(),
+                                    expense.date,
+                                    expense.currency ?: currency
+                                ))
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(expense, "id") ?: ""
+                                val subject = getFieldValue(expense, "subject") ?: ""
+                                val category = getFieldValue(expense, "category") ?: ""
+                                val amount = getFieldValue(expense, "amount") ?: "0.00"
+                                val date = getFieldValue(expense, "date") ?: ""
+                                val expenseCurrency = getFieldValue(expense, "currency") ?: currency
+                                writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
+                            }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
                 
                 // Budget Section - Handle different potential types with safe casting
-                if (budgets != null) {
+                if (budgetsList != null && budgetsList.isNotEmpty()) {
                     writeRow("BUDGET RECORDS")
                     writeRow(listOf("ID", "Category", "Monthly Budget", "Total Spent", "Month", "Year"))
                     
-                    when (budgets) {
-                        is List<*> -> {
-                            for (budget in budgets) {
-                                when (budget) {
-                                    is Map<*, *> -> {
-                                        val id = budget["id"]?.toString() ?: ""
-                                        val category = budget["category"]?.toString() ?: ""
-                                        val monthlyBudget = budget["monthlyBudget"]?.toString() ?: "0.00"
-                                        val totalSpent = budget["totalSpent"]?.toString() ?: "0.00"
-                                        val month = budget["budgetMonth"]?.toString() ?: ""
-                                        val year = budget["budgetYear"]?.toString() ?: ""
-                                        writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
-                                    }
-                                    is BudgetResponse -> {
-                                        writeRow(listOf(
-                                            budget.id.toString(),
-                                            budget.category,
-                                            budget.monthlyBudget.toString(),
-                                            budget.totalSpent.toString(),
-                                            budget.budgetMonth.toString(),
-                                            budget.budgetYear.toString()
-                                        ))
-                                    }
-                                    else -> {
-                                        // Try to extract fields by reflection
-                                        val id = getFieldValue(budget, "id") ?: ""
-                                        val category = getFieldValue(budget, "category") ?: ""
-                                        val monthlyBudget = getFieldValue(budget, "monthlyBudget") ?: "0.00"
-                                        val totalSpent = getFieldValue(budget, "totalSpent") ?: "0.00"
-                                        val month = getFieldValue(budget, "budgetMonth") ?: ""
-                                        val year = getFieldValue(budget, "budgetYear") ?: ""
-                                        writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
-                                    }
-                                }
+                    for (budget in budgetsList) {
+                        when (budget) {
+                            is Map<*, *> -> {
+                                val id = budget["id"]?.toString() ?: ""
+                                val category = budget["category"]?.toString() ?: ""
+                                val monthlyBudget = budget["monthlyBudget"]?.toString() ?: "0.00"
+                                val totalSpent = budget["totalSpent"]?.toString() ?: "0.00"
+                                val month = budget["budgetMonth"]?.toString() ?: ""
+                                val year = budget["budgetYear"]?.toString() ?: ""
+                                writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
                             }
-                        }
-                        else -> {
-                            // Handle single item or other types
-                            writeRow(listOf("N/A", "Unable to process", "0.00", "0.00", "N/A", "N/A"))
+                            is BudgetResponse -> {
+                                writeRow(listOf(
+                                    budget.id.toString(),
+                                    budget.category,
+                                    budget.monthlyBudget.toString(),
+                                    budget.totalSpent.toString(),
+                                    budget.budgetMonth.toString(),
+                                    budget.budgetYear.toString()
+                                ))
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(budget, "id") ?: ""
+                                val category = getFieldValue(budget, "category") ?: ""
+                                val monthlyBudget = getFieldValue(budget, "monthlyBudget") ?: "0.00"
+                                val totalSpent = getFieldValue(budget, "totalSpent") ?: "0.00"
+                                val month = getFieldValue(budget, "budgetMonth") ?: ""
+                                val year = getFieldValue(budget, "budgetYear") ?: ""
+                                writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
+                            }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
                 
                 // Savings Goals Section - Handle different potential types with safe casting
-                if (savingsGoals != null) {
+                if (savingsGoalsList != null && savingsGoalsList.isNotEmpty()) {
                     writeRow("SAVINGS GOALS")
                     writeRow(listOf("ID", "Goal", "Target Amount", "Current Amount", "Target Date", "Progress (%)"))
                     
-                    when (savingsGoals) {
-                        is List<*> -> {
-                            for (goal in savingsGoals) {
-                                when (goal) {
-                                    is Map<*, *> -> {
-                                        val id = goal["id"]?.toString() ?: ""
-                                        val name = goal["goal"]?.toString() ?: ""
-                                        val targetAmount = goal["targetAmount"]?.toString() ?: "0.00"
-                                        val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
-                                        val targetDate = goal["targetDate"]?.toString() ?: ""
-                                        val progress = ((currentAmount.toDoubleOrNull() ?: 0.0) / 
-                                                      (targetAmount.toDoubleOrNull() ?: 1.0) * 100).toInt().toString() + "%"
-                                        writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
-                                    }
-                                    is SavingsGoalResponse -> {
-                                        val progress = ((goal.currentAmount / goal.targetAmount) * 100).toInt().toString() + "%"
-                                        writeRow(listOf(
-                                            goal.id.toString(),
-                                            goal.goal,
-                                            goal.targetAmount.toString(),
-                                            goal.currentAmount.toString(),
-                                            goal.targetDate,
-                                            progress
-                                        ))
-                                    }
-                                    else -> {
-                                        // Try to extract fields by reflection
-                                        val id = getFieldValue(goal, "id") ?: ""
-                                        val name = getFieldValue(goal, "goal") ?: ""
-                                        val targetAmount = getFieldValue(goal, "targetAmount") ?: "0.00"
-                                        val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
-                                        val targetDate = getFieldValue(goal, "targetDate") ?: ""
-                                        val progress = getFieldValue(goal, "progress") ?: "0%"
-                                        writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
-                                    }
-                                }
+                    for (goal in savingsGoalsList) {
+                        when (goal) {
+                            is Map<*, *> -> {
+                                val id = goal["id"]?.toString() ?: ""
+                                val name = goal["goal"]?.toString() ?: ""
+                                val targetAmount = goal["targetAmount"]?.toString() ?: "0.00"
+                                val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
+                                val targetDate = goal["targetDate"]?.toString() ?: ""
+                                val progress = ((currentAmount.toDoubleOrNull() ?: 0.0) / 
+                                              (targetAmount.toDoubleOrNull() ?: 1.0) * 100).toInt().toString() + "%"
+                                writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
                             }
-                        }
-                        else -> {
-                            // Handle single item or other types
-                            writeRow(listOf("N/A", "Unable to process", "0.00", "0.00", "N/A", "0%"))
+                            is SavingsGoalResponse -> {
+                                val progress = ((goal.currentAmount / goal.targetAmount) * 100).toInt().toString() + "%"
+                                writeRow(listOf(
+                                    goal.id.toString(),
+                                    goal.goal,
+                                    goal.targetAmount.toString(),
+                                    goal.currentAmount.toString(),
+                                    goal.targetDate,
+                                    progress
+                                ))
+                            }
+                            else -> {
+                                // Try to extract fields by reflection
+                                val id = getFieldValue(goal, "id") ?: ""
+                                val name = getFieldValue(goal, "goal") ?: ""
+                                val targetAmount = getFieldValue(goal, "targetAmount") ?: "0.00"
+                                val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
+                                val targetDate = getFieldValue(goal, "targetDate") ?: ""
+                                val progress = getFieldValue(goal, "progress") ?: "0%"
+                                writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
+                            }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
@@ -355,7 +376,7 @@ class ExportService(private val context: Context) {
             null
         }
     }
-
+    
     /**
      * Get Google Sign-in intent for activity to start
      */

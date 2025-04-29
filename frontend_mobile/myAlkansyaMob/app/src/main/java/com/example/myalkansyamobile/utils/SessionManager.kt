@@ -9,6 +9,7 @@ import com.example.myalkansyamobile.api.ChangeCurrencyRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Response
+import java.util.Calendar
 
 class SessionManager(context: Context) {
     private var prefs: SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -156,26 +157,22 @@ class SessionManager(context: Context) {
             // Use analytics service for testing
             val bearerToken = "Bearer $token"
             val analyticsService = RetrofitClient.analyticsApiService
-
+            
+            // Get current month and year
+            val calendar = Calendar.getInstance()
+            val currentMonth = calendar.get(Calendar.MONTH) + 1 // Calendar months are 0-based
+            val currentYear = calendar.get(Calendar.YEAR)
+            
+            // Use withContext to run on IO thread
             return withContext(Dispatchers.IO) {
                 try {
-                    // Test with an analytics endpoint
-                    val currentYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
-                    val response = analyticsService.getMonthlySummary(bearerToken, currentYear)
-
-                    // If we reach here, analytics access is confirmed
-                    editor.putBoolean(HAS_ANALYTICS_ACCESS, true)
-                    editor.apply()
-
-                    Log.d("SessionManager", "Analytics token validation successful")
-                    true // If we get here without exception, the token works
+                    // For suspend functions, we don't use execute()
+                    analyticsService.getFinancialSummary(bearerToken, currentMonth, currentYear)
+                    // If we get here without exception, the call was successful
+                    Log.d("SessionManager", "Analytics token validation result: success")
+                    true
                 } catch (e: Exception) {
                     Log.w("SessionManager", "Analytics token validation failed: ${e.message}")
-
-                    // Store that this user doesn't have analytics access
-                    editor.putBoolean(HAS_ANALYTICS_ACCESS, false)
-                    editor.apply()
-
                     false
                 }
             }

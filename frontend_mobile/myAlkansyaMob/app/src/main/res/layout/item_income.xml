@@ -71,13 +71,4 @@
     </LinearLayout>
 
     <!-- Edit Button -->
-    <ImageButton
-        android:id="@+id/btnEdit"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginStart="8dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_edit"
-        android:contentDescription="Edit"
-        app:tint="#18864F" />
 </LinearLayout>

@@ -166,6 +166,19 @@
                         android:popupBackground="@android:color/white" />
                 </LinearLayout>
 
+                <!-- Currency Warning -->
+                <TextView
+                    android:id="@+id/tvCurrencyWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:textColor="#FFA500"
+                    android:text="Note: This will be converted to your default currency"
+                    android:textStyle="italic"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
                 <!-- Error Message -->
                 <TextView
                     android:id="@+id/tvError"
@@ -176,6 +189,15 @@
                     android:visibility="gone"
                     tools:text="Error message here"
                     tools:visibility="visible" />
+
+                <!-- Progress bar for conversions -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:visibility="gone"
+                    android:indeterminateTint="@color/green" />
 
                 <!-- Buttons -->
                 <LinearLayout

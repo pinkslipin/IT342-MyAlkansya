@@ -47,15 +47,6 @@
                 android:textColor="@color/green" />
 
             <!-- Edit Button -->
-            <ImageButton
-                android:id="@+id/btnEdit"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="0.5"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Edit Budget"
-                android:padding="4dp"
-                android:src="@android:drawable/ic_menu_edit" />
         </LinearLayout>
 
         <!-- Progress section (optional) -->
