@@ -16,6 +16,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
 
+import edu.cit.myalkansya.security.CookieOAuth2AuthorizationRequestRepository;
 import edu.cit.myalkansya.security.CustomOAuth2UserService;
 import edu.cit.myalkansya.security.OAuth2LoginSuccessHandler;
 
@@ -24,10 +25,12 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository;
 
-    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler) {
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService, OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler, CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository) {
         this.customOAuth2UserService = customOAuth2UserService;
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
+        this.cookieOAuth2AuthorizationRequestRepository = cookieOAuth2AuthorizationRequestRepository;
     }
 
     @Bean
@@ -41,6 +44,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
+                .authorizationEndpoint(authz -> authz
+                    .authorizationRequestRepository(cookieOAuth2AuthorizationRequestRepository()) // ✅ Plug it in here
+                )
                 .successHandler(oAuth2LoginSuccessHandler)
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
@@ -87,4 +93,11 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
+    //Revert if needed xian
+    @Bean
+    public CookieOAuth2AuthorizationRequestRepository cookieOAuth2AuthorizationRequestRepository() {
+        return new CookieOAuth2AuthorizationRequestRepository();
+    }
+
 }
