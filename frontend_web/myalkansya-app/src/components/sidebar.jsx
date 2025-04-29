@@ -67,7 +67,7 @@ const Sidebar = ({ activePage }) => {
       {/* Logo */}
       <div className="p-4">
         <img
-          src="/assets/myAlkansyaLogo.png" // Replace with your logo path
+          src="/assets/myAlkansyaLogo.png"
           alt="Logo"
           className="w-20 h-20 mx-auto"
         />
@@ -82,9 +82,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "dashboard" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h11M9 21V3m12 7h-3m0 0v11m0-11l-3 3m3-3l3 3" />
-          </svg>
+          <img 
+            src="/assets/home.png" 
+            alt="Home" 
+            className="h-6 w-6"
+          />
           Dashboard
         </button>
 
@@ -94,9 +96,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "income" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
-          </svg>
+          <img 
+            src="/assets/income.png" 
+            alt="Income" 
+            className="h-6 w-6"
+          />
           Income Management
         </button>
 
@@ -106,9 +110,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "expense" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
-          </svg>
+          <img 
+            src="/assets/expense.png" 
+            alt="Expense" 
+            className="h-6 w-6"
+          />
           Expense Management
         </button>
 
@@ -118,9 +124,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "budget" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
-          </svg>
+          <img 
+            src="/assets/budget.png" 
+            alt="Budget" 
+            className="h-6 w-6"
+          />
           Budgeting
         </button>
 
@@ -130,9 +138,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "savingsgoal" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
-          </svg>
+          <img 
+            src="/assets/savingsGoal.png" 
+            alt="Savings Goal" 
+            className="h-6 w-6"
+          />
           Savings Goal
         </button>
 
@@ -143,9 +153,11 @@ const Sidebar = ({ activePage }) => {
             activePage === "currencyconverter" ? "bg-[#EDFBE9] text-[#18864F]" : "text-gray-600 hover:bg-[#EDFBE9]"
           }`}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-3.866 0-7 3.134-7 7h14c0-3.866-3.134-7-7-7z" />
-          </svg>
+          <img 
+            src="/assets/converter.png" 
+            alt="Currency Converter" 
+            className="h-6 w-6"
+          />
           Currency Converter
         </button>
       </div>
