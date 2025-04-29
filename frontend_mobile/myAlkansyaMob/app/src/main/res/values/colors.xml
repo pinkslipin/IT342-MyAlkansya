@@ -22,7 +22,6 @@
     <color name="error_color">#DC3545</color>
     <color name="info_background">#E3F2FD</color>
     <color name="primary_dark">#106b3e</color>
-    <color name="warning_color">#FFC107</color>
     <color name="green_700">#388E3C</color>
     <color name="background_light">#FEF6EA</color>
     
@@ -43,4 +42,11 @@
     <color name="light_green">#EDFBE9</color>
     <color name="red">#FF5252</color>
     <color name="grey">#757575</color>
+
+    <!-- Added new colors -->
+    <color name="background_color">#F5F5F5</color>
+    <color name="error_text">#B71C1C</color>
+    <color name="warning_color">#FFA000</color>
+    <color name="delete_red">#B71C1C</color>
+    <color name="grey_300">#E0E0E0</color>
 </resources>

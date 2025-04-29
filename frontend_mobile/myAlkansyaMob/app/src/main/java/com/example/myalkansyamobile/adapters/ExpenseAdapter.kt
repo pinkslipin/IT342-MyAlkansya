@@ -1,64 +1,61 @@
 package com.example.myalkansyamobile.adapters
 
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myalkansyamobile.R
 import com.example.myalkansyamobile.model.Expense
-import com.example.myalkansyamobile.utils.CurrencyUtils
-import java.text.NumberFormat
-import java.util.Locale
+import java.time.format.DateTimeFormatter
 
-class ExpenseAdapter(private val expenseList: List<Expense>, private val onItemClick: (Expense) -> Unit) : RecyclerView.Adapter<ExpenseAdapter.ExpenseViewHolder>() {
+class ExpenseAdapter(
+    private var expenses: List<Expense>,
+    private val onItemClick: (Expense) -> Unit
+) : RecyclerView.Adapter<ExpenseAdapter.ExpenseViewHolder>() {
 
-    inner class ExpenseViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val subjectTextView: TextView = itemView.findViewById(R.id.txtSubject)
-        val categoryTextView: TextView = itemView.findViewById(R.id.txtCategory)
-        val dateTextView: TextView = itemView.findViewById(R.id.txtDate)
-        val amountTextView: TextView = itemView.findViewById(R.id.txtAmount)
-        val originalAmountTextView: TextView? = itemView.findViewById(R.id.txtOriginalAmount) // May be null
-
-        init {
-            itemView.setOnClickListener {
-                onItemClick(expenseList[adapterPosition])
-            }
-        }
+    class ExpenseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        val tvSubject: TextView = view.findViewById(R.id.tvSubject)
+        val tvAmount: TextView = view.findViewById(R.id.tvAmount)
+        val btnEdit: ImageButton = view.findViewById(R.id.btnEdit)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExpenseViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.expense_item, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_expense, parent, false)
         return ExpenseViewHolder(view)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onBindViewHolder(holder: ExpenseViewHolder, position: Int) {
-        val expense = expenseList[position]
-        holder.subjectTextView.text = expense.subject
-        holder.categoryTextView.text = expense.category
-        holder.dateTextView.text = expense.date.toString()
+        val expense = expenses[position]
         
-        // Format the amount with currency
-        val formattedAmount = CurrencyUtils.formatWithCurrency(expense.amount, expense.currency)
-        holder.amountTextView.text = formattedAmount
+        // Format date
+        val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+        holder.tvDate.text = expense.date.format(dateFormatter)
         
-        // Show original amount if available
-        if (holder.originalAmountTextView != null && 
-            expense.originalAmount != null && 
-            expense.originalCurrency != null) {
-            
-            holder.originalAmountTextView.visibility = View.VISIBLE
-            val formattedOriginal = CurrencyUtils.formatWithCurrency(
-                expense.originalAmount, 
-                expense.originalCurrency
-            )
-            holder.originalAmountTextView.text = "($formattedOriginal)"
-        } else if (holder.originalAmountTextView != null) {
-            holder.originalAmountTextView.visibility = View.GONE
+        holder.tvSubject.text = expense.subject
+        holder.tvAmount.text = "${expense.currency} ${expense.amount}"
+        
+        // Set click listener for edit button
+        holder.btnEdit.setOnClickListener {
+            onItemClick(expense)
+        }
+        
+        // Set click listener for the entire item
+        holder.itemView.setOnClickListener {
+            onItemClick(expense)
         }
     }
 
-    override fun getItemCount(): Int {
-        return expenseList.size
+    override fun getItemCount() = expenses.size
+    
+    fun updateList(newExpenses: List<Expense>) {
+        expenses = newExpenses
+        notifyDataSetChanged()
     }
 }

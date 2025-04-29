@@ -17,6 +17,7 @@ import com.github.doyaaaaaken.kotlincsv.dsl.csvWriter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -28,6 +29,7 @@ import java.util.*
 class ExportService(private val context: Context) {
     private val sheetsHelper = GoogleSheetsHelper(context)
     private val TAG = "ExportService"
+    private val sessionManager = SessionManager(context)
 
     // Request code for Google Sign-in
     companion object {
@@ -55,14 +57,14 @@ class ExportService(private val context: Context) {
                 savingsGoals = savingsGoals,
                 financialSummary = financialSummary
             )
-            
+
             if (sheetsUrl != null) {
                 // Open the Google Sheet in browser
                 openGoogleSheet(sheetsUrl)
                 return
             }
         }
-        
+
         // If Google Sheets export failed or user not signed in, fall back to CSV
         val uri = exportToCSV(
             incomes = incomes,
@@ -71,7 +73,7 @@ class ExportService(private val context: Context) {
             savingsGoals = savingsGoals,
             financialSummary = financialSummary
         )
-        
+
         if (uri != null) {
             shareCSVFile(uri)
         } else {
@@ -85,7 +87,7 @@ class ExportService(private val context: Context) {
      * Export data specifically to Google Sheets
      * This method can throw GoogleSheetsHelper.SheetsPermissionRequiredException
      * which contains an Intent that must be launched to get additional permissions
-     * 
+     *
      * Modified to accept Any? type parameters
      */
     suspend fun exportToGoogleSheets(
@@ -100,7 +102,7 @@ class ExportService(private val context: Context) {
         val expensesList = toSafeList(expenses)
         val budgetsList = toSafeList(budgets)
         val savingsGoalsList = toSafeList(savingsGoals)
-        
+
         // No try-catch here - let the exception propagate to the activity
         sheetsHelper.createAndPopulateSheet(
             incomesList, expensesList, budgetsList, savingsGoalsList, financialSummary
@@ -148,76 +150,99 @@ class ExportService(private val context: Context) {
             // Create file name with timestamp
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "MyAlkansya_Export_$timestamp.csv"
-            
+
             // Get the Downloads directory
             val downloadsDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             val file = File(downloadsDir, fileName)
-            
+
             // Create CSV writer
             val writer = csvWriter()
+
+            // Get currency formatter using user's preferred currency
+            val userCurrency = sessionManager.getCurrency() ?: "PHP"
+            val currency = financialSummary?.currency ?: userCurrency
             
-            // Get currency formatter
-            val currency = financialSummary?.currency ?: "USD"
+            // Log the currency that will be used for export
+            Log.d("ExportService", "Exporting data with currency: $currency")
+            Log.d("ExportService", "User's preferred currency: $userCurrency")
+            
+            // Verify that the currency symbol is available
+            val symbol = CurrencyUtils.getCurrencySymbol(currency)
+            Log.d("ExportService", "Currency symbol that will be used: $symbol")
+            
             val currencyFormat = NumberFormat.getCurrencyInstance()
             try {
                 currencyFormat.currency = Currency.getInstance(currency)
             } catch (e: Exception) {
-                currencyFormat.currency = Currency.getInstance("USD")
+                currencyFormat.currency = Currency.getInstance(userCurrency)
+                Log.e("ExportService", "Error setting currency $currency, falling back to $userCurrency", e)
             }
-            
+
             // Convert the Any? params to List<*>? safely
             val incomesList = toSafeList(incomes)
             val expensesList = toSafeList(expenses)
             val budgetsList = toSafeList(budgets)
             val savingsGoalsList = toSafeList(savingsGoals)
-            
+
             // Generate CSV content
             writer.open(file, append = false) {
                 // Write header
                 writeRow("MyAlkansya Financial Export - $timestamp")
+                writeRow(listOf("Currency", currency))
                 writeRow(listOf()) // empty row for spacing
-                
+
                 // Financial Summary Section
                 writeRow("FINANCIAL SUMMARY")
                 writeRow(listOf("Category", "Amount"))
-                
+
                 // Use actual financial summary data if available
                 if (financialSummary != null) {
-                    writeRow(listOf("Total Income", currencyFormat.format(financialSummary.totalIncome)))
-                    writeRow(listOf("Total Expenses", currencyFormat.format(financialSummary.totalExpenses)))
-                    writeRow(listOf("Total Budget", currencyFormat.format(financialSummary.totalBudget)))
-                    writeRow(listOf("Total Savings", currencyFormat.format(financialSummary.totalSavings)))
-                    writeRow(listOf("Net Cashflow", currencyFormat.format(financialSummary.netCashflow)))
+                    // Replace direct currencyFormat.format() calls with formatAmountWithCurrency
+                    writeRow(listOf("Total Income", formatAmountWithCurrency(financialSummary.totalIncome, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Expenses", formatAmountWithCurrency(financialSummary.totalExpenses, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Budget", formatAmountWithCurrency(financialSummary.totalBudget, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Savings", formatAmountWithCurrency(financialSummary.totalSavings, currency, currencyFormat, currency)))
+                    writeRow(listOf("Net Cashflow", formatAmountWithCurrency(financialSummary.netCashflow, currency, currencyFormat, currency)))
                     writeRow(listOf("Budget Utilization", "${(financialSummary.budgetUtilization * 100).toInt()}%"))
                     writeRow(listOf("Savings Rate", "${(financialSummary.savingsRate * 100).toInt()}%"))
                 } else {
-                    writeRow(listOf("Total Income", "0.00"))
-                    writeRow(listOf("Total Expenses", "0.00"))
-                    writeRow(listOf("Total Budget", "0.00"))
-                    writeRow(listOf("Total Savings", "0.00"))
+                    // Also update the default values
+                    writeRow(listOf("Total Income", formatAmountWithCurrency(0.00, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Expenses", formatAmountWithCurrency(0.00, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Budget", formatAmountWithCurrency(0.00, currency, currencyFormat, currency)))
+                    writeRow(listOf("Total Savings", formatAmountWithCurrency(0.00, currency, currencyFormat, currency)))
                 }
                 writeRow(listOf()) // empty row for spacing
-                
+
                 // Income Section - Handle different potential types with safe casting
                 if (incomesList != null && incomesList.isNotEmpty()) {
                     writeRow("INCOME RECORDS")
                     writeRow(listOf("ID", "Source", "Amount", "Date", "Currency"))
-                    
+
                     for (income in incomesList) {
                         when (income) {
                             is Map<*, *> -> {
                                 val id = income["id"]?.toString() ?: ""
                                 val source = income["source"]?.toString() ?: ""
-                                val amount = income["amount"]?.toString() ?: "0.00"
+                                val amount = income["amount"]?.toString()?.toDoubleOrNull() ?: 0.00
                                 val date = income["date"]?.toString() ?: ""
                                 val incomeCurrency = income["currency"]?.toString() ?: currency
-                                writeRow(listOf(id, source, amount, date, incomeCurrency))
+
+                                // Format the amount using currency
+                                val formattedAmount = formatAmountWithCurrency(amount, incomeCurrency, currencyFormat, currency)
+                                writeRow(listOf(id, source, formattedAmount, date, incomeCurrency))
                             }
                             is Income -> {
+                                val formattedAmount = formatAmountWithCurrency(
+                                    income.amount,
+                                    income.currency,
+                                    currencyFormat,
+                                    currency
+                                )
                                 writeRow(listOf(
                                     income.id.toString(),
                                     income.source,
-                                    income.amount.toString(),
+                                    formattedAmount,
                                     income.date.toString(),
                                     income.currency
                                 ))
@@ -226,38 +251,58 @@ class ExportService(private val context: Context) {
                                 // Try to extract fields by reflection
                                 val id = getFieldValue(income, "id") ?: ""
                                 val source = getFieldValue(income, "source") ?: ""
-                                val amount = getFieldValue(income, "amount") ?: "0.00"
+                                val amount = getFieldValue(income, "amount")?.toString()?.toDoubleOrNull() ?: 0.00
                                 val date = getFieldValue(income, "date") ?: ""
                                 val incomeCurrency = getFieldValue(income, "currency") ?: currency
-                                writeRow(listOf(id, source, amount, date, incomeCurrency))
+
+                                val formattedAmount = formatAmountWithCurrency(
+                                    amount,
+                                    incomeCurrency.toString(),
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, source, formattedAmount, date, incomeCurrency))
                             }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
-                
-                // Expense Section - Handle different potential types with safe casting
+
+                // Expense Section with proper currency formatting
                 if (expensesList != null && expensesList.isNotEmpty()) {
                     writeRow("EXPENSE RECORDS")
                     writeRow(listOf("ID", "Subject", "Category", "Amount", "Date", "Currency"))
-                    
+
                     for (expense in expensesList) {
                         when (expense) {
                             is Map<*, *> -> {
                                 val id = expense["id"]?.toString() ?: ""
                                 val subject = expense["subject"]?.toString() ?: ""
                                 val category = expense["category"]?.toString() ?: ""
-                                val amount = expense["amount"]?.toString() ?: "0.00"
+                                val amount = expense["amount"]?.toString()?.toDoubleOrNull() ?: 0.00
                                 val date = expense["date"]?.toString() ?: ""
                                 val expenseCurrency = expense["currency"]?.toString() ?: currency
-                                writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
+
+                                val formattedAmount = formatAmountWithCurrency(
+                                    amount,
+                                    expenseCurrency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, subject, category, formattedAmount, date, expenseCurrency))
                             }
                             is ExpenseResponse -> {
+                                val formattedAmount = formatAmountWithCurrency(
+                                    expense.amount,
+                                    expense.currency ?: currency,
+                                    currencyFormat,
+                                    currency
+                                )
                                 writeRow(listOf(
                                     expense.id.toString(),
                                     expense.subject,
                                     expense.category,
-                                    expense.amount.toString(),
+                                    formattedAmount,
                                     expense.date,
                                     expense.currency ?: currency
                                 ))
@@ -267,38 +312,70 @@ class ExportService(private val context: Context) {
                                 val id = getFieldValue(expense, "id") ?: ""
                                 val subject = getFieldValue(expense, "subject") ?: ""
                                 val category = getFieldValue(expense, "category") ?: ""
-                                val amount = getFieldValue(expense, "amount") ?: "0.00"
+                                val amount = getFieldValue(expense, "amount")?.toString()?.toDoubleOrNull() ?: 0.00
                                 val date = getFieldValue(expense, "date") ?: ""
                                 val expenseCurrency = getFieldValue(expense, "currency") ?: currency
-                                writeRow(listOf(id, subject, category, amount, date, expenseCurrency))
+
+                                val formattedAmount = formatAmountWithCurrency(
+                                    amount,
+                                    expenseCurrency.toString(),
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, subject, category, formattedAmount, date, expenseCurrency))
                             }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
-                
+
                 // Budget Section - Handle different potential types with safe casting
                 if (budgetsList != null && budgetsList.isNotEmpty()) {
                     writeRow("BUDGET RECORDS")
                     writeRow(listOf("ID", "Category", "Monthly Budget", "Total Spent", "Month", "Year"))
-                    
+
                     for (budget in budgetsList) {
                         when (budget) {
                             is Map<*, *> -> {
                                 val id = budget["id"]?.toString() ?: ""
                                 val category = budget["category"]?.toString() ?: ""
-                                val monthlyBudget = budget["monthlyBudget"]?.toString() ?: "0.00"
-                                val totalSpent = budget["totalSpent"]?.toString() ?: "0.00"
+                                val monthlyBudget = budget["monthlyBudget"]?.toString()?.toDoubleOrNull() ?: 0.00
+                                val totalSpent = budget["totalSpent"]?.toString()?.toDoubleOrNull() ?: 0.00
                                 val month = budget["budgetMonth"]?.toString() ?: ""
                                 val year = budget["budgetYear"]?.toString() ?: ""
-                                writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
+
+                                val formattedMonthlyBudget = formatAmountWithCurrency(
+                                    monthlyBudget,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedTotalSpent = formatAmountWithCurrency(
+                                    totalSpent,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, category, formattedMonthlyBudget, formattedTotalSpent, month, year))
                             }
                             is BudgetResponse -> {
+                                val formattedMonthlyBudget = formatAmountWithCurrency(
+                                    budget.monthlyBudget,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedTotalSpent = formatAmountWithCurrency(
+                                    budget.totalSpent,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
                                 writeRow(listOf(
                                     budget.id.toString(),
                                     budget.category,
-                                    budget.monthlyBudget.toString(),
-                                    budget.totalSpent.toString(),
+                                    formattedMonthlyBudget,
+                                    formattedTotalSpent,
                                     budget.budgetMonth.toString(),
                                     budget.budgetYear.toString()
                                 ))
@@ -307,41 +384,78 @@ class ExportService(private val context: Context) {
                                 // Try to extract fields by reflection
                                 val id = getFieldValue(budget, "id") ?: ""
                                 val category = getFieldValue(budget, "category") ?: ""
-                                val monthlyBudget = getFieldValue(budget, "monthlyBudget") ?: "0.00"
-                                val totalSpent = getFieldValue(budget, "totalSpent") ?: "0.00"
+                                val monthlyBudget = getFieldValue(budget, "monthlyBudget")?.toString()?.toDoubleOrNull() ?: 0.00
+                                val totalSpent = getFieldValue(budget, "totalSpent")?.toString()?.toDoubleOrNull() ?: 0.00
                                 val month = getFieldValue(budget, "budgetMonth") ?: ""
                                 val year = getFieldValue(budget, "budgetYear") ?: ""
-                                writeRow(listOf(id, category, monthlyBudget, totalSpent, month, year))
+
+                                val formattedMonthlyBudget = formatAmountWithCurrency(
+                                    monthlyBudget,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedTotalSpent = formatAmountWithCurrency(
+                                    totalSpent,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, category, formattedMonthlyBudget, formattedTotalSpent, month, year))
                             }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
-                
+
                 // Savings Goals Section - Handle different potential types with safe casting
                 if (savingsGoalsList != null && savingsGoalsList.isNotEmpty()) {
                     writeRow("SAVINGS GOALS")
                     writeRow(listOf("ID", "Goal", "Target Amount", "Current Amount", "Target Date", "Progress (%)"))
-                    
+
                     for (goal in savingsGoalsList) {
                         when (goal) {
                             is Map<*, *> -> {
                                 val id = goal["id"]?.toString() ?: ""
                                 val name = goal["goal"]?.toString() ?: ""
-                                val targetAmount = goal["targetAmount"]?.toString() ?: "0.00"
-                                val currentAmount = goal["currentAmount"]?.toString() ?: "0.00"
+                                val targetAmount = goal["targetAmount"]?.toString()?.toDoubleOrNull() ?: 0.00
+                                val currentAmount = goal["currentAmount"]?.toString()?.toDoubleOrNull() ?: 0.00
                                 val targetDate = goal["targetDate"]?.toString() ?: ""
-                                val progress = ((currentAmount.toDoubleOrNull() ?: 0.0) / 
-                                              (targetAmount.toDoubleOrNull() ?: 1.0) * 100).toInt().toString() + "%"
-                                writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
+                                val progress = ((currentAmount / targetAmount) * 100).toInt().toString() + "%"
+
+                                val formattedTargetAmount = formatAmountWithCurrency(
+                                    targetAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedCurrentAmount = formatAmountWithCurrency(
+                                    currentAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, name, formattedTargetAmount, formattedCurrentAmount, targetDate, progress))
                             }
                             is SavingsGoalResponse -> {
                                 val progress = ((goal.currentAmount / goal.targetAmount) * 100).toInt().toString() + "%"
+                                val formattedTargetAmount = formatAmountWithCurrency(
+                                    goal.targetAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedCurrentAmount = formatAmountWithCurrency(
+                                    goal.currentAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
                                 writeRow(listOf(
                                     goal.id.toString(),
                                     goal.goal,
-                                    goal.targetAmount.toString(),
-                                    goal.currentAmount.toString(),
+                                    formattedTargetAmount,
+                                    formattedCurrentAmount,
                                     goal.targetDate,
                                     progress
                                 ))
@@ -350,21 +464,34 @@ class ExportService(private val context: Context) {
                                 // Try to extract fields by reflection
                                 val id = getFieldValue(goal, "id") ?: ""
                                 val name = getFieldValue(goal, "goal") ?: ""
-                                val targetAmount = getFieldValue(goal, "targetAmount") ?: "0.00"
-                                val currentAmount = getFieldValue(goal, "currentAmount") ?: "0.00"
+                                val targetAmount = getFieldValue(goal, "targetAmount")?.toString()?.toDoubleOrNull() ?: 0.00
+                                val currentAmount = getFieldValue(goal, "currentAmount")?.toString()?.toDoubleOrNull() ?: 0.00
                                 val targetDate = getFieldValue(goal, "targetDate") ?: ""
-                                val progress = getFieldValue(goal, "progress") ?: "0%"
-                                writeRow(listOf(id, name, targetAmount, currentAmount, targetDate, progress))
+                                val progress = ((currentAmount / targetAmount) * 100).toInt().toString() + "%"
+
+                                val formattedTargetAmount = formatAmountWithCurrency(
+                                    targetAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                val formattedCurrentAmount = formatAmountWithCurrency(
+                                    currentAmount,
+                                    currency,
+                                    currencyFormat,
+                                    currency
+                                )
+                                writeRow(listOf(id, name, formattedTargetAmount, formattedCurrentAmount, targetDate, progress))
                             }
                         }
                     }
                     writeRow(listOf()) // empty row for spacing
                 }
-                
+
                 // Footer with export info
                 writeRow(listOf("Generated by MyAlkansya App on", SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())))
             }
-            
+
             // Create and return content URI using FileProvider
             val authority = "${context.packageName}.fileprovider"
             FileProvider.getUriForFile(context, authority, file)
@@ -376,21 +503,46 @@ class ExportService(private val context: Context) {
             null
         }
     }
-    
+
+    /**
+     * Format an amount with the appropriate currency symbol
+     * 
+     * @param amount The amount to format
+     * @param amountCurrency The currency of the amount
+     * @param formatter The number formatter to use (not used anymore)
+     * @param defaultCurrency The default currency to use if amountCurrency is null
+     * @return Formatted amount with correct currency symbol
+     */
+    private fun formatAmountWithCurrency(
+        amount: Double, 
+        amountCurrency: String?, 
+        formatter: NumberFormat,
+        defaultCurrency: String
+    ): String {
+        val currencyToUse = amountCurrency ?: defaultCurrency
+        
+        // Log the currency being used for debugging
+        Log.d("ExportService", "Formatting amount $amount with currency: $currencyToUse")
+        
+        // Skip the NumberFormat parameter and use CurrencyUtils directly
+        // This ensures we use consistent formatting across the app
+        return CurrencyUtils.formatWithProperCurrency(amount, currencyToUse)
+    }
+
     /**
      * Get Google Sign-in intent for activity to start
      */
     fun getGoogleSignInIntent(): Intent {
         return sheetsHelper.getGoogleSignInIntent()
     }
-    
+
     /**
      * Check if user is signed into Google
      */
     fun isUserSignedInWithGoogle(): Boolean {
         return sheetsHelper.isUserSignedIn()
     }
-    
+
     /**
      * Opens a Google Sheet URL
      */
@@ -398,11 +550,11 @@ class ExportService(private val context: Context) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
-        
+
         // Show success message
         Toast.makeText(
-            context, 
-            "Financial data exported to Google Sheets", 
+            context,
+            "Financial data exported to Google Sheets",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -418,12 +570,12 @@ class ExportService(private val context: Context) {
             putExtra(Intent.EXTRA_SUBJECT, "MyAlkansya Financial Data Export")
             putExtra(Intent.EXTRA_TEXT, "Attached is your exported financial data from MyAlkansya.")
         }
-        
+
         val chooser = Intent.createChooser(intent, "Share MyAlkansya Export")
         chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(chooser)
     }
-    
+
     /**
      * Helper method to extract field values using reflection
      */

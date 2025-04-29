@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.time.LocalDate
 import java.util.*
+import androidx.appcompat.app.AlertDialog
 
 class EditExpenseActivity : AppCompatActivity() {
     private lateinit var etSubject: EditText
@@ -27,9 +28,12 @@ class EditExpenseActivity : AppCompatActivity() {
     private lateinit var btnPickDate: ImageView
     private lateinit var btnSaveChanges: Button
     private lateinit var btnCancel: Button
+    private lateinit var btnDeleteExpense: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var progressBarConversion: ProgressBar
     private lateinit var tvConversionInfo: TextView
     private lateinit var tvCurrencyWarning: TextView
+    private lateinit var tvError: TextView
     
     private lateinit var sessionManager: SessionManager
     
@@ -83,6 +87,14 @@ class EditExpenseActivity : AppCompatActivity() {
         btnCancel.setOnClickListener {
             finish()
         }
+        
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
+        
+        btnDeleteExpense.setOnClickListener {
+            showDeleteConfirmation()
+        }
     }
 
     private fun initializeUI() {
@@ -91,21 +103,16 @@ class EditExpenseActivity : AppCompatActivity() {
             tvDate = findViewById(R.id.tvDateEdit)
             spinnerCategory = findViewById(R.id.spinnerCategoryEdit)
             etAmount = findViewById(R.id.etAmountEdit)
-            spinnerCurrency = findViewById(R.id.spinnerCurrencyEdit) ?: findViewById(R.id.spinnerCurrency)
-                ?: throw NullPointerException("Currency spinner not found in layout")
+            spinnerCurrency = findViewById(R.id.spinnerCurrencyEdit)
             btnPickDate = findViewById(R.id.btnPickDateEdit)
             btnSaveChanges = findViewById(R.id.btnSaveExpense)
             btnCancel = findViewById(R.id.btnCancelEdit)
-            progressBar = findViewById(R.id.progressBar) ?: ProgressBar(this).also {
-                it.visibility = View.GONE
-                val layout = findViewById<LinearLayout>(R.id.editExpenseLayout)
-                layout?.addView(it, 0)
-            }
-            
-            tvConversionInfo = findViewById(R.id.tvConversionInfo) 
-                ?: TextView(this).also { it.visibility = View.GONE }
+            btnDeleteExpense = findViewById(R.id.btnDeleteExpense)
+            progressBar = findViewById(R.id.progressBar)
+            progressBarConversion = findViewById(R.id.progressBarConversion)
+            tvConversionInfo = findViewById(R.id.tvConversionInfo)
             tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
-                ?: TextView(this).also { it.visibility = View.GONE }
+            tvError = findViewById(R.id.tvError)
             
         } catch (e: Exception) {
             Log.e("EditExpenseActivity", "Error finding views: ${e.message}")
@@ -340,24 +347,24 @@ class EditExpenseActivity : AppCompatActivity() {
         val currency = getSelectedCurrency()
         
         if (subject.isEmpty()) {
-            etSubject.error = "Subject cannot be empty"
+            showError("Subject cannot be empty")
             return
         }
         
         if (amountStr.isEmpty()) {
-            etAmount.error = "Amount cannot be empty"
+            showError("Amount cannot be empty")
             return
         }
         
         val amount = try {
             amountStr.toDouble()
         } catch (e: NumberFormatException) {
-            etAmount.error = "Invalid amount format"
+            showError("Invalid amount format")
             return
         }
         
         if (amount <= 0) {
-            etAmount.error = "Amount must be greater than zero"
+            showError("Amount must be greater than zero")
             return
         }
         
@@ -426,6 +433,11 @@ class EditExpenseActivity : AppCompatActivity() {
         }
     }
     
+    private fun showError(message: String) {
+        tvError.text = message
+        tvError.visibility = View.VISIBLE
+    }
+    
     private fun saveExpenseToServer(updatedExpense: Expense) {
         lifecycleScope.launch {
             try {
@@ -443,6 +455,48 @@ class EditExpenseActivity : AppCompatActivity() {
                 
                 if (response.isSuccessful) {
                     Toast.makeText(this@EditExpenseActivity, "Expense updated successfully", Toast.LENGTH_SHORT).show()
+                    setResult(RESULT_OK)
+                    finish()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Toast.makeText(this@EditExpenseActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                progressBar.visibility = View.GONE
+                Toast.makeText(this@EditExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
+    private fun showDeleteConfirmation() {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Expense")
+            .setMessage("Are you sure you want to delete this expense? This action cannot be undone.")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteExpense()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun deleteExpense() {
+        progressBar.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            try {
+                val token = sessionManager.getToken()
+                if (token == null) {
+                    Toast.makeText(this@EditExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                    return@launch
+                }
+                
+                val response = RetrofitClient.expenseApiService.deleteExpense(expenseId, "Bearer $token")
+                
+                progressBar.visibility = View.GONE
+                
+                if (response.isSuccessful) {
+                    Toast.makeText(this@EditExpenseActivity, "Expense deleted successfully", Toast.LENGTH_SHORT).show()
                     setResult(RESULT_OK)
                     finish()
                 } else {

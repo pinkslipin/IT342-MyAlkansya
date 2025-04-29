@@ -7,12 +7,18 @@ import android.util.Log
 import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.ProgressBar
+import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.myalkansyamobile.api.IncomeRepository
 import com.example.myalkansyamobile.api.RetrofitClient
-import com.example.myalkansyamobile.databinding.ActivityEditIncomeBinding
 import com.example.myalkansyamobile.model.Income
 import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.Resource
@@ -24,75 +30,114 @@ import java.util.Calendar
 import java.util.Locale
 
 class EditIncomeActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityEditIncomeBinding
-    private var incomeId: Int = -1
+    private lateinit var etSource: EditText
+    private lateinit var etDate: EditText
+    private lateinit var etAmount: EditText
+    private lateinit var spinnerCurrency: Spinner
+    private lateinit var btnPickDate: ImageView
+    private lateinit var btnSave: Button
+    private lateinit var btnCancel: Button
+    private lateinit var btnDelete: Button
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvCurrencyWarning: TextView
+    private lateinit var tvError: TextView
+    
     private val calendar = Calendar.getInstance()
     private lateinit var sessionManager: SessionManager
     private lateinit var incomeRepository: IncomeRepository
+    
+    private var incomeId: Int = -1
     private var userDefaultCurrency: String = "PHP"
     private var originalAmount: Double? = null
     private var originalCurrency: String? = null
     private var conversionJob: Job? = null
-    
-    private val currencies = arrayOf("PHP", "USD", "EUR", "GBP", "JPY", "CNY", "CAD", "AUD")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityEditIncomeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_edit_income)
 
         sessionManager = SessionManager(this)
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         incomeRepository = IncomeRepository(RetrofitClient.incomeApiService)
 
-        // Setup currency spinner
-        setupCurrencySpinner()
+        // Initialize UI components
+        initializeUI()
         
-        // Setup date picker for the date field
-        binding.editTextDate.setOnClickListener {
-            showDatePickerDialog()
-        }
-        
-        // Setup amount focus listener for formatting
-        setupAmountListener()
-
         incomeId = intent.getIntExtra("incomeId", -1)
         if (incomeId == -1) {
-            Toast.makeText(this, "Invalid income ID", Toast.LENGTH_SHORT).show()
+            showError("Invalid income ID")
             finish()
             return
         }
 
+        setupUI()
         fetchIncomeDetails()
+    }
 
-        binding.btnSave.setOnClickListener {
-            updateIncome()
-        }
-
-        binding.btnBack.setOnClickListener {
+    private fun initializeUI() {
+        try {
+            etSource = findViewById(R.id.editTextSource)
+            etDate = findViewById(R.id.editTextDate)
+            etAmount = findViewById(R.id.editTextAmount)
+            spinnerCurrency = findViewById(R.id.spinnerCurrency)
+            btnPickDate = findViewById(R.id.btnPickDate)
+            btnSave = findViewById(R.id.btnSave)
+            btnCancel = findViewById(R.id.btnCancel)
+            btnDelete = findViewById(R.id.btnDelete)
+            progressBar = findViewById(R.id.progressBar)
+            tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
+            tvError = findViewById(R.id.tvError)
+            
+        } catch (e: Exception) {
+            Log.e("EditIncomeActivity", "Error finding views: ${e.message}")
+            Toast.makeText(this, "Failed to initialize UI: ${e.message}", Toast.LENGTH_LONG).show()
             finish()
-        }
-
-        // Add delete button click listener
-        binding.btnDelete.setOnClickListener {
-            showDeleteConfirmationDialog()
         }
     }
 
+    private fun setupUI() {
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
+        
+        btnCancel.setOnClickListener {
+            finish()
+        }
+        
+        btnSave.setOnClickListener {
+            updateIncome()
+        }
+        
+        btnDelete.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
+        
+        setupCurrencySpinner()
+        setupDatePicker()
+        setupAmountListener()
+    }
+    
     private fun setupCurrencySpinner() {
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, currencies)
-        binding.spinnerCurrency.adapter = adapter
+        val currencyItems = CurrencyUtils.currencyCodes.map { code ->
+            val isDefault = code == userDefaultCurrency
+            val displayText = CurrencyUtils.getCurrencyDisplayText(code) + if (isDefault) " (Default)" else ""
+            displayText
+        }
+
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, currencyItems)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerCurrency.adapter = adapter
         
         // Set default selection
-        val defaultPosition = currencies.indexOf(userDefaultCurrency)
+        val defaultPosition = CurrencyUtils.currencyCodes.indexOf(userDefaultCurrency)
         if (defaultPosition >= 0) {
-            binding.spinnerCurrency.setSelection(defaultPosition)
+            spinnerCurrency.setSelection(defaultPosition)
         }
         
         // Handle selection changes
-        binding.spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedCurrency = currencies[position]
+                val selectedCurrency = CurrencyUtils.currencyCodes[position]
                 handleCurrencyChange(selectedCurrency)
             }
             
@@ -102,9 +147,36 @@ class EditIncomeActivity : AppCompatActivity() {
         }
     }
     
+    private fun setupDatePicker() {
+        etDate.setOnClickListener {
+            showDatePickerDialog()
+        }
+        
+        btnPickDate.setOnClickListener {
+            showDatePickerDialog()
+        }
+    }
+    
+    private fun setupAmountListener() {
+        etAmount.setOnFocusChangeListener { _, hasFocus -> 
+            if (!hasFocus) {
+                val amountStr = etAmount.text.toString()
+                if (amountStr.isNotEmpty()) {
+                    try {
+                        // Format to two decimal places
+                        val amount = amountStr.toDouble()
+                        etAmount.setText(String.format("%.2f", amount))
+                    } catch (e: Exception) {
+                        etAmount.error = "Invalid amount"
+                    }
+                }
+            }
+        }
+    }
+    
     private fun handleCurrencyChange(newCurrency: String) {
         // Get current amount
-        val amountStr = binding.editTextAmount.text.toString()
+        val amountStr = etAmount.text.toString()
         val currentAmount = amountStr.toDoubleOrNull()
         
         // If amount exists and currency is changed
@@ -121,88 +193,31 @@ class EditIncomeActivity : AppCompatActivity() {
                 
                 // If changing back to original currency, restore original amount
                 if (selectedCurrency == originalCurrency) {
-                    binding.editTextAmount.setText(String.format("%.2f", originalAmount))
+                    etAmount.setText(String.format("%.2f", originalAmount))
+                    tvCurrencyWarning.visibility = View.GONE
                 } else {
                     // Otherwise convert to new currency
                     convertAmount(currentAmount, currentCurrency, selectedCurrency)
                 }
             }
         }
+        
+        updateCurrencyWarning(newCurrency)
     }
     
-    private fun setupAmountListener() {
-        binding.editTextAmount.setOnFocusChangeListener { _, hasFocus -> 
-            if (!hasFocus) {
-                val amountStr = binding.editTextAmount.text.toString()
-                if (amountStr.isNotEmpty()) {
-                    try {
-                        // Format to two decimal places
-                        val amount = amountStr.toDouble()
-                        binding.editTextAmount.setText(String.format("%.2f", amount))
-                    } catch (e: Exception) {
-                        binding.editTextAmount.error = "Invalid amount"
-                    }
-                }
-            }
+    private fun updateCurrencyWarning(selectedCurrency: String) {
+        if (selectedCurrency != userDefaultCurrency) {
+            tvCurrencyWarning.text = 
+                "Note: This income will be automatically converted to $userDefaultCurrency when saved."
+            tvCurrencyWarning.visibility = View.VISIBLE
+        } else {
+            tvCurrencyWarning.visibility = View.GONE
         }
     }
     
     private fun getSelectedCurrency(): String {
-        val position = binding.spinnerCurrency.selectedItemPosition
-        return currencies[position]
-    }
-    
-    private fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String) {
-        // Cancel any ongoing conversion
-        conversionJob?.cancel()
-        
-        // Show loading indicator
-        binding.progressBar.visibility = View.VISIBLE
-        
-        conversionJob = lifecycleScope.launch {
-            try {
-                val authToken = sessionManager.getToken()
-                if (authToken.isNullOrEmpty()) {
-                    Toast.makeText(
-                        this@EditIncomeActivity,
-                        "Error: Not logged in",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    binding.progressBar.visibility = View.GONE
-                    return@launch
-                }
-                
-                val convertedAmount = CurrencyUtils.convertCurrency(
-                    amount, 
-                    fromCurrency, 
-                    toCurrency, 
-                    authToken
-                )
-                
-                if (convertedAmount != null) {
-                    binding.editTextAmount.setText(String.format("%.2f", convertedAmount))
-                    Toast.makeText(
-                        this@EditIncomeActivity,
-                        "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    Toast.makeText(
-                        this@EditIncomeActivity,
-                        "Conversion failed. Please enter amount manually.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: Exception) {
-                Toast.makeText(
-                    this@EditIncomeActivity,
-                    "Error: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } finally {
-                binding.progressBar.visibility = View.GONE
-            }
-        }
+        val position = spinnerCurrency.selectedItemPosition
+        return CurrencyUtils.currencyCodes[position]
     }
 
     private fun showDatePickerDialog() {
@@ -223,94 +238,161 @@ class EditIncomeActivity : AppCompatActivity() {
 
     private fun updateDateInView() {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        binding.editTextDate.setText(sdf.format(calendar.time))
+        etDate.setText(sdf.format(calendar.time))
+    }
+    
+    private fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String) {
+        // Cancel any ongoing conversion
+        conversionJob?.cancel()
+        
+        // Show loading indicator
+        progressBar.visibility = View.VISIBLE
+        
+        conversionJob = lifecycleScope.launch {
+            try {
+                val authToken = sessionManager.getToken()
+                if (authToken.isNullOrEmpty()) {
+                    showError("Error: Not logged in")
+                    progressBar.visibility = View.GONE
+                    return@launch
+                }
+                
+                val convertedAmount = CurrencyUtils.convertCurrency(
+                    amount, 
+                    fromCurrency, 
+                    toCurrency, 
+                    authToken
+                )
+                
+                if (convertedAmount != null) {
+                    etAmount.setText(String.format("%.2f", convertedAmount))
+                    Toast.makeText(
+                        this@EditIncomeActivity,
+                        "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    showError("Conversion failed. Please enter amount manually.")
+                }
+            } catch (e: Exception) {
+                showError("Error: ${e.message}")
+            } finally {
+                progressBar.visibility = View.GONE
+            }
+        }
     }
 
     private fun fetchIncomeDetails() {
+        showLoading(true)
+        
         val token = sessionManager.fetchAuthToken()
         if (token.isNullOrEmpty()) {
-            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show()
+            showError("Please login first")
             finish()
             return
         }
         
-        binding.progressBar.visibility = View.VISIBLE
         lifecycleScope.launch {
             when (val result = incomeRepository.getIncomeById(incomeId, token)) {
                 is Resource.Success -> {
-                    binding.progressBar.visibility = View.GONE
                     val income = result.data
-                    binding.editTextSource.setText(income.source)
-                    binding.editTextDate.setText(income.date)
+                    etSource.setText(income.source)
+                    etDate.setText(income.date)
+                    
+                    // Parse date string to set the calendar
+                    try {
+                        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                        val date = sdf.parse(income.date)
+                        if (date != null) {
+                            calendar.time = date
+                        }
+                    } catch (e: Exception) {
+                        Log.e("EditIncomeActivity", "Error parsing date: ${e.message}")
+                    }
                     
                     // Always prioritize showing the true original values if they exist
                     if (income.originalAmount != null && income.originalCurrency != null) {
                         // If we have original values, show those instead
-                        binding.editTextAmount.setText(income.originalAmount.toString())
+                        etAmount.setText(String.format("%.2f", income.originalAmount))
                         originalAmount = income.originalAmount
                         originalCurrency = income.originalCurrency
                         
                         // Set spinner to original currency
-                        val originalPosition = currencies.indexOf(income.originalCurrency)
+                        val originalPosition = CurrencyUtils.currencyCodes.indexOf(income.originalCurrency)
                         if (originalPosition >= 0) {
-                            binding.spinnerCurrency.setSelection(originalPosition)
+                            spinnerCurrency.setSelection(originalPosition)
                         }
                     } else {
                         // No original values available, use the stored ones
-                        binding.editTextAmount.setText(income.amount.toString())
+                        etAmount.setText(String.format("%.2f", income.amount))
                         originalAmount = income.amount
                         originalCurrency = income.currency
                         
-                        val position = currencies.indexOf(income.currency ?: userDefaultCurrency)
+                        val position = CurrencyUtils.currencyCodes.indexOf(income.currency ?: userDefaultCurrency)
                         if (position >= 0) {
-                            binding.spinnerCurrency.setSelection(position)
+                            spinnerCurrency.setSelection(position)
                         }
                     }
                     
-                    // Log for debugging
-                    Log.d("EditIncomeActivity", "Income: amount=${income.amount}, currency=${income.currency}")
-                    Log.d("EditIncomeActivity", "Original: amount=${income.originalAmount}, currency=${income.originalCurrency}")
+                    // Update currency warning if needed
+                    updateCurrencyWarning(getSelectedCurrency())
+                    
+                    showLoading(false)
                 }
                 is Resource.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    Toast.makeText(this@EditIncomeActivity, "Error: ${result.message}", Toast.LENGTH_SHORT).show()
+                    showError("Error: ${result.message}")
                     finish()
                 }
                 is Resource.Loading -> {
-                    // Keep progress bar visible during loading
-                    binding.progressBar.visibility = View.VISIBLE
+                    // Keep loading state active
                 }
             }
         }
     }
 
     private fun updateIncome() {
-        val source = binding.editTextSource.text.toString()
-        val date = binding.editTextDate.text.toString()
-        val amountStr = binding.editTextAmount.text.toString()
+        val source = etSource.text.toString()
+        val date = etDate.text.toString()
+        val amountStr = etAmount.text.toString()
         val currency = getSelectedCurrency()
 
-        if (source.isEmpty() || date.isEmpty() || amountStr.isEmpty()) {
-            Toast.makeText(this, "Please fill out all fields", Toast.LENGTH_SHORT).show()
+        if (source.isEmpty()) {
+            etSource.error = "Source cannot be empty"
+            return
+        }
+        
+        if (date.isEmpty()) {
+            showError("Please select a date")
+            return
+        }
+        
+        if (amountStr.isEmpty()) {
+            etAmount.error = "Amount cannot be empty"
             return
         }
         
         val amount = try {
             amountStr.toDouble()
         } catch (e: Exception) {
-            binding.editTextAmount.error = "Invalid amount"
+            etAmount.error = "Invalid amount"
+            return
+        }
+        
+        if (amount <= 0) {
+            etAmount.error = "Amount must be greater than zero"
             return
         }
 
         val token = sessionManager.fetchAuthToken()
         if (token.isNullOrEmpty()) {
-            Toast.makeText(this, "Please login first", Toast.LENGTH_SHORT).show()
-            finish()
+            showError("Please login first")
             return
         }
         
-        binding.progressBar.visibility = View.VISIBLE
-        binding.btnSave.isEnabled = false
+        showLoading(true)
+        btnSave.isEnabled = false
+        btnDelete.isEnabled = false
+        btnCancel.isEnabled = false
         
         // If selected currency is different from user's default, convert it
         if (currency != userDefaultCurrency) {
@@ -339,22 +421,18 @@ class EditIncomeActivity : AppCompatActivity() {
                         submitIncomeUpdate(updatedIncome, token)
                     } else {
                         // Conversion failed
-                        binding.progressBar.visibility = View.GONE
-                        binding.btnSave.isEnabled = true
-                        Toast.makeText(
-                            this@EditIncomeActivity,
-                            "Currency conversion failed. Try again or use your default currency.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        showLoading(false)
+                        btnSave.isEnabled = true
+                        btnDelete.isEnabled = true
+                        btnCancel.isEnabled = true
+                        showError("Currency conversion failed. Try again or use your default currency.")
                     }
                 } catch (e: Exception) {
-                    binding.progressBar.visibility = View.GONE
-                    binding.btnSave.isEnabled = true
-                    Toast.makeText(
-                        this@EditIncomeActivity,
-                        "Error: ${e.message}",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    showLoading(false)
+                    btnSave.isEnabled = true
+                    btnDelete.isEnabled = true
+                    btnCancel.isEnabled = true
+                    showError("Error: ${e.message}")
                 }
             }
         } else {
@@ -375,38 +453,40 @@ class EditIncomeActivity : AppCompatActivity() {
     private suspend fun submitIncomeUpdate(updatedIncome: Income, token: String) {
         when (val result = incomeRepository.updateIncome(incomeId, updatedIncome, token)) {
             is Resource.Success -> {
-                binding.progressBar.visibility = View.GONE
+                showLoading(false)
                 Toast.makeText(this@EditIncomeActivity, "Income updated successfully", Toast.LENGTH_SHORT).show()
                 finish() // Go back to previous screen
             }
             is Resource.Error -> {
-                binding.progressBar.visibility = View.GONE
-                binding.btnSave.isEnabled = true
-                Toast.makeText(this@EditIncomeActivity, "Error: ${result.message}", Toast.LENGTH_SHORT).show()
+                showLoading(false)
+                btnSave.isEnabled = true
+                btnDelete.isEnabled = true
+                btnCancel.isEnabled = true
+                showError("Error: ${result.message}")
             }
             is Resource.Loading -> {
-                // Keep progress bar visible during loading
-                binding.progressBar.visibility = View.VISIBLE
+                // Keep loading state active
             }
         }
     }
 
     private fun showDeleteConfirmationDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Delete Income")
+            .setTitle(R.string.delete_income)
             .setMessage("Are you sure you want to delete this income record? This action cannot be undone.")
-            .setPositiveButton("Delete") { _, _ ->
+            .setPositiveButton(R.string.delete) { _, _ ->
                 deleteIncome()
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(R.string.cancel, null)
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
 
     private fun deleteIncome() {
-        binding.progressBar.visibility = View.VISIBLE
-        binding.btnSave.isEnabled = false
-        binding.btnDelete.isEnabled = false
+        showLoading(true)
+        btnSave.isEnabled = false
+        btnDelete.isEnabled = false
+        btnCancel.isEnabled = false
 
         lifecycleScope.launch {
             val token = sessionManager.fetchAuthToken() ?: ""
@@ -416,15 +496,26 @@ class EditIncomeActivity : AppCompatActivity() {
                     finish()
                 }
                 is Resource.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.btnSave.isEnabled = true
-                    binding.btnDelete.isEnabled = true
-                    Toast.makeText(this@EditIncomeActivity, "Error: ${result.message}", Toast.LENGTH_SHORT).show()
+                    showLoading(false)
+                    btnSave.isEnabled = true
+                    btnDelete.isEnabled = true
+                    btnCancel.isEnabled = true
+                    showError("Error: ${result.message}")
                 }
                 is Resource.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
+                    // Keep loading state active
                 }
             }
         }
+    }
+
+    private fun showError(message: String) {
+        tvError.text = message
+        tvError.visibility = View.VISIBLE
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun showLoading(isLoading: Boolean) {
+        progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
     }
 }

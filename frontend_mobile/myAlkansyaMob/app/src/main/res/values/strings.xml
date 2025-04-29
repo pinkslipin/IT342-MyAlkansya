@@ -5,4 +5,54 @@
     <string name="fb_login_protocol_scheme">fb953547133647991</string>
     <string name="facebook_client_token">62a4bdcfd82c0abbb3cd5c5efd11cb65</string>
     <string name="welcome_title">Welcome to <font color="#FFC107">My</font>Alkansya</string>
+
+    <!-- Income edit page strings -->
+    <string name="edit_income">Edit Income</string>
+    <string name="income_details">Income Details</string>
+    <string name="income_source">Source</string>
+    <string name="date">Date</string>
+    <string name="amount">Amount</string>
+    <string name="currency">Currency</string>
+    <string name="delete">Delete</string>
+    <string name="delete_income">Delete Income</string>
+    <string name="delete_budget">Delete Budget</string>
+    <string name="delete_expense">Delete Expense</string>
+    <string name="cancel">Cancel</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="back">Back</string>
+    <string name="edit_income_details_description">Edit your income for this source. Any changes will be reflected in your financial summary.</string>
+    <string name="note_income_currency_change">Note: Changing the month or category may affect which expenses are tracked against this income.</string>
+
+    <!-- Income filter strings -->
+    <string name="filter_income">Filters</string>
+    <string name="month">Month:</string>
+    <string name="year">Year:</string>
+    <string name="apply_filters">Apply Filters</string>
+    <string name="reset_filters">Reset</string>
+    <string name="no_income_records">No income records found.</string>
+    <string name="no_filtered_income">No incomes found for the selected filter</string>
+    <string name="active_filters">Active filters: %1$s</string>
+
+    <!-- Budget filter strings -->
+    <string name="no_budget_records">No budget records found.</string>
+    <string name="no_filtered_budget">No budgets found for the selected filter</string>
+    <string name="budget_details">Budget Details</string>
+    <string name="add_budget">Add Budget</string>
+    <string name="edit_budget">Edit Budget</string>
+    <string name="budget_category">Category</string>
+    <string name="budget_amount">Budget Amount</string>
+    <string name="add_budget_details_description">Set your budget limits to help track and manage your spending.</string>
+    <string name="edit_budget_details_description">Edit your budget allocation. Any changes will be reflected in your financial summary.</string>
+    <string name="note_budget_category_change">Note: Changing the month or category may affect which expenses are tracked against this budget.</string>
+
+    <!-- Expense edit page strings -->
+    <string name="edit_expense">Edit Expense</string>
+    <string name="expense_details">Expense Details</string>
+    <string name="expense_subject">Subject</string>
+    <string name="expense_category">Category</string>
+    <string name="expense_amount">Amount</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="add_expense_details_description">Record your expenses to track your spending and stay within budget.</string>
+    <string name="edit_expense_details_description">Edit your expense details. Any changes will be reflected in your financial summary and budget tracking.</string>
+    <string name="note_expense_category_change">Note: Changing the category or date may affect which budget this expense is tracked against.</string>
 </resources>

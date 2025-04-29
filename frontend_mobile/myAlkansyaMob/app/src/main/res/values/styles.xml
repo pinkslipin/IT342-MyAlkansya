@@ -11,4 +11,12 @@
         <item name="android:textColor">#000000</item>
         <item name="android:textSize">14sp</item>
     </style>
+
+    <!-- Button Text Style -->
+    <style name="ButtonTextStyle">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/green_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
 </resources>
