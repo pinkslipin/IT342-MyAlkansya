@@ -31,6 +31,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder encoder;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
     public UserEntity registerLocalUser(String firstname, String lastname, String email, String password, String currency) {
         UserEntity user = new UserEntity();
         user.setFirstname(firstname);
@@ -153,15 +156,24 @@ public class UserService {
 
         UserEntity user = userOpt.get();
         
-        // Store the image bytes directly in the database
-        user.setProfileImageData(imageBytes);
-        
-        // Keep track of the image content type
-        user.setProfilePicture("data:" + contentType + ";base64,user-profile-picture");
-        
-        userRepo.save(user);
-        
-        return user.getProfileImageBase64();
+        try {
+            // Generate a unique filename
+            String uniqueFileName = UUID.randomUUID() + "_" + (fileName != null ? fileName : "profile.jpg");
+            
+            // Upload to Cloudinary and get the URL
+            String imageUrl = cloudinaryService.uploadImage(imageBytes, uniqueFileName);
+            
+            // Store the URL in the user profile (not the image data itself)
+            user.setProfilePicture(imageUrl);
+            // Don't need to store the bytes anymore
+            user.setProfileImageData(null);
+            
+            userRepo.save(user);
+            
+            return imageUrl;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload image: " + e.getMessage());
+        }
     }
 
     // Add a method to retrieve profile picture as Base64
