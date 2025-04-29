@@ -67,7 +67,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-                "https://myalkansya.vercel.app/",
+                "https://myalkansya.vercel.app",
                 "http://localhost:5173",  // Frontend
                 "https://it-342-my-alkansya-djht17t6u-pinkslipins-projects.vercel.app",
                 "http://10.0.2.2:8080",   // Android emulator
