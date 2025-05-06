@@ -3,21 +3,16 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
-import editIcon from "/assets/edit.png";
-import { ChevronDown, ChevronRight } from "react-feather"; // Add this import
+import editIcon from "/assets/edit.png"; // Import the edit icon
 
 const Budget = () => {
   const [budgets, setBudgets] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(10); // Set to 10 items per page
   const [error, setError] = useState("");
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1); // Current month (1-12)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear()); // Current year
   const navigate = useNavigate();
-  // New state for expanded categories and their expenses
-  const [expandedCategories, setExpandedCategories] = useState({});
-  const [categoryExpenses, setCategoryExpenses] = useState({});
-  const [loadingExpenses, setLoadingExpenses] = useState({});
 
   const apiUrl = "https://myalkansya-sia.as.r.appspot.com/api/budgets";
 
@@ -97,61 +92,6 @@ const Budget = () => {
   // Generate array of years (current year - 1, current year, current year + 1)
   const currentYear = new Date().getFullYear();
   const years = [currentYear - 1, currentYear, currentYear + 1, currentYear + 2];
-
-  // New function to fetch expenses for a specific category
-  const fetchExpensesForCategory = async (category) => {
-    try {
-      const authToken = localStorage.getItem("authToken");
-      if (!authToken) return;
-      
-      setLoadingExpenses(prev => ({ ...prev, [category]: true }));
-      
-      const config = {
-        headers: { Authorization: `Bearer ${authToken}` }
-      };
-      
-      // Get expenses filtered by category, month, and year
-      const response = await axios.get(
-        `https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpensesByCategory/${category}`,
-        config
-      );
-      
-      // Filter by month and year client-side
-      let expenses = response.data;
-      if (selectedMonth > 0 || selectedYear > 0) {
-        expenses = expenses.filter(expense => {
-          const expenseDate = new Date(expense.date);
-          const expenseMonth = expenseDate.getMonth() + 1;
-          const expenseYear = expenseDate.getFullYear();
-          
-          const monthMatches = selectedMonth === 0 || expenseMonth === selectedMonth;
-          const yearMatches = selectedYear === 0 || expenseYear === selectedYear;
-          
-          return monthMatches && yearMatches;
-        });
-      }
-      
-      setCategoryExpenses(prev => ({ ...prev, [category]: expenses }));
-    } catch (error) {
-      console.error(`Error fetching expenses for ${category}:`, error);
-    } finally {
-      setLoadingExpenses(prev => ({ ...prev, [category]: false }));
-    }
-  };
-  
-  // Toggle function to expand/collapse a category
-  const toggleCategory = (category) => {
-    setExpandedCategories(prev => {
-      const newState = { ...prev, [category]: !prev[category] };
-      
-      // Fetch expenses when expanding if we don't have them yet
-      if (newState[category] && (!categoryExpenses[category] || !categoryExpenses[category].length)) {
-        fetchExpensesForCategory(category);
-      }
-      
-      return newState;
-    });
-  };
 
   if (error) {
     return (
@@ -259,7 +199,7 @@ const Budget = () => {
           </div>
 
           {/* Budget Data Container */}
-          <div className="bg-white rounded-b-md shadow-md" style={{ minHeight: "500px" }}>
+          <div className="bg-white rounded-b-md shadow-md" style={{ height: "500px" }}>
             {currentBudgets.length === 0 ? (
               <p className="text-center text-gray-500 py-4">
                 No budget records found for {months.find(m => m.value === selectedMonth)?.label} {selectedYear}.
@@ -270,138 +210,71 @@ const Budget = () => {
                 const percentSpent = (budget.totalSpent / budget.monthlyBudget) * 100;
                 const progressColor =
                   percentSpent > 90 ? "#dc3545" : percentSpent > 70 ? "#ffc107" : "#28a745";
-                
-                const isExpanded = expandedCategories[budget.category] || false;
-                const expenses = categoryExpenses[budget.category] || [];
-                const isLoading = loadingExpenses[budget.category] || false;
 
                 return (
-                  <div key={budget.id} className="border-b last:border-none">
-                    {/* Main budget row */}
-                    <div className="grid grid-cols-6 py-2 px-4 hover:bg-gray-50">
-                      <div className="flex items-center">
-                        <button 
-                          onClick={() => toggleCategory(budget.category)} 
-                          className="mr-2 focus:outline-none"
-                        >
-                          {isExpanded ? (
-                            <ChevronDown size={16} className="text-[#18864F]" />
-                          ) : (
-                            <ChevronRight size={16} className="text-[#18864F]" />
-                          )}
-                        </button>
-                        {budget.category}
-                      </div>
-                      <div className="text-right">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: budget.currency || "USD",
-                        }).format(budget.monthlyBudget)}
-                      </div>
-                      <div className="text-right">
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: budget.currency || "USD",
-                        }).format(budget.totalSpent)}
-                      </div>
+                  <div
+                    key={budget.id}
+                    className="grid grid-cols-6 py-2 px-4 border-b last:border-none"
+                  >
+                    <div>{budget.category}</div>
+                    <div className="text-right">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: budget.currency || "USD",
+                      }).format(budget.monthlyBudget)}
+                    </div>
+                    <div className="text-right">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: budget.currency || "USD",
+                      }).format(budget.totalSpent)}
+                    </div>
+                    <div
+                      className="text-right"
+                      style={{ color: remaining < 0 ? "#dc3545" : "#28a745" }}
+                    >
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: budget.currency || "USD",
+                      }).format(remaining)}
+                    </div>
+                    <div className="text-center">
                       <div
-                        className="text-right"
-                        style={{ color: remaining < 0 ? "#dc3545" : "#28a745" }}
+                        style={{
+                          width: "150px", // Adjusted width for a shorter progress bar
+                          backgroundColor: "#e9ecef",
+                          borderRadius: "4px",
+                          overflow: "hidden",
+                          margin: "0 auto",
+                        }}
                       >
-                        {new Intl.NumberFormat("en-US", {
-                          style: "currency",
-                          currency: budget.currency || "USD",
-                        }).format(remaining)}
-                      </div>
-                      <div className="text-center">
-                        {/* Progress bar remains the same */}
-                        <div style={{ width: "150px", backgroundColor: "#e9ecef", borderRadius: "4px", overflow: "hidden", margin: "0 auto" }}>
-                          <div
-                            style={{
-                              width: `${Math.min(percentSpent, 100)}%`,
-                              height: "20px",
-                              backgroundColor: progressColor,
-                              textAlign: "center",
-                              color: "white",
-                              fontSize: "12px",
-                              lineHeight: "20px",
-                            }}
-                          >
-                            {percentSpent.toFixed(0)}%
-                          </div>
+                        <div
+                          style={{
+                            width: `${Math.min(percentSpent, 100)}%`,
+                            height: "20px",
+                            backgroundColor: progressColor,
+                            textAlign: "center",
+                            color: "white",
+                            fontSize: "12px",
+                            lineHeight: "20px",
+                          }}
+                        >
+                          {percentSpent.toFixed(0)}%
                         </div>
                       </div>
-                      <div className="text-center">
-                        <button
-                          onClick={() => navigate(`/editbudget/${budget.id}`)}
-                          className="hover:opacity-80"
-                        >
-                          <img src={editIcon} alt="Edit" className="h-5 w-5 inline-block" />
-                        </button>
-                      </div>
                     </div>
-                    
-                    {/* Expense breakdown when expanded */}
-                    {isExpanded && (
-                      <div className="bg-gray-50 px-8 py-2 border-t border-gray-200">
-                        <h3 className="text-sm font-semibold text-[#18864F] mb-2">Expense Breakdown</h3>
-                        
-                        {isLoading ? (
-                          <div className="text-center py-4">
-                            <div className="inline-block animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-[#18864F]"></div>
-                            <p className="text-sm text-gray-600 mt-2">Loading expenses...</p>
-                          </div>
-                        ) : expenses.length > 0 ? (
-                          <div>
-                            <div className="grid grid-cols-4 text-sm font-medium text-gray-600 mb-1 px-2">
-                              <div>Date</div>
-                              <div>Subject</div>
-                              <div className="text-right">Amount</div>
-                              <div className="text-right">Currency</div>
-                            </div>
-                            {expenses.map(expense => (
-                              <div key={expense.id} className="grid grid-cols-4 text-sm border-b border-gray-200 px-2 py-1">
-                                <div>{expense.date}</div>
-                                <div>{expense.subject}</div>
-                                <div className="text-right">
-                                  {new Intl.NumberFormat("en-US", {
-                                    style: "currency",
-                                    currency: expense.currency || budget.currency,
-                                  }).format(expense.amount)}
-                                </div>
-                                <div className="text-right">{expense.currency}</div>
-                              </div>
-                            ))}
-                            
-                            {/* Summary of expenses & remaining budget */}
-                            <div className="bg-[#EDFBE9] p-2 mt-2 rounded-md">
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium text-sm">Total Spent:</span>
-                                <span className="font-bold text-sm">
-                                  {new Intl.NumberFormat("en-US", {
-                                    style: "currency",
-                                    currency: budget.currency,
-                                  }).format(budget.totalSpent)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center mt-1">
-                                <span className="font-medium text-sm">Remaining Budget:</span>
-                                <span 
-                                  className={`font-bold text-sm ${remaining < 0 ? "text-red-600" : "text-green-600"}`}
-                                >
-                                  {new Intl.NumberFormat("en-US", {
-                                    style: "currency",
-                                    currency: budget.currency,
-                                  }).format(remaining)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 py-2">No expenses found for this category.</p>
-                        )}
-                      </div>
-                    )}
+                    <div className="text-center">
+                      <button
+                        onClick={() => navigate(`/editbudget/${budget.id}`)}
+                        className="hover:opacity-80"
+                      >
+                        <img
+                          src={editIcon}
+                          alt="Edit"
+                          className="h-5 w-5 inline-block"
+                        />
+                      </button>
+                    </div>
                   </div>
                 );
               })
