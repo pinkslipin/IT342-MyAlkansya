@@ -58,7 +58,11 @@ class BudgetActivity : AppCompatActivity() {
     }
     
     private fun setupUI() {
-        // Set up back button
+        // Set up back button in topBar
+        binding.topBar.setOnClickListener {
+            finish()
+        }
+        
         binding.btnBack.setOnClickListener {
             finish()
         }
@@ -81,7 +85,6 @@ class BudgetActivity : AppCompatActivity() {
         binding.spinnerMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 filterMonth = position
-                applyFilters()
             }
             
             override fun onNothingSelected(parent: AdapterView<*>?) {}
@@ -99,10 +102,44 @@ class BudgetActivity : AppCompatActivity() {
         binding.spinnerYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 filterYear = if (position == 0) 0 else years[position].toInt()
-                applyFilters()
             }
             
             override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+        
+        // Setup apply and reset filter buttons
+        binding.btnApplyFilter.setOnClickListener {
+            applyFilters()
+            updateActiveFiltersText()
+        }
+        
+        binding.btnResetFilters.setOnClickListener {
+            // Reset spinners to default values
+            binding.spinnerMonth.setSelection(0) // All months
+            binding.spinnerYear.setSelection(0) // All years
+            filterMonth = 0
+            filterYear = 0
+            applyFilters()
+            binding.activeFiltersText.visibility = View.GONE
+        }
+    }
+    
+    private fun updateActiveFiltersText() {
+        val activeFilters = mutableListOf<String>()
+        
+        if (filterMonth > 0) {
+            activeFilters.add("Month: ${months[filterMonth]}")
+        }
+        
+        if (filterYear > 0) {
+            activeFilters.add("Year: $filterYear")
+        }
+        
+        if (activeFilters.isNotEmpty()) {
+            binding.activeFiltersText.text = getString(R.string.active_filters, activeFilters.joinToString(", "))
+            binding.activeFiltersText.visibility = View.VISIBLE
+        } else {
+            binding.activeFiltersText.visibility = View.GONE
         }
     }
     
@@ -241,15 +278,30 @@ class BudgetActivity : AppCompatActivity() {
     }
     
     private fun applyFilters() {
-        val filteredList = displayBudgetList.filter { budget ->
-            val monthMatches = filterMonth == 0 || budget.budgetMonth == filterMonth
-            val yearMatches = filterYear == 0 || budget.budgetYear == filterYear
-            monthMatches && yearMatches
+        val filteredList = if (filterMonth == 0 && filterYear == 0) {
+            // No filters applied, show all budgets
+            displayBudgetList
+        } else {
+            // Apply filters
+            displayBudgetList.filter { budget ->
+                val monthMatches = filterMonth == 0 || budget.budgetMonth == filterMonth
+                val yearMatches = filterYear == 0 || budget.budgetYear == filterYear
+                monthMatches && yearMatches
+            }
         }
         
         adapter.updateData(filteredList)
         
         // Show empty state if needed
-        binding.tvEmptyState.visibility = if (filteredList.isEmpty()) View.VISIBLE else View.GONE
+        if (filteredList.isEmpty()) {
+            binding.tvEmptyState.visibility = View.VISIBLE
+            binding.tvEmptyState.text = if (filterMonth > 0 || filterYear > 0) {
+                getString(R.string.no_filtered_budget)
+            } else {
+                getString(R.string.no_budget_records)
+            }
+        } else {
+            binding.tvEmptyState.visibility = View.GONE
+        }
     }
 }

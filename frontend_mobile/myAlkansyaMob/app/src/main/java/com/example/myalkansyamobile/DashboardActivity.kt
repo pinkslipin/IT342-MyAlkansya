@@ -127,6 +127,11 @@ class DashboardActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener {
             finish()
         }
+        
+        binding.btnViewAllGoals.setOnClickListener {
+            val intent = Intent(this, SavingsGoalsActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun checkStoragePermission() {

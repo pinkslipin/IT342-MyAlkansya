@@ -56,6 +56,7 @@ class AddExpenseActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         
+        // Initialize UI components
         etSubject = findViewById(R.id.etSubject)
         tvDate = findViewById(R.id.tvDate)
         spinnerCategory = findViewById(R.id.spinnerCategory)
@@ -64,10 +65,13 @@ class AddExpenseActivity : AppCompatActivity() {
         btnAddExpense = findViewById(R.id.btnAddExpense)
         btnCancel = findViewById(R.id.btnCancel)
         btnPickDate = findViewById(R.id.btnPickDate)
+        tvConversionInfo = findViewById(R.id.tvConversionInfo)
+        tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
         
-        tvConversionInfo = findViewById(R.id.tvConversionInfo) ?: TextView(this).also { it.visibility = View.GONE }
-        tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning) ?: TextView(this).also { it.visibility = View.GONE }
+        // Set up the header
+        findViewById<TextView>(R.id.tvHeader).text = getString(R.string.add_expense)
         
+        // Set initial date
         tvDate.text = selectedDate.toString()
         
         val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
@@ -75,6 +79,10 @@ class AddExpenseActivity : AppCompatActivity() {
         
         setupCurrencySpinner()
         setupAmountListener()
+        
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
         
         btnPickDate.setOnClickListener {
             showDatePicker()

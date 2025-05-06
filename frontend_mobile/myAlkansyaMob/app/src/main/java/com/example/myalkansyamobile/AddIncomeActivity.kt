@@ -1,18 +1,14 @@
 package com.example.myalkansyamobile
 
 import android.os.Bundle
-import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.myalkansyamobile.R
 import com.example.myalkansyamobile.api.IncomeRequest
 import com.example.myalkansyamobile.api.RetrofitClient
-import com.example.myalkansyamobile.databinding.ActivityAddIncomeBinding
 import com.example.myalkansyamobile.utils.CurrencyUtils
-import com.example.myalkansyamobile.utils.DateUtils
 import com.example.myalkansyamobile.utils.SessionManager
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
@@ -27,7 +23,23 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class AddIncomeActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityAddIncomeBinding
+    // UI elements
+    private lateinit var etSource: EditText
+    private lateinit var etDate: EditText
+    private lateinit var btnPickDate: ImageView
+    private lateinit var etAmount: EditText
+    private lateinit var spinnerCurrency: Spinner
+    private lateinit var tvCurrencyWarning: TextView
+    private lateinit var progressBarConversion: ProgressBar
+    private lateinit var tvConversionInfo: TextView
+    private lateinit var btnSave: Button
+    private lateinit var btnCancel: Button
+    private lateinit var btnBack: ImageButton
+    private lateinit var tvCurrencyInfo: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var tvError: TextView
+
+    // Other variables
     private lateinit var sessionManager: SessionManager
     private var userDefaultCurrency: String = "PHP"
     private var originalAmount: Double? = null
@@ -36,47 +48,67 @@ class AddIncomeActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityAddIncomeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_add_income)
         
         // Initialize sessionManager
         sessionManager = SessionManager(this)
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         
-        // Setup toolbar
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "Add Income"
+        // Initialize UI components
+        initializeViews()
         
-        // Set up UI components
+        // Set up UI interaction
+        setupBackButton()
         setupDatePicker()
         setupCurrencySpinner()
         setupAmountListener()
+        setupButtons()
         
         // Set default date to today
         val today = Calendar.getInstance().time
         val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        binding.etDate.setText(dateFormat.format(today))
+        etDate.setText(dateFormat.format(today))
         
-        // Setup save button
-        binding.btnSave.setOnClickListener {
+        // Show default currency in info text
+        tvCurrencyInfo.text = "Your default currency is $userDefaultCurrency. Income will be stored in this currency."
+    }
+    
+    private fun initializeViews() {
+        // Find all views
+        etSource = findViewById(R.id.etSource)
+        etDate = findViewById(R.id.etDate)
+        btnPickDate = findViewById(R.id.btnPickDate)
+        etAmount = findViewById(R.id.etAmount)
+        spinnerCurrency = findViewById(R.id.spinnerCurrency)
+        tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
+        progressBarConversion = findViewById(R.id.progressBarConversion)
+        tvConversionInfo = findViewById(R.id.tvConversionInfo)
+        btnSave = findViewById(R.id.btnSave)
+        btnCancel = findViewById(R.id.btnCancel)
+        btnBack = findViewById(R.id.btnBack)
+        tvCurrencyInfo = findViewById(R.id.tvCurrencyInfo)
+        progressBar = findViewById(R.id.progressBar)
+        tvError = findViewById(R.id.tvError)
+    }
+    
+    private fun setupBackButton() {
+        btnBack.setOnClickListener {
+            finish()
+        }
+    }
+    
+    private fun setupButtons() {
+        btnSave.setOnClickListener {
             saveIncome()
         }
         
-        // Show default currency in info text
-        binding.tvCurrencyInfo.text = "Your default currency is $userDefaultCurrency. Income will be stored in this currency."
-    }
-    
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
+        btnCancel.setOnClickListener {
             finish()
-            return true
         }
-        return super.onOptionsItemSelected(item)
     }
     
     private fun setupDatePicker() {
-        binding.etDate.setOnClickListener {
+        val dateClickListener = View.OnClickListener {
             val datePicker = MaterialDatePicker.Builder.datePicker()
                 .setTitleText("Select Date")
                 .setSelection(MaterialDatePicker.todayInUtcMilliseconds())
@@ -86,11 +118,14 @@ class AddIncomeActivity : AppCompatActivity() {
                 val calendar = Calendar.getInstance()
                 calendar.timeInMillis = selection
                 val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                binding.etDate.setText(dateFormat.format(calendar.time))
+                etDate.setText(dateFormat.format(calendar.time))
             }
             
             datePicker.show(supportFragmentManager, "DATE_PICKER")
         }
+        
+        etDate.setOnClickListener(dateClickListener)
+        btnPickDate.setOnClickListener(dateClickListener)
     }
     
     private fun setupCurrencySpinner() {
@@ -110,16 +145,16 @@ class AddIncomeActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         
         // Set adapter
-        binding.spinnerCurrency.adapter = adapter
+        spinnerCurrency.adapter = adapter
         
         // Set default selection
         val defaultPosition = currencyItems.indexOfFirst { it.second == userDefaultCurrency }
         if (defaultPosition >= 0) {
-            binding.spinnerCurrency.setSelection(defaultPosition)
+            spinnerCurrency.setSelection(defaultPosition)
         }
         
         // Handle selection changes
-        binding.spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        spinnerCurrency.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 val selectedCurrency = currencyItems[position].second
                 
@@ -135,7 +170,7 @@ class AddIncomeActivity : AppCompatActivity() {
     
     private fun handleCurrencyChange(newCurrency: String) {
         // Get current amount
-        val amountStr = binding.etAmount.text.toString()
+        val amountStr = etAmount.text.toString()
         val currentAmount = amountStr.toDoubleOrNull()
         
         // If amount exists and currency is changed
@@ -152,9 +187,9 @@ class AddIncomeActivity : AppCompatActivity() {
                 
                 // If changing back to original currency, restore original amount
                 if (selectedCurrency == originalCurrency) {
-                    binding.etAmount.setText(String.format("%.2f", originalAmount))
-                    binding.tvConversionInfo.text = ""
-                    binding.tvConversionInfo.visibility = View.GONE
+                    etAmount.setText(String.format("%.2f", originalAmount))
+                    tvConversionInfo.text = ""
+                    tvConversionInfo.visibility = View.GONE
                 } else {
                     // Otherwise convert to new currency
                     convertAmount(currentAmount, currentCurrency, selectedCurrency)
@@ -168,25 +203,25 @@ class AddIncomeActivity : AppCompatActivity() {
     
     private fun updateConversionNotification(selectedCurrency: String) {
         if (selectedCurrency != userDefaultCurrency) {
-            binding.tvCurrencyWarning.text = 
+            tvCurrencyWarning.text = 
                 "Note: This income will be automatically converted to $userDefaultCurrency when saved."
-            binding.tvCurrencyWarning.visibility = View.VISIBLE
+            tvCurrencyWarning.visibility = View.VISIBLE
         } else {
-            binding.tvCurrencyWarning.visibility = View.GONE
+            tvCurrencyWarning.visibility = View.GONE
         }
     }
     
     private fun setupAmountListener() {
-        binding.etAmount.setOnFocusChangeListener { _, hasFocus ->
+        etAmount.setOnFocusChangeListener { _, hasFocus ->
             if (!hasFocus) {
-                val amountStr = binding.etAmount.text.toString()
+                val amountStr = etAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
                     try {
                         // Format to two decimal places
                         val amount = amountStr.toDouble()
-                        binding.etAmount.setText(String.format("%.2f", amount))
+                        etAmount.setText(String.format("%.2f", amount))
                     } catch (e: Exception) {
-                        binding.etAmount.error = "Invalid amount"
+                        etAmount.error = "Invalid amount"
                     }
                 }
             }
@@ -194,7 +229,7 @@ class AddIncomeActivity : AppCompatActivity() {
     }
     
     private fun getSelectedCurrency(): String {
-        val position = binding.spinnerCurrency.selectedItemPosition
+        val position = spinnerCurrency.selectedItemPosition
         return CurrencyUtils.currencyCodes[position]
     }
     
@@ -203,16 +238,16 @@ class AddIncomeActivity : AppCompatActivity() {
         conversionJob?.cancel()
         
         // Show loading indicator
-        binding.progressBarConversion.visibility = View.VISIBLE
-        binding.tvConversionInfo.text = "Converting..."
-        binding.tvConversionInfo.visibility = View.VISIBLE
+        progressBarConversion.visibility = View.VISIBLE
+        tvConversionInfo.text = "Converting..."
+        tvConversionInfo.visibility = View.VISIBLE
         
         conversionJob = lifecycleScope.launch {
             try {
                 val authToken = sessionManager.getToken()
                 if (authToken.isNullOrEmpty()) {
-                    binding.tvConversionInfo.text = "Error: Not logged in"
-                    binding.progressBarConversion.visibility = View.GONE
+                    tvConversionInfo.text = "Error: Not logged in"
+                    progressBarConversion.visibility = View.GONE
                     return@launch
                 }
                 
@@ -224,61 +259,61 @@ class AddIncomeActivity : AppCompatActivity() {
                 )
                 
                 if (convertedAmount != null) {
-                    binding.etAmount.setText(String.format("%.2f", convertedAmount))
-                    binding.tvConversionInfo.text = "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency"
+                    etAmount.setText(String.format("%.2f", convertedAmount))
+                    tvConversionInfo.text = "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency"
                 } else {
-                    binding.tvConversionInfo.text = "Conversion failed. Please enter amount manually."
+                    tvConversionInfo.text = "Conversion failed. Please enter amount manually."
                 }
             } catch (e: Exception) {
-                binding.tvConversionInfo.text = "Error: ${e.message}"
+                tvConversionInfo.text = "Error: ${e.message}"
             } finally {
-                binding.progressBarConversion.visibility = View.GONE
+                progressBarConversion.visibility = View.GONE
             }
         }
     }
     
     private fun saveIncome() {
-        val source = binding.etSource.text.toString()
-        val amountStr = binding.etAmount.text.toString()
-        val dateStr = binding.etDate.text.toString()
+        val source = etSource.text.toString()
+        val amountStr = etAmount.text.toString()
+        val dateStr = etDate.text.toString()
         val currency = getSelectedCurrency()
         
         // Validate inputs
         if (source.isEmpty()) {
-            binding.etSource.error = "Source is required"
+            etSource.error = "Source is required"
             return
         }
         
         if (amountStr.isEmpty()) {
-            binding.etAmount.error = "Amount is required"
+            etAmount.error = "Amount is required"
             return
         }
         
         val amount = try {
             amountStr.toDouble()
         } catch (e: Exception) {
-            binding.etAmount.error = "Invalid amount"
+            etAmount.error = "Invalid amount"
             return
         }
         
         if (amount <= 0) {
-            binding.etAmount.error = "Amount must be greater than zero"
+            etAmount.error = "Amount must be greater than zero"
             return
         }
         
         if (dateStr.isEmpty()) {
-            binding.etDate.error = "Date is required"
+            etDate.error = "Date is required"
             return
         }
         
         // Show loading state
-        binding.btnSave.isEnabled = false
-        binding.progressBar.visibility = View.VISIBLE
+        btnSave.isEnabled = false
+        progressBar.visibility = View.VISIBLE
         
         // If currency is different than default, actually convert the amount
         if (currency != userDefaultCurrency) {
-            binding.tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
-            binding.tvCurrencyWarning.visibility = View.VISIBLE
+            tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
+            tvCurrencyWarning.visibility = View.VISIBLE
 
             // Perform the conversion before saving
             lifecycleScope.launch {
@@ -286,8 +321,8 @@ class AddIncomeActivity : AppCompatActivity() {
                     val token = sessionManager.getToken()
                     if (token.isNullOrEmpty()) {
                         showError("You must be logged in to add income")
-                        binding.btnSave.isEnabled = true
-                        binding.progressBar.visibility = View.GONE
+                        btnSave.isEnabled = true
+                        progressBar.visibility = View.GONE
                         return@launch
                     }
                     
@@ -301,8 +336,8 @@ class AddIncomeActivity : AppCompatActivity() {
                     
                 } catch (e: Exception) {
                     showError("Error during conversion: ${e.message}")
-                    binding.btnSave.isEnabled = true
-                    binding.progressBar.visibility = View.GONE
+                    btnSave.isEnabled = true
+                    progressBar.visibility = View.GONE
                 }
             }
         } else {
@@ -350,7 +385,7 @@ class AddIncomeActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body() != null) {
                     // Show success message
                     Snackbar.make(
-                        binding.root,
+                        findViewById(android.R.id.content),
                         "Income added successfully",
                         Snackbar.LENGTH_SHORT
                     ).show()
@@ -368,18 +403,23 @@ class AddIncomeActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 showError("Error: ${e.message}")
             } finally {
-                binding.btnSave.isEnabled = true
-                binding.progressBar.visibility = View.GONE
+                btnSave.isEnabled = true
+                progressBar.visibility = View.GONE
             }
         }
     }
     
     private fun showError(message: String) {
-        binding.btnSave.isEnabled = true
-        binding.progressBar.visibility = View.GONE
+        btnSave.isEnabled = true
+        progressBar.visibility = View.GONE
         
+        // Display error in the designated TextView
+        tvError.text = message
+        tvError.visibility = View.VISIBLE
+        
+        // Also show a Snackbar for immediate feedback
         Snackbar.make(
-            binding.root,
+            findViewById(android.R.id.content),
             message,
             Snackbar.LENGTH_LONG
         ).setBackgroundTint(

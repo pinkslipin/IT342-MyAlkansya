@@ -1,5 +1,6 @@
 package com.example.myalkansyamobile.utils
 
+import android.util.Log
 import com.example.myalkansyamobile.api.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -161,5 +162,149 @@ object CurrencyUtils {
             "ETH" -> "Ξ"
             else -> "💱"
         }
+    }
+    
+    /**
+     * Direct mapping of currency codes to their symbols for consistent display
+     */
+    private val currencySymbols = mapOf(
+        "PHP" to "₱",
+        "USD" to "$",
+        "EUR" to "€",
+        "GBP" to "£",
+        "JPY" to "¥",
+        "CNY" to "¥",
+        "INR" to "₹",
+        "KRW" to "₩",
+        "BTC" to "₿",
+        "THB" to "฿",
+        "RUB" to "₽",
+        "TRY" to "₺",
+        "MYR" to "RM",
+        "SGD" to "S$",
+        "HKD" to "HK$",
+        "AUD" to "A$",
+        "CAD" to "C$",
+        "NZD" to "NZ$",
+        "ZAR" to "R",
+        "BRL" to "R$",
+        "MXN" to "Mex$",
+        "CHF" to "Fr",
+        "SEK" to "kr",
+        "NOK" to "kr",
+        "DKK" to "kr",
+        "IDR" to "Rp",
+        "AED" to "د.إ",
+        "ARS" to "$",
+        "BGN" to "лв",
+        "BSD" to "B$",
+        "CLP" to "$",
+        "COP" to "$",
+        "CZK" to "Kč",
+        "DOP" to "RD$",
+        "EGP" to "E£",
+        "FJD" to "FJ$",
+        "GTQ" to "Q",
+        "HRK" to "kn",
+        "HUF" to "Ft",
+        "ILS" to "₪",
+        "ISK" to "kr",
+        "KZT" to "₸",
+        "PAB" to "B/.",
+        "PEN" to "S/.",
+        "PKR" to "₨",
+        "PLN" to "zł",
+        "PYG" to "₲",
+        "RON" to "lei",
+        "SAR" to "﷼",
+        "TWD" to "NT$",
+        "UAH" to "₴",
+        "UYU" to "SU"
+        // Add more as needed
+    )
+    
+    /**
+     * Get currency symbol directly (more reliable than locale-based)
+     */
+    fun getCurrencySymbol(currencyCode: String): String {
+        val code = currencyCode.uppercase()
+        // Log for debugging
+        Log.d("CurrencyUtils", "Getting symbol for currency: $code")
+        val symbol = currencySymbols[code]
+        
+        if (symbol == null) {
+            Log.w("CurrencyUtils", "WARNING: No symbol found for currency $code, defaulting to code itself")
+            return code
+        }
+        
+        Log.d("CurrencyUtils", "Symbol found for $code: $symbol")
+        return symbol
+    }
+    
+    /**
+     * Get a properly configured NumberFormat for a specific currency
+     * This handles locale selection to get the right currency symbols
+     */
+    fun getCurrencyFormatter(currencyCode: String): NumberFormat {
+        // Select appropriate locale for the currency to get correct symbols
+        val locale = when (currencyCode) {
+            "PHP" -> Locale("fil", "PH") // Filipino locale for Philippine Peso
+            "USD" -> Locale.US
+            "EUR" -> Locale.GERMANY
+            "GBP" -> Locale.UK
+            "JPY" -> Locale.JAPAN
+            "CNY" -> Locale.CHINA
+            "AUD" -> Locale("en", "AU")
+            "CAD" -> Locale("en", "CA")
+            "INR" -> Locale("en", "IN")
+            "MXN" -> Locale("es", "MX")
+            "BRL" -> Locale("pt", "BR")
+            "RUB" -> Locale("ru", "RU")
+            "ZAR" -> Locale("en", "ZA")
+            "CHF" -> Locale("de", "CH")
+            "SGD" -> Locale("en", "SG")
+            "HKD" -> Locale("zh", "HK")
+            "NZD" -> Locale("en", "NZ")
+            "SEK" -> Locale("sv", "SE")
+            "KRW" -> Locale("ko", "KR")
+            "NOK" -> Locale("no", "NO")
+            "TRY" -> Locale("tr", "TR")
+            else -> Locale.US // Default to US if no specific locale
+        }
+        
+        val formatter = NumberFormat.getCurrencyInstance(locale)
+        try {
+            formatter.currency = Currency.getInstance(currencyCode)
+        } catch (e: Exception) {
+            Log.w("CurrencyUtils", "Error setting currency $currencyCode: ${e.message}")
+        }
+        
+        return formatter
+    }
+    
+    /**
+     * Format amount with proper currency symbol based on currency code
+     * This version uses direct symbol mapping rather than locale-based formatting
+     * to ensure consistent display across platforms
+     */
+    fun formatWithProperCurrency(amount: Double, currencyCode: String): String {
+        // Use our direct symbol mapping instead of formatter
+        val code = currencyCode.uppercase()
+        val symbol = getCurrencySymbol(code)
+        val formatter = DecimalFormat("#,##0.00")
+        val formatted = "$symbol${formatter.format(amount)}"
+        
+        // Log for debugging
+        Log.d("CurrencyUtils", "Formatted $amount $code as: $formatted")
+        return formatted
+    }
+    
+    /**
+     * Simple format with currency code (for CSV export)
+     * Format: "PHP 1,000.00" instead of "₱1,000.00"
+     */
+    fun formatWithCurrencyCode(amount: Double, currencyCode: String): String {
+        val formatter = DecimalFormat("#,##0.00")
+        return "$currencyCode ${formatter.format(amount)}"
     }
 }

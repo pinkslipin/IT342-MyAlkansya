@@ -72,7 +72,7 @@
                 android:paddingVertical="8dp" />
         </LinearLayout>
 
-        <!-- Filter Card -->
+        <!-- Filter Card - Updated with correct IDs -->
         <androidx.cardview.widget.CardView
             android:id="@+id/filterCard"
             android:layout_width="match_parent"
@@ -88,78 +88,96 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Filters"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#18864F"
+                    android:layout_marginBottom="8dp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="wrap_content"
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="Filters"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#18864F"
-                        android:layout_marginEnd="16dp" />
-
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:layout_marginEnd="8dp">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Month:"
+                            android:textColor="#18864F"
+                            android:layout_marginEnd="4dp"
+                            android:layout_gravity="center_vertical" />
+                            
+                        <Spinner
+                            android:id="@+id/spinnerMonth"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/spinner_background"
+                            android:padding="8dp" />
+                    </LinearLayout>
+                    
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:orientation="horizontal">
                         
-                        <LinearLayout
+                        <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginEnd="8dp">
+                            android:text="Year:"
+                            android:textColor="#18864F"
+                            android:layout_marginEnd="4dp"
+                            android:layout_gravity="center_vertical" />
                             
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Month:"
-                                android:textColor="#18864F"
-                                android:layout_marginEnd="4dp" />
-                                
-                            <Spinner
-                                android:id="@+id/monthSpinner"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/spinner_background"
-                                android:padding="4dp" />
-                        </LinearLayout>
-                        
-                        <LinearLayout
-                            android:layout_width="wrap_content"
+                        <Spinner
+                            android:id="@+id/spinnerYear"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-                            
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Year:"
-                                android:textColor="#18864F"
-                                android:layout_marginEnd="4dp" />
-                                
-                            <Spinner
-                                android:id="@+id/yearSpinner"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/spinner_background"
-                                android:padding="4dp" />
-                        </LinearLayout>
+                            android:background="@drawable/spinner_background"
+                            android:padding="8dp" />
                     </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <Button
+                        android:id="@+id/btnApplyFilter"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Apply Filters"
+                        android:textAllCaps="false"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#18864F"
+                        android:layout_marginEnd="8dp" />
 
                     <Button
                         android:id="@+id/btnResetFilters"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
                         android:text="Reset"
                         android:textAllCaps="false"
-                        android:textSize="12sp"
+                        android:textSize="14sp"
                         android:textColor="#18864F"
-                        android:backgroundTint="#FFC107"
-                        android:paddingHorizontal="8dp" />
+                        android:backgroundTint="#FFC107" />
                 </LinearLayout>
 
                 <!-- Active filters indicator (initially hidden) -->

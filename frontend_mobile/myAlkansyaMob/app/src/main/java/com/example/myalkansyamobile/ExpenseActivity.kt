@@ -3,6 +3,7 @@ package com.example.myalkansyamobile
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.myalkansyamobile.adapters.ExpenseAdapter
 import com.example.myalkansyamobile.model.Expense
 import com.example.myalkansyamobile.api.RetrofitClient
-import com.example.myalkansyamobile.api.ExpenseResponse
 import com.example.myalkansyamobile.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,7 +20,6 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.time.LocalDate
 import java.time.Month
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class ExpenseActivity : AppCompatActivity() {
@@ -33,7 +32,19 @@ class ExpenseActivity : AppCompatActivity() {
     private lateinit var monthSpinner: Spinner
     private lateinit var yearSpinner: Spinner
     private lateinit var filterButton: Button
+    private lateinit var resetFilterButton: Button
     private lateinit var categorySpinner: Spinner
+    private lateinit var progressBar: ProgressBar
+    private lateinit var txtEmptyState: TextView
+    private lateinit var activeFiltersText: TextView
+    
+    // Pagination variables
+    private var currentPage = 1
+    private var totalPages = 1
+    private var itemsPerPage = 10
+    private lateinit var btnPrevPage: Button
+    private lateinit var btnNextPage: Button
+    private lateinit var tvPagination: TextView
     
     // Updated categories list matching with backend
     private val categories = arrayOf(
@@ -53,15 +64,24 @@ class ExpenseActivity : AppCompatActivity() {
 
         // Initialize UI elements
         recyclerView = findViewById(R.id.expenseRecyclerView)
+        progressBar = findViewById(R.id.progressBar)
+        txtEmptyState = findViewById(R.id.txtEmptyState)
+        activeFiltersText = findViewById(R.id.activeFiltersText)
+        
         val addExpenseButton = findViewById<Button>(R.id.addExpenseButton)
-        val menuButton = findViewById<ImageButton>(R.id.menuButton)
+        val topBar = findViewById<LinearLayout>(R.id.topBar)
         
         // Initialize filter UI elements
         monthSpinner = findViewById(R.id.monthSpinner)
         yearSpinner = findViewById(R.id.yearSpinner)
         filterButton = findViewById(R.id.filterButton)
-        // This might need to be added to your layout if it doesn't exist yet
+        resetFilterButton = findViewById(R.id.resetFilterButton)
         categorySpinner = findViewById(R.id.categorySpinner)
+        
+        // Initialize pagination controls
+        btnPrevPage = findViewById(R.id.btnPrevPage)
+        btnNextPage = findViewById(R.id.btnNextPage)
+        tvPagination = findViewById(R.id.tvPagination)
 
         // Setup filter spinners
         setupFilterSpinners()
@@ -71,7 +91,7 @@ class ExpenseActivity : AppCompatActivity() {
         allExpenseList = mutableListOf()
         expenseAdapter = ExpenseAdapter(expenseList) { expense ->
             // Handle item click - navigate to detail view
-            val intent = Intent(this, ExpenseDetailActivity::class.java)
+            val intent = Intent(this, EditExpenseActivity::class.java)
             intent.putExtra("EXPENSE_ID", expense.id)
             startActivity(intent)
         }
@@ -87,7 +107,7 @@ class ExpenseActivity : AppCompatActivity() {
             startActivityForResult(intent, ADD_EXPENSE_REQUEST_CODE)
         }
 
-        menuButton.setOnClickListener {
+        topBar.setOnClickListener {
             // Navigate back to home
             finish()
         }
@@ -95,6 +115,27 @@ class ExpenseActivity : AppCompatActivity() {
         // Setup filter button click listener
         filterButton.setOnClickListener {
             applyFilter()
+        }
+        
+        resetFilterButton.setOnClickListener {
+            resetFilters()
+        }
+        
+        // Setup pagination controls
+        btnPrevPage.setOnClickListener {
+            if (currentPage > 1) {
+                currentPage--
+                updatePageDisplay()
+                displayCurrentPage()
+            }
+        }
+        
+        btnNextPage.setOnClickListener {
+            if (currentPage < totalPages) {
+                currentPage++
+                updatePageDisplay()
+                displayCurrentPage()
+            }
         }
     }
     
@@ -138,14 +179,16 @@ class ExpenseActivity : AppCompatActivity() {
         // Apply month filter if not "All Months"
         if (selectedMonth > 0) {
             expenseList.retainAll { expense ->
-                expense.date.month == Month.of(selectedMonth)
+                val expenseMonth = expense.date.monthValue
+                expenseMonth == selectedMonth
             }
         }
         
         // Apply year filter if not "All Years"
         if (selectedYear != "All Years") {
             expenseList.retainAll { expense ->
-                expense.date.year == selectedYear.toInt()
+                val expenseYear = expense.date.year
+                expenseYear == selectedYear.toInt()
             }
         }
         
@@ -156,13 +199,100 @@ class ExpenseActivity : AppCompatActivity() {
             }
         }
         
-        // Update the adapter
-        expenseAdapter.notifyDataSetChanged()
+        // Update active filters text
+        updateActiveFiltersText(selectedMonth, selectedYear, selectedCategory)
         
-        // Show message if no expenses match the filter
+        // Reset pagination
+        currentPage = 1
+        calculateTotalPages()
+        updatePageDisplay()
+        displayCurrentPage()
+        
+        // Update UI
         if (expenseList.isEmpty()) {
-            Toast.makeText(this, "No expenses found for the selected filter", Toast.LENGTH_SHORT).show()
+            recyclerView.visibility = View.GONE
+            txtEmptyState.visibility = View.VISIBLE
+            txtEmptyState.text = getString(R.string.no_filtered_income)
+        } else {
+            recyclerView.visibility = View.VISIBLE
+            txtEmptyState.visibility = View.GONE
         }
+    }
+    
+    private fun updateActiveFiltersText(monthPosition: Int, year: String, category: String) {
+        val activeFilters = mutableListOf<String>()
+        
+        if (monthPosition > 0) {
+            val monthName = monthSpinner.getItemAtPosition(monthPosition).toString()
+            activeFilters.add("Month: $monthName")
+        }
+        
+        if (year != "All Years") {
+            activeFilters.add("Year: $year")
+        }
+        
+        if (category != "All Categories") {
+            activeFilters.add("Category: $category")
+        }
+        
+        if (activeFilters.isNotEmpty()) {
+            val filterText = getString(R.string.active_filters, activeFilters.joinToString(", "))
+            activeFiltersText.text = filterText
+            activeFiltersText.visibility = View.VISIBLE
+        } else {
+            activeFiltersText.visibility = View.GONE
+        }
+    }
+    
+    private fun resetFilters() {
+        monthSpinner.setSelection(0)
+        yearSpinner.setSelection(0)
+        categorySpinner.setSelection(0)
+        
+        activeFiltersText.visibility = View.GONE
+        
+        // Reset list to show all expenses
+        expenseList.clear()
+        expenseList.addAll(allExpenseList)
+        
+        // Reset pagination
+        currentPage = 1
+        calculateTotalPages()
+        updatePageDisplay()
+        displayCurrentPage()
+        
+        // Update UI
+        if (expenseList.isEmpty()) {
+            recyclerView.visibility = View.GONE
+            txtEmptyState.visibility = View.VISIBLE
+        } else {
+            recyclerView.visibility = View.VISIBLE
+            txtEmptyState.visibility = View.GONE
+        }
+    }
+    
+    private fun calculateTotalPages() {
+        totalPages = if (expenseList.isEmpty()) 1 else (expenseList.size + itemsPerPage - 1) / itemsPerPage
+    }
+    
+    private fun updatePageDisplay() {
+        tvPagination.text = "$currentPage out of $totalPages"
+        btnPrevPage.isEnabled = currentPage > 1
+        btnNextPage.isEnabled = currentPage < totalPages
+    }
+    
+    private fun displayCurrentPage() {
+        val start = (currentPage - 1) * itemsPerPage
+        val end = minOf(start + itemsPerPage, expenseList.size)
+        
+        val currentPageItems = if (expenseList.isNotEmpty() && start < expenseList.size) {
+            expenseList.subList(start, end)
+        } else {
+            emptyList()
+        }
+        
+        // Update adapter with current page items
+        expenseAdapter.updateList(currentPageItems)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -177,7 +307,9 @@ class ExpenseActivity : AppCompatActivity() {
                 }
 
                 // Show loading indicator
-                // progressBar.visibility = View.VISIBLE
+                progressBar.visibility = View.VISIBLE
+                recyclerView.visibility = View.GONE
+                txtEmptyState.visibility = View.GONE
 
                 // Get expenses from API with proper error handling
                 val responseList = withContext(Dispatchers.IO) {
@@ -196,19 +328,34 @@ class ExpenseActivity : AppCompatActivity() {
                     )
                 }
                 
-                // Clear existing list and add new items
-                expenseList.clear()
-                allExpenseList.clear()
-                expenseList.addAll(expenses)
-                allExpenseList.addAll(expenses)
-                expenseAdapter.notifyDataSetChanged()
+                // Update lists
+                allExpenseList = expenses.toMutableList()
+                expenseList = expenses.toMutableList()
+                
+                // Setup pagination
+                currentPage = 1
+                calculateTotalPages()
+                updatePageDisplay()
                 
                 // Hide loading indicator
-                // progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
+                
+                // Update UI based on results
+                if (expenseList.isEmpty()) {
+                    recyclerView.visibility = View.GONE
+                    txtEmptyState.visibility = View.VISIBLE
+                } else {
+                    recyclerView.visibility = View.VISIBLE
+                    txtEmptyState.visibility = View.GONE
+                    displayCurrentPage()
+                }
                 
             } catch (e: HttpException) {
                 // Hide loading indicator
-                // progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
+                recyclerView.visibility = View.GONE
+                txtEmptyState.visibility = View.VISIBLE
+                txtEmptyState.text = "Error loading expenses"
                 
                 if (e.code() == 401) {
                     Toast.makeText(this@ExpenseActivity, "Session expired. Please login again.", Toast.LENGTH_SHORT).show()
@@ -221,7 +368,10 @@ class ExpenseActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 // Hide loading indicator
-                // progressBar.visibility = View.GONE
+                progressBar.visibility = View.GONE
+                recyclerView.visibility = View.GONE
+                txtEmptyState.visibility = View.VISIBLE
+                txtEmptyState.text = "Error loading expenses"
                 
                 Toast.makeText(this@ExpenseActivity, "Error loading expenses: ${e.message}", Toast.LENGTH_SHORT).show()
             }
