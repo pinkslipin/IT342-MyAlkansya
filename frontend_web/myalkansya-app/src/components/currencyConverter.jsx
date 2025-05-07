@@ -431,7 +431,7 @@ const handleSwapCurrencies = () => {
   {/* Row layout for amount, from, swap, to */}
   <div className="flex items-end gap-2 w-full">
     {/* Amount input */}
-    <div className="flex-1">
+    <div className="flex-1 min-w-[180px]">
       <label className="block text-[#18864F] font-bold mb-2">Amount</label>
       <input
         type="number"
@@ -443,7 +443,7 @@ const handleSwapCurrencies = () => {
     </div>
 
     {/* From Currency */}
-    <div className="flex-1">
+    <div className="flex-1 min-w-[180px]">
       <label className="block text-[#18864F] font-bold mb-2">From</label>
       <select
         value={fromCurrency}
@@ -475,7 +475,7 @@ const handleSwapCurrencies = () => {
     </div>
 
     {/* To Currency */}
-    <div className="flex-1">
+    <div className="flex-1 min-w-[180px]">
       <label className="block text-[#18864F] font-bold mb-2">To</label>
       <select
         value={toCurrency}
@@ -506,7 +506,7 @@ const handleSwapCurrencies = () => {
 </div>
 
           {/* Conversion Result */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-[#18864F] mb-4">
               {fromCurrency} to {toCurrency}
             </h2>
@@ -651,7 +651,7 @@ const handleSwapCurrencies = () => {
           </div>
 
           {/* Popular Currencies Table */}
-          <div className="bg-white p-6 rounded-lg shadow-md mt-6">
+          <div className="bg-white p-6 rounded-lg shadow-md mt-6 max-w-2xl mx-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-[#18864F]">Popular Currencies</h2>
               {apiCache.popularCurrenciesTimestamp && (
