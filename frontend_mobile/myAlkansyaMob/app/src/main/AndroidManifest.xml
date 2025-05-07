@@ -35,7 +35,7 @@
         <meta-data
             android:name="com.facebook.sdk.ClientToken"
             android:value="@string/facebook_client_token" />
-            
+
         <activity
             android:name="com.facebook.FacebookActivity"
             android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
@@ -56,14 +56,20 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <!-- Main Activity (Welcome Screen) -->
+        <!-- Authentication Activity (New Launcher) -->
         <activity
-            android:name=".MainActivity"
+            android:name=".AuthenticationActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <!-- Main Activity -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false">
         </activity>
 
         <!-- New Dashboard Activity -->
@@ -127,7 +133,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ExpenseActivity" />
         </activity>
-        
+
 
         <!-- Edit Expense Activity -->
         <activity
@@ -143,12 +149,12 @@
         <activity
             android:name=".BudgetActivity"
             android:exported="false" />
-        
+
         <!-- Add Budget Activity -->
         <activity
             android:name=".AddBudgetActivity"
             android:exported="false" />
-        
+
         <!-- Edit Budget Activity -->
         <activity
             android:name=".EditBudgetActivity"
@@ -159,15 +165,15 @@
             android:name=".SavingsGoalsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".AddSavingsGoalActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
-            
+
         <activity
             android:name=".EditSavingsGoalActivity"
-            android:exported="false" 
+            android:exported="false"
             android:screenOrientation="portrait" />
 
         <!-- Profile Activity -->

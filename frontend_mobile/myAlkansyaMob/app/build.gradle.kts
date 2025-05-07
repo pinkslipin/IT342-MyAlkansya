@@ -115,4 +115,7 @@ dependencies {
     
     // Add desugaring support for Java 8+ APIs
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+
+    //Biometrics Authentication
+    implementation ("androidx.biometric:biometric:1.1.0")
 }

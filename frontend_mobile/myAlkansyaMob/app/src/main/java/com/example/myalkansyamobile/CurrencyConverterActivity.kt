@@ -32,6 +32,7 @@ class CurrencyConverterActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var errorTextView: TextView
     private lateinit var backToHomeButton: Button
+    private lateinit var swapCurrenciesButton: ImageButton
     
     // Currency data
     private val currencyCodes = arrayOf(
@@ -90,6 +91,7 @@ class CurrencyConverterActivity : AppCompatActivity() {
             progressBar = findViewById(R.id.progressBar)
             errorTextView = findViewById(R.id.tvError)
             backToHomeButton = findViewById(R.id.btnBackToHome)
+            swapCurrenciesButton = findViewById(R.id.btnSwapCurrencies)
             
             // Setup currency spinners
             setupCurrencySpinners()
@@ -97,6 +99,11 @@ class CurrencyConverterActivity : AppCompatActivity() {
             // Setup convert button
             convertButton.setOnClickListener {
                 convertCurrency()
+            }
+            
+            // Setup swap button
+            swapCurrenciesButton.setOnClickListener {
+                swapCurrencies()
             }
             
             // Setup back to home button
@@ -421,5 +428,38 @@ class CurrencyConverterActivity : AppCompatActivity() {
     // Extension function to format double
     private fun Double.format(digits: Int): String {
         return "%.${digits}f".format(this)
+    }
+    
+    private fun swapCurrencies() {
+        try {
+            // Get current positions
+            val fromPosition = fromCurrencySpinner.selectedItemPosition
+            val toPosition = toCurrencySpinner.selectedItemPosition
+            
+            // Swap positions
+            fromCurrencySpinner.setSelection(toPosition)
+            toCurrencySpinner.setSelection(fromPosition)
+            
+            // Clear previous result since we've changed currencies
+            resultTextView.visibility = View.GONE
+            rateTextView.visibility = View.GONE
+            
+            // Animate the swap button
+            swapCurrenciesButton.animate()
+                .rotationBy(180f)
+                .setDuration(300)
+                .start()
+            
+            // Log the action
+            Log.d("CurrencyConverter", "Currencies swapped: ${currencyCodes[toPosition]} <-> ${currencyCodes[fromPosition]}")
+            
+            // If amount is already entered, you might want to automatically convert with the new currencies
+            if (amountEditText.text.toString().isNotEmpty()) {
+                convertCurrency()
+            }
+        } catch (e: Exception) {
+            Log.e("CurrencyConverter", "Error swapping currencies: ${e.message}", e)
+            Toast.makeText(this, "Error swapping currencies", Toast.LENGTH_SHORT).show()
+        }
     }
 }

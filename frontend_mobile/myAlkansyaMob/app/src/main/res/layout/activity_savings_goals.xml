@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:background="#FEF6EA"
     tools:context=".SavingsGoalsActivity">
 
@@ -12,65 +13,276 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- Top Bar with back button and title -->
+        <!-- Top bar -->
         <LinearLayout
-            android:id="@+id/topBarLayout"
+            android:id="@+id/topBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent">
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/btnBack"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/ic_arrow_back"
-                android:contentDescription="Back" />
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#18864F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="MyAlkansya"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:textSize="18sp"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+
+        <!-- Header with Title and Add Button -->
+        <LinearLayout
+            android:id="@+id/headerSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@+id/topBar">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Savings Goals"
-                android:textSize="22sp"
-                android:textStyle="bold"
                 android:textColor="#18864F"
-                android:layout_marginStart="12dp" />
+                android:textSize="22sp"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnAddSavingsGoal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Add Goal"
+                android:textAllCaps="false"
                 android:textColor="#18864F"
-                android:textSize="14sp"
                 android:backgroundTint="#FFC107"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="8dp"
-                android:minHeight="0dp"
-                android:elevation="2dp" />
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="8dp" />
         </LinearLayout>
 
-        <!-- No Goals Message (shown when empty) -->
+        <!-- Filter Card -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/emptyStateCard"
+            android:id="@+id/filterCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            app:cardCornerRadius="12dp"
-            app:cardElevation="3dp"
-            app:layout_constraintTop_toBottomOf="@id/topBarLayout"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:visibility="gone">
+            android:layout_marginTop="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/headerSection">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Filters"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#18864F"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal"
+                        android:layout_marginEnd="8dp">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Status:"
+                            android:textColor="#18864F"
+                            android:layout_marginEnd="4dp"
+                            android:layout_gravity="center_vertical" />
+                            
+                        <Spinner
+                            android:id="@+id/spinnerStatus"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/spinner_background"
+                            android:padding="8dp" />
+                    </LinearLayout>
+                    
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="horizontal">
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Sort By:"
+                            android:textColor="#18864F"
+                            android:layout_marginEnd="4dp"
+                            android:layout_gravity="center_vertical" />
+                            
+                        <Spinner
+                            android:id="@+id/spinnerSortBy"
+                            android:layout_width="0dp"
+                            android:layout_weight="1"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/spinner_background"
+                            android:padding="8dp" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="12dp">
+
+                    <Button
+                        android:id="@+id/btnApplyFilter"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Apply Filters"
+                        android:textAllCaps="false"
+                        android:textSize="14sp"
+                        android:textColor="#FFFFFF"
+                        android:backgroundTint="#18864F"
+                        android:layout_marginEnd="8dp" />
+
+                    <Button
+                        android:id="@+id/btnResetFilters"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Reset"
+                        android:textAllCaps="false"
+                        android:textSize="14sp"
+                        android:textColor="#18864F"
+                        android:backgroundTint="#FFC107" />
+                </LinearLayout>
+
+                <!-- Active filters indicator (initially hidden) -->
+                <TextView
+                    android:id="@+id/activeFiltersText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="#EDFBE9"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="4dp"
+                    android:text="Active filters: Status: In progress, Sort: Target date"
+                    android:textColor="#18864F"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <!-- Goals List Header -->
+        <LinearLayout
+            android:id="@+id/listHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#FFC107"
+            android:orientation="horizontal"
+            android:paddingVertical="12dp"
+            android:paddingHorizontal="16dp"
+            android:layout_marginTop="16dp"
+            app:layout_constraintTop_toBottomOf="@+id/filterCard">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.5"
+                android:text="Goal"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Progress"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Amount"
+                android:gravity="end"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Actions"
+                android:layout_marginStart="8dp"
+                android:textStyle="bold"
+                android:textColor="#18864F" />
+        </LinearLayout>
+
+        <!-- Goals List Container (Card) -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/goalsListCard"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:minHeight="200dp"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/listHeader"
+            app:layout_constraintBottom_toTopOf="@+id/paginationControls">
+
+            <!-- RecyclerView for Savings Goals List -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerSavingsGoals"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="visible" />
+
+            <!-- Empty State Message -->
+            <LinearLayout
+                android:id="@+id/emptyStateLayout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
                 android:gravity="center"
-                android:padding="32dp">
+                android:padding="32dp"
+                android:visibility="gone">
 
                 <ImageView
                     android:layout_width="80dp"
@@ -100,17 +312,50 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- RecyclerView for goals list -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerSavingsGoals"
+        <!-- Pagination Controls -->
+        <LinearLayout
+            android:id="@+id/paginationControls"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end"
             android:layout_marginTop="16dp"
-            android:clipToPadding="false"
-            android:paddingBottom="24dp"
-            app:layout_constraintTop_toBottomOf="@id/topBarLayout"
+            android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent">
+
+            <Button
+                android:id="@+id/btnPrevPage"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="&lt;"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:backgroundTint="#FFC107" />
+
+            <TextView
+                android:id="@+id/tvPagination"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="1 out of 1"
+                android:gravity="center"
+                android:background="#FFC107"
+                android:paddingHorizontal="16dp"
+                android:textStyle="bold"
+                android:textColor="#18864F"/>
+
+            <Button
+                android:id="@+id/btnNextPage"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:text="&gt;"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:backgroundTint="#FFC107" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.core.widget.NestedScrollView>
+</ScrollView>
