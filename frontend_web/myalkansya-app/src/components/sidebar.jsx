@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "./UserContext";
+import { useUser } from "./userContext";
 
 const Sidebar = ({ activePage }) => {
   const navigate = useNavigate();
