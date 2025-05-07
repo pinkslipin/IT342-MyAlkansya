@@ -20,7 +20,7 @@ import AddSavingGoal from "./components/addSavingGoal";
 import EditSavingGoal from "./components/editSavingGoal";
 import CurrencyConverter from "./components/currencyConverter";
 import Profile from "./components/profile";
-import { UserProvider } from "./components/UserContext";
+import { UserProvider } from "./components/userContext";
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
