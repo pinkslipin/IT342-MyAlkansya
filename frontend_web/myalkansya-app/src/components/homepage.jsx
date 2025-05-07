@@ -523,10 +523,7 @@ const HomePage = () => {
   }).format(totalBudget);
 
   // Use totalSavings directly in the formatter
-const formattedSavings = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: userCurrency,
-}).format(totalSavings); // Changed from displayedTotalSavings to totalSavings
+const formattedSavings = formatCurrencyAccounting(totalSavings, userCurrency); // Changed from displayedTotalSavings to totalSavings
 
   const imageToDisplay = profileImage || user.picture || user.profilePicture || defaultProfilePic;
 
@@ -811,7 +808,7 @@ const getTopFiveClosestGoals = () => {
               <p className="text-2xl font-bold text-[#18864F]">{formattedBudget}</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <h3 className="text-lg font-bold text-[#18864F]">Total Savings</h3>
+              <h3 className="text-lg font-bold text-[#18864F]">Total Balance</h3>
               <p className="text-2xl font-bold text-[#18864F]">{formattedSavings}</p>
             </div>
           </div>
@@ -923,10 +920,7 @@ const getTopFiveClosestGoals = () => {
               <div className="flex-1 p-4 border rounded-md">
                 <h4 className="text-sm font-semibold text-gray-600">Income vs Expenses</h4>
                 <p className="text-xl font-bold" style={{ color: totalIncome > totalExpenses ? '#18864F' : '#dc3545' }}>
-                  {new Intl.NumberFormat("en-US", {
-                    style: "currency",
-                    currency: userCurrency,
-                  }).format(totalIncome - totalExpenses)}
+                  {formatCurrencyAccounting(totalIncome - totalExpenses, userCurrency)}
                 </p>
                 <div className="text-sm">{totalIncome > totalExpenses ? 'Surplus' : 'Deficit'}</div>
               </div>
@@ -950,6 +944,21 @@ const getTopFiveClosestGoals = () => {
       </div>
     </div>
   );
+};
+
+// Create a helper function to format currency with accounting notation (negatives in parentheses)
+const formatCurrencyAccounting = (amount, currencyCode) => {
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currencyCode,
+  });
+  
+  if (amount < 0) {
+    // For negative values, remove the minus sign and wrap in parentheses
+    return `(${formatter.format(Math.abs(amount))})`;
+  } else {
+    return formatter.format(amount);
+  }
 };
 
 export default HomePage;
