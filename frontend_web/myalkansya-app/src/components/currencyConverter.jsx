@@ -421,7 +421,7 @@ const handleSwapCurrencies = () => {
           )}
 
           {/* Converter Section */}
-          <div className="bg-white p-8 rounded-lg shadow-md mb-8 max-w-5xl mx-auto">
+          <div className="bg-white p-8 rounded-lg shadow-md mb-8 w-full max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-end gap-4 w-full">
               {/* Amount input */}
               <div className="flex-1 min-w-[180px]">
@@ -478,18 +478,18 @@ const handleSwapCurrencies = () => {
                   ))}
                 </select>
               </div>
-              {/* Convert Button */}
-              <div className="flex-1 min-w-[140px] flex items-end">
-                <button
-                  onClick={handleConvert}
-                  disabled={isLoading}
-                  className={`w-full ${
-                    isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
-                  } text-white font-bold py-3 px-6 rounded-md transition duration-300`}
-                >
-                  {isLoading ? "Converting..." : "Convert"}
-                </button>
-              </div>
+            </div>
+            {/* Convert Button centered below */}
+            <div className="flex justify-center mt-6">
+              <button
+                onClick={handleConvert}
+                disabled={isLoading}
+                className={`w-48 ${
+                  isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
+                } text-white font-bold py-3 px-6 rounded-md transition duration-300`}
+              >
+                {isLoading ? "Converting..." : "Convert"}
+              </button>
             </div>
           </div>
 
