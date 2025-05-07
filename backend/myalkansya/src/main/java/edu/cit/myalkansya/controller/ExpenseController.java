@@ -85,6 +85,13 @@ public class ExpenseController {
         }
     }
 
+    @GetMapping("/getExpensesByGoal")
+    public List<ExpenseEntity> getExpensesByGoal(@RequestParam String goal, @RequestHeader("Authorization") String token) {
+        String email = jwtUtil.extractEmail(token.replace("Bearer ", ""));
+        int userId = userService.findByEmail(email).get().getUserId();
+        return expenseService.findByUserAndCategoryAndSubject(userId, "Savings Goal", goal);
+    }
+
     // UPDATE
     @PutMapping("/putExpense/{expenseId}")
     public ResponseEntity<?> putExpense(

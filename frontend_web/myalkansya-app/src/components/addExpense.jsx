@@ -185,9 +185,13 @@ const AddExpense = () => {
         return;
       }
 
-      // Create a copy of form data for submission
+      // Use manualCategory if category is "Manual"
       const submissionData = { ...formData };
-      
+      if (submissionData.category === "Manual") {
+        submissionData.category = submissionData.manualCategory || "Other";
+        delete submissionData.manualCategory;
+      }
+
       // If the selected currency is different from user's default, convert it
       if (submissionData.currency !== userDefaultCurrency) {
         setConverting(true);
@@ -302,8 +306,21 @@ const AddExpense = () => {
                       <option value="Healthcare">Healthcare</option>
                       <option value="Education">Education</option>
                       <option value="Shopping">Shopping</option>
-                      <option value="Other">Other</option>
+                      <option value="Manual">Manual Input</option>
                     </select>
+                    {formData.category === "Manual" && (
+                      <input
+                        type="text"
+                        name="manualCategory"
+                        value={formData.manualCategory || ""}
+                        onChange={(e) =>
+                          setFormData({ ...formData, manualCategory: e.target.value })
+                        }
+                        className="mt-2 w-full max-w-lg p-3 border rounded-md bg-[#FFF8E1] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                        placeholder="Enter custom category"
+                        required
+                      />
+                    )}
                   </div>
 
                   <div className="mb-4">

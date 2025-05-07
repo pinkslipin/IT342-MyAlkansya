@@ -83,6 +83,11 @@ public class ExpenseService {
         return expense != null && expense.getUser().getUserId() == userId;
     }
 
+    // New method to get expenses by user ID, category, and subject
+    public List<ExpenseEntity> findByUserAndCategoryAndSubject(int userId, String category, String subject) {
+        return expenseRepository.findByUserUserIdAndCategoryAndSubject(userId, category, subject);
+    }
+
     // UPDATE
     @Transactional
     public ExpenseEntity updateExpense(int expenseId, ExpenseEntity newExpenseDetails, int userId) {
