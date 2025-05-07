@@ -14,6 +14,7 @@ public interface ExpenseRepository extends JpaRepository<ExpenseEntity, Integer>
     List<ExpenseEntity> findByUser_UserIdAndDateBetween(int userId, LocalDate startDate, LocalDate endDate);
     List<ExpenseEntity> findByBudgetId(int budgetId);
     List<ExpenseEntity> findByUserUserIdAndCategory(int userId, String category);
+    List<ExpenseEntity> findByUserUserIdAndCategoryAndSubject(int userId, String category, String subject);
     
     // Adding back the removed method
     List<ExpenseEntity> findByUserUserId(int userId);
