@@ -809,7 +809,13 @@ const getTopFiveClosestGoals = () => {
             </div>
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
               <h3 className="text-lg font-bold text-[#18864F]">Total Balance</h3>
-              <p className="text-2xl font-bold text-[#18864F]">{formattedSavings}</p>
+              <p
+                className={`text-2xl font-bold ${
+                  totalSavings < 0 ? "text-red-600" : "text-[#18864F]"
+                }`}
+              >
+                {formattedSavings}
+              </p>
             </div>
           </div>
 
