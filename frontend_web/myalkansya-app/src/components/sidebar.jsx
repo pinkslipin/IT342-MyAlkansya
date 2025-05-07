@@ -1,66 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useUser } from "./userContext";
 
 const Sidebar = ({ activePage }) => {
-  const [user, setUser] = useState(null);
-  const [profileImage, setProfileImage] = useState(null);
   const navigate = useNavigate();
-
+  const { user, profileImage } = useUser();
   const defaultProfilePic = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
-
-  useEffect(() => {
-    const fetchUserInfo = async () => {
-      try {
-        const authToken = localStorage.getItem("authToken");
-        if (!authToken) {
-          navigate("/login");
-          return;
-        }
-
-        const config = {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        };
-
-        const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", config);
-        setUser(response.data);
-
-        // Universal profile picture handling - works with both uploaded and OAuth pictures
-        if (response.data.profilePicture) {
-          // If it's a Base64 image
-          if (response.data.profilePicture.startsWith('data:')) {
-            console.log("Sidebar: Using Base64 profile picture");
-            setProfileImage(response.data.profilePicture);
-          }
-          // If it's already a full URL (like from Google/Facebook)
-          else if (response.data.profilePicture.startsWith('http')) {
-            console.log("Sidebar: Using external provider profile picture");
-            setProfileImage(response.data.profilePicture);
-          } 
-          // If it's a path to our own API (uploaded pictures)
-          else {
-            const baseUrl = "https://myalkansya-sia.as.r.appspot.com";
-            const path = response.data.profilePicture.startsWith('/') 
-              ? response.data.profilePicture 
-              : `/${response.data.profilePicture}`;
-            
-            const finalUrl = `${baseUrl}${path}?t=${new Date().getTime()}`;
-            console.log("Sidebar: Using uploaded profile picture");
-            setProfileImage(finalUrl);
-          }
-        } else {
-          setProfileImage(defaultProfilePic);
-        }
-      } catch (err) {
-        console.error("Error fetching user info:", err);
-        navigate("/login");
-      }
-    };
-
-    fetchUserInfo();
-  }, [navigate]);
 
   return (
     <div className="fixed top-16 left-0 h-[calc(100%-4rem)] w-72 bg-white shadow-md flex flex-col z-40">

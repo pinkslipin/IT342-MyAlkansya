@@ -20,31 +20,34 @@ import AddSavingGoal from "./components/addSavingGoal";
 import EditSavingGoal from "./components/editSavingGoal";
 import CurrencyConverter from "./components/currencyConverter";
 import Profile from "./components/profile";
+import { UserProvider } from "./components/userContext";
 
 const root = ReactDOM.createRoot(document.getElementById("app"));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/income" element={<Income />} />
-        <Route path="/expense" element={<Expense />} />
-        <Route path="/budget" element={<Budget />} />
-        <Route path="/savingsgoal" element={<SavingsGoal />} />
-        <Route path="/addincome" element={<AddIncome />} />
-        <Route path="/editincome/:incomeId" element={<EditIncome />} />
-        <Route path="/addexpense" element={<AddExpense />} />
-        <Route path="/editexpense/:expenseId" element={<EditExpense />} />
-        <Route path="/addbudget" element={<AddBudget />} />
-        <Route path="/editbudget/:budgetId" element={<EditBudget />} />
-        <Route path="/addsavingsgoal" element={<AddSavingGoal />} />
-        <Route path="/editsavingsgoal/:goalId" element={<EditSavingGoal />} />
-        <Route path="/currencyconverter" element={<CurrencyConverter />} />
-        <Route path="/profile" element={<Profile />} />
-      </Routes>
-    </BrowserRouter>
+    <UserProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/income" element={<Income />} />
+          <Route path="/expense" element={<Expense />} />
+          <Route path="/budget" element={<Budget />} />
+          <Route path="/savingsgoal" element={<SavingsGoal />} />
+          <Route path="/addincome" element={<AddIncome />} />
+          <Route path="/editincome/:incomeId" element={<EditIncome />} />
+          <Route path="/addexpense" element={<AddExpense />} />
+          <Route path="/editexpense/:expenseId" element={<EditExpense />} />
+          <Route path="/addbudget" element={<AddBudget />} />
+          <Route path="/editbudget/:budgetId" element={<EditBudget />} />
+          <Route path="/addsavingsgoal" element={<AddSavingGoal />} />
+          <Route path="/editsavingsgoal/:goalId" element={<EditSavingGoal />} />
+          <Route path="/currencyconverter" element={<CurrencyConverter />} />
+          <Route path="/profile" element={<Profile />} />
+        </Routes>
+      </BrowserRouter>
+    </UserProvider>
   </React.StrictMode>
 );
