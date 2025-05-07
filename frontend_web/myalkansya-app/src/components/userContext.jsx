@@ -7,12 +7,15 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(() => localStorage.getItem("authToken"));
 
   const defaultProfilePic = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
+  // Always fetch the latest token from localStorage
+  const getToken = () => localStorage.getItem("authToken");
+
   useEffect(() => {
     const fetchUserInfo = async () => {
+      const token = getToken();
       if (!token) {
         setLoading(false);
         setUser(null);
@@ -50,29 +53,33 @@ export const UserProvider = ({ children }) => {
     };
 
     fetchUserInfo();
-  }, [token]);
 
-  // Listen for token changes in localStorage (cross-tab)
-  useEffect(() => {
+    // Listen for token changes in localStorage (cross-tab)
     const handleStorage = (e) => {
       if (e.key === "authToken") {
-        setToken(e.newValue);
+        fetchUserInfo();
       }
     };
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
 
-  // Also update token state when it changes in this tab (after login)
-  useEffect(() => {
+    // Listen for navigation changes (in case of redirect after OAuth)
+    const handlePopState = () => {
+      fetchUserInfo();
+    };
+    window.addEventListener("popstate", handlePopState);
+
+    // Patch setItem for in-tab token changes
     const origSetItem = localStorage.setItem;
     localStorage.setItem = function (key, value) {
       origSetItem.apply(this, arguments);
       if (key === "authToken") {
-        setToken(value);
+        fetchUserInfo();
       }
     };
+
     return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("popstate", handlePopState);
       localStorage.setItem = origSetItem;
     };
   }, []);
