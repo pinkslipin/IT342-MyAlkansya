@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import editIcon from "/assets/edit.png"; // Import the edit icon
-import { useUser } from "./UserContext"; // If you have user context for currency
+
 
 const SavingsGoal = () => {
   const [savingsGoals, setSavingsGoals] = useState([]);
