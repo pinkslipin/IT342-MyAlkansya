@@ -355,7 +355,7 @@ const Budget = () => {
                           <div>
                             <div className="grid grid-cols-4 text-sm font-medium text-gray-600 mb-1 px-2">
                               <div>Date</div>
-                              <div>Subject</div>
+                              <div>Description</div>
                               <div className="text-right">Amount</div>
                               <div className="text-right">Currency</div>
                             </div>
