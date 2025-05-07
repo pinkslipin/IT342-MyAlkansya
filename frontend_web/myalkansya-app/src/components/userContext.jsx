@@ -12,16 +12,18 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      try {
-        const authToken = localStorage.getItem("authToken");
-        if (!authToken) return;
+      const authToken = localStorage.getItem("authToken");
+      if (!authToken) {
+        setLoading(false);
+        return;
+      }
 
+      try {
         const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
           headers: { Authorization: `Bearer ${authToken}` },
         });
         setUser(response.data);
 
-        // Profile image logic (same as before)
         if (response.data.profilePicture) {
           if (response.data.profilePicture.startsWith('data:')) {
             setProfileImage(response.data.profilePicture);
@@ -46,7 +48,11 @@ export const UserProvider = ({ children }) => {
     };
 
     fetchUserInfo();
-  }, []);
+
+    // Listen for token changes (e.g., after login)
+    window.addEventListener("storage", fetchUserInfo);
+    return () => window.removeEventListener("storage", fetchUserInfo);
+  }, [localStorage.getItem("authToken")]);
 
   return (
     <UserContext.Provider value={{ user, profileImage, loading }}>
