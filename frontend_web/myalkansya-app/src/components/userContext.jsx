@@ -7,20 +7,22 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState(() => localStorage.getItem("authToken"));
 
   const defaultProfilePic = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const authToken = localStorage.getItem("authToken");
-      if (!authToken) {
+      if (!token) {
         setLoading(false);
+        setUser(null);
+        setProfileImage(defaultProfilePic);
         return;
       }
 
       try {
         const response = await axios.get("https://myalkansya-sia.as.r.appspot.com/api/users/me", {
-          headers: { Authorization: `Bearer ${authToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setUser(response.data);
 
@@ -48,11 +50,32 @@ export const UserProvider = ({ children }) => {
     };
 
     fetchUserInfo();
+  }, [token]);
 
-    // Listen for token changes (e.g., after login)
-    window.addEventListener("storage", fetchUserInfo);
-    return () => window.removeEventListener("storage", fetchUserInfo);
-  }, [localStorage.getItem("authToken")]);
+  // Listen for token changes in localStorage (cross-tab)
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "authToken") {
+        setToken(e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Also update token state when it changes in this tab (after login)
+  useEffect(() => {
+    const origSetItem = localStorage.setItem;
+    localStorage.setItem = function (key, value) {
+      origSetItem.apply(this, arguments);
+      if (key === "authToken") {
+        setToken(value);
+      }
+    };
+    return () => {
+      localStorage.setItem = origSetItem;
+    };
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, profileImage, loading }}>
