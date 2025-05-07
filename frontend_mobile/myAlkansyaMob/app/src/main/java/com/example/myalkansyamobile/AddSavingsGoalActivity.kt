@@ -50,6 +50,11 @@ class AddSavingsGoalActivity : AppCompatActivity() {
         setupClickListeners()
         setupDatePicker()
         setupAmountListeners()
+        setupCurrencyInfo()
+    }
+
+    private fun setupCurrencyInfo() {
+        binding.tvCurrencyInfo.text = "Your default currency is $userDefaultCurrency. Goals will be stored in this currency."
     }
 
     private fun setupCurrencySpinner() {
@@ -130,7 +135,7 @@ class AddSavingsGoalActivity : AppCompatActivity() {
     }
 
     private fun setupAmountListeners() {
-        binding.editTextTargetAmount.setOnFocusChangeListener { _, hasFocus ->
+        binding.editTextTargetAmount.setOnFocusChangeListener { _, hasFocus -> 
             if (!hasFocus) {
                 val amountStr = binding.editTextTargetAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
@@ -144,7 +149,7 @@ class AddSavingsGoalActivity : AppCompatActivity() {
             }
         }
         
-        binding.editTextCurrentAmount.setOnFocusChangeListener { _, hasFocus ->
+        binding.editTextCurrentAmount.setOnFocusChangeListener { _, hasFocus -> 
             if (!hasFocus) {
                 val amountStr = binding.editTextCurrentAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
@@ -227,12 +232,19 @@ class AddSavingsGoalActivity : AppCompatActivity() {
         binding.btnSaveGoal.setOnClickListener {
             validateAndSaveGoal()
         }
+        
+        binding.btnPickDate.setOnClickListener {
+            showDatePickerDialog()
+        }
     }
 
     private fun setupDatePicker() {
         binding.editTextTargetDate.setOnClickListener {
             showDatePickerDialog()
         }
+        
+        // Set default text
+        binding.editTextTargetDate.setText("Select Date")
     }
 
     private fun showDatePickerDialog() {
