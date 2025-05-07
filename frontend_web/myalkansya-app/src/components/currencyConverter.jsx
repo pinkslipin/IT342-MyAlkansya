@@ -428,10 +428,11 @@ const handleSwapCurrencies = () => {
     </div>
   )}
 
-  <div className="flex flex-col items-center gap-6">
+  {/* Row layout for amount, from, swap, to */}
+  <div className="flex items-end gap-2 w-full">
     {/* Amount input */}
-    <div className="w-full">
-      <label className="block text-[#18864F] font-bold mb-2">Enter Amount</label>
+    <div className="flex-1">
+      <label className="block text-[#18864F] font-bold mb-2">Amount</label>
       <input
         type="number"
         value={amount}
@@ -441,74 +442,66 @@ const handleSwapCurrencies = () => {
       />
     </div>
 
-    {/* Currency selects with swap */}
-    <div className="flex items-center gap-2 w-full">
-      {/* From Currency */}
-      <div className="flex-1">
-        <label className="block text-[#18864F] font-bold mb-2">From</label>
-        <div className="relative">
-          <select
-            value={fromCurrency}
-            onChange={(e) => setFromCurrency(e.target.value)}
-            className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F] shadow"
-          >
-            {availableCurrencies.map(currency => (
-              <option key={currency.code} value={currency.code}>
-                {currency.code} – {currency.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Swap Button */}
-      <div className="flex flex-col items-center justify-center">
-        <button
-          onClick={handleSwapCurrencies}
-          type="button"
-          className="p-2 rounded-full bg-[#18864F] hover:bg-green-700 text-white shadow transition duration-300"
-          aria-label="Swap currencies"
-          title="Swap currencies"
-          style={{ marginTop: '28px', marginBottom: '0' }}
-        >
-          {/* Vertical swap arrow */}
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
-        </button>
-      </div>
-
-      {/* To Currency */}
-      <div className="flex-1">
-        <label className="block text-[#18864F] font-bold mb-2">To</label>
-        <div className="relative">
-          <select
-            value={toCurrency}
-            onChange={(e) => setToCurrency(e.target.value)}
-            className="w-full p-3 border rounded-md bg-[#18864F] text-white font-bold focus:outline-none focus:ring-2 focus:ring-[#FFC107] shadow"
-          >
-            {availableCurrencies.map(currency => (
-              <option key={currency.code} value={currency.code}>
-                {currency.code} – {currency.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+    {/* From Currency */}
+    <div className="flex-1">
+      <label className="block text-[#18864F] font-bold mb-2">From</label>
+      <select
+        value={fromCurrency}
+        onChange={(e) => setFromCurrency(e.target.value)}
+        className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F] shadow"
+      >
+        {availableCurrencies.map(currency => (
+          <option key={currency.code} value={currency.code}>
+            {currency.code} – {currency.name}
+          </option>
+        ))}
+      </select>
     </div>
 
-    {/* Convert Button */}
-    <div className="w-full flex justify-center mt-2">
+    {/* Swap Button */}
+    <div className="flex flex-col items-center justify-end pb-1">
       <button
-        onClick={handleConvert}
-        disabled={isLoading}
-        className={`${
-          isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
-        } text-white font-bold py-2 px-6 rounded-md transition duration-300`}
+        onClick={handleSwapCurrencies}
+        type="button"
+        className="p-2 rounded-full bg-[#18864F] hover:bg-green-700 text-white shadow transition duration-300"
+        aria-label="Swap currencies"
+        title="Swap currencies"
       >
-        {isLoading ? "Converting..." : "Convert"}
+        {/* Vertical swap arrow */}
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+        </svg>
       </button>
     </div>
+
+    {/* To Currency */}
+    <div className="flex-1">
+      <label className="block text-[#18864F] font-bold mb-2">To</label>
+      <select
+        value={toCurrency}
+        onChange={(e) => setToCurrency(e.target.value)}
+        className="w-full p-3 border rounded-md bg-[#18864F] text-white font-bold focus:outline-none focus:ring-2 focus:ring-[#FFC107] shadow"
+      >
+        {availableCurrencies.map(currency => (
+          <option key={currency.code} value={currency.code}>
+            {currency.code} – {currency.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Convert Button */}
+  <div className="w-full flex justify-center mt-4">
+    <button
+      onClick={handleConvert}
+      disabled={isLoading}
+      className={`${
+        isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
+      } text-white font-bold py-2 px-6 rounded-md transition duration-300`}
+    >
+      {isLoading ? "Converting..." : "Convert"}
+    </button>
   </div>
 </div>
 
