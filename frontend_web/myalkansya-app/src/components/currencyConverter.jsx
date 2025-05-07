@@ -388,6 +388,15 @@ const getCurrencyEmoji = (code) => {
   return currencyEmojis[code] || "💱";
 };
 
+// Add this function inside the CurrencyConverter component, before the return statement
+const handleSwapCurrencies = () => {
+  // Save current values
+  const temp = fromCurrency;
+  // Swap the currencies
+  setFromCurrency(toCurrency);
+  setToCurrency(temp);
+};
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* TopBar */}
@@ -419,9 +428,9 @@ const getCurrencyEmoji = (code) => {
               </div>
             )}
             
-            <div className="grid grid-cols-3 gap-4 items-center">
+            <div className="grid grid-cols-7 gap-4 items-center">
               {/* Enter Amount */}
-              <div>
+              <div className="col-span-2">
                 <label className="block text-[#18864F] font-bold mb-2">Enter Amount</label>
                 <input
                   type="number"
@@ -433,7 +442,7 @@ const getCurrencyEmoji = (code) => {
               </div>
 
               {/* From Currency */}
-              <div>
+              <div className="col-span-2">
                 <label className="block text-[#18864F] font-bold mb-2">From</label>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl" style={{ minWidth: '28px', display: 'inline-block' }}>
@@ -453,8 +462,23 @@ const getCurrencyEmoji = (code) => {
                 </div>
               </div>
 
+              {/* Swap Button */}
+              <div className="flex justify-center items-center">
+                <button
+                  onClick={handleSwapCurrencies}
+                  type="button"
+                  className="p-2 rounded-full bg-[#18864F] hover:bg-green-700 text-white transition duration-300"
+                  aria-label="Swap currencies"
+                  title="Swap currencies"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                </button>
+              </div>
+
               {/* To Currency */}
-              <div>
+              <div className="col-span-2">
                 <label className="block text-[#18864F] font-bold mb-2">To</label>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl" style={{ minWidth: '28px', display: 'inline-block' }}>

@@ -224,8 +224,9 @@ const Expense = () => {
 
           {/* Fixed Header - Adjust column names based on your expense fields */}
           <div className="bg-[#FFC107] text-[#18864F] font-bold py-2 px-4 rounded-t-md mb-2">
-            <div className="grid grid-cols-4">
+            <div className="grid grid-cols-5">
               <div>Date</div>
+              <div>Description</div>
               <div>Category</div>
               <div className="text-right">Amount</div>
               <div className="text-center">Actions</div>
@@ -240,9 +241,10 @@ const Expense = () => {
               currentExpenses.map((expense) => (
                 <div
                   key={expense.id}
-                  className="grid grid-cols-4 py-2 px-4 border-b last:border-none"
+                  className="grid grid-cols-5 py-2 px-4 border-b last:border-none"
                 >
                   <div>{expense.date}</div>
+                  <div>{expense.subject}</div>
                   <div>{expense.category}</div>
                   <div className="text-right">
                     {new Intl.NumberFormat("en-US", {
