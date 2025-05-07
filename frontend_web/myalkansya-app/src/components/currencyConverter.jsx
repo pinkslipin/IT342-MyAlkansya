@@ -421,92 +421,80 @@ const handleSwapCurrencies = () => {
           )}
 
           {/* Converter Section */}
-          <div className="bg-white p-6 rounded-lg shadow-md mb-6 max-w-2xl mx-auto">
-  {error && !error.includes("API") && (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-      {error}
-    </div>
-  )}
-
-  {/* Row layout for amount, from, swap, to */}
-  <div className="flex items-end gap-2 w-full">
-    {/* Amount input */}
-    <div className="flex-1 min-w-[180px]">
-      <label className="block text-[#18864F] font-bold mb-2">Amount</label>
-      <input
-        type="number"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        className="w-full p-3 border rounded-md bg-[#FEF6EA] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
-        placeholder="Enter amount"
-      />
-    </div>
-
-    {/* From Currency */}
-    <div className="flex-1 min-w-[180px]">
-      <label className="block text-[#18864F] font-bold mb-2">From</label>
-      <select
-        value={fromCurrency}
-        onChange={(e) => setFromCurrency(e.target.value)}
-        className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F] shadow"
-      >
-        {availableCurrencies.map(currency => (
-          <option key={currency.code} value={currency.code}>
-            {currency.code} – {currency.name}
-          </option>
-        ))}
-      </select>
-    </div>
-
-    {/* Swap Button */}
-    <div className="flex flex-col items-center justify-end pb-1">
-      <button
-        onClick={handleSwapCurrencies}
-        type="button"
-        className="p-2 rounded-full bg-[#18864F] hover:bg-green-700 text-white shadow transition duration-300"
-        aria-label="Swap currencies"
-        title="Swap currencies"
-      >
-        {/* Vertical swap arrow */}
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-        </svg>
-      </button>
-    </div>
-
-    {/* To Currency */}
-    <div className="flex-1 min-w-[180px]">
-      <label className="block text-[#18864F] font-bold mb-2">To</label>
-      <select
-        value={toCurrency}
-        onChange={(e) => setToCurrency(e.target.value)}
-        className="w-full p-3 border rounded-md bg-[#18864F] text-white font-bold focus:outline-none focus:ring-2 focus:ring-[#FFC107] shadow"
-      >
-        {availableCurrencies.map(currency => (
-          <option key={currency.code} value={currency.code}>
-            {currency.code} – {currency.name}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-
-  {/* Convert Button */}
-  <div className="w-full flex justify-center mt-4">
-    <button
-      onClick={handleConvert}
-      disabled={isLoading}
-      className={`${
-        isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
-      } text-white font-bold py-2 px-6 rounded-md transition duration-300`}
-    >
-      {isLoading ? "Converting..." : "Convert"}
-    </button>
-  </div>
-</div>
+          <div className="bg-white p-8 rounded-lg shadow-md mb-8 max-w-5xl mx-auto">
+            <div className="flex flex-col md:flex-row items-end gap-4 w-full">
+              {/* Amount input */}
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-[#18864F] font-bold mb-2">Amount</label>
+                <input
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full p-3 border rounded-md bg-[#FEF6EA] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                  placeholder="Enter amount"
+                />
+              </div>
+              {/* From Currency */}
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-[#18864F] font-bold mb-2">From</label>
+                <select
+                  value={fromCurrency}
+                  onChange={(e) => setFromCurrency(e.target.value)}
+                  className="w-full p-3 border rounded-md bg-[#FFC107] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F] shadow"
+                >
+                  {availableCurrencies.map(currency => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.code} – {currency.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Swap Button */}
+              <div className="flex flex-col items-center justify-end pb-1">
+                <button
+                  onClick={handleSwapCurrencies}
+                  type="button"
+                  className="p-2 rounded-full bg-[#18864F] hover:bg-green-700 text-white shadow transition duration-300"
+                  aria-label="Swap currencies"
+                  title="Swap currencies"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                </button>
+              </div>
+              {/* To Currency */}
+              <div className="flex-1 min-w-[180px]">
+                <label className="block text-[#18864F] font-bold mb-2">To</label>
+                <select
+                  value={toCurrency}
+                  onChange={(e) => setToCurrency(e.target.value)}
+                  className="w-full p-3 border rounded-md bg-[#18864F] text-white font-bold focus:outline-none focus:ring-2 focus:ring-[#FFC107] shadow"
+                >
+                  {availableCurrencies.map(currency => (
+                    <option key={currency.code} value={currency.code}>
+                      {currency.code} – {currency.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {/* Convert Button */}
+              <div className="flex-1 min-w-[140px] flex items-end">
+                <button
+                  onClick={handleConvert}
+                  disabled={isLoading}
+                  className={`w-full ${
+                    isLoading ? "bg-gray-400" : "bg-[#18864F] hover:bg-green-700"
+                  } text-white font-bold py-3 px-6 rounded-md transition duration-300`}
+                >
+                  {isLoading ? "Converting..." : "Convert"}
+                </button>
+              </div>
+            </div>
+          </div>
 
           {/* Conversion Result */}
-          <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+          <div className="bg-white p-8 rounded-lg shadow-md mb-8 max-w-5xl mx-auto">
             <h2 className="text-2xl font-bold text-[#18864F] mb-4">
               {fromCurrency} to {toCurrency}
             </h2>
@@ -518,140 +506,11 @@ const handleSwapCurrencies = () => {
                 Exchange rate: 1 {fromCurrency} = {conversionRate.toFixed(6)} {toCurrency}
               </p>
             )}
-
-            {/* Historical Trends */}
-            {conversionData && conversionData.trends && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold text-[#18864F] mb-2">Historical Trends</h3>
-                <div className="grid grid-cols-3 gap-4 mt-2">
-                  {/* 7-day trend */}
-                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">7 days</span>
-                      {conversionData.trends["7days"].changePercent > 0 ? (
-                        <span className="text-green-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["7days"].changePercent).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-red-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["7days"].changePercent).toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="h-10 mt-1 w-full">
-                      {/* Simple chart visualization using trend points */}
-                      <div className="flex items-end h-full w-full">
-                        {conversionData.trends["7days"].trendPoints.map((point, index) => (
-                          <div
-                            key={index}
-                            className={`flex-1 mx-px ${
-                              index === conversionData.trends["7days"].trendPoints.length - 1
-                                ? "bg-[#18864F]"
-                                : "bg-[#A5D6B7]"
-                            }`}
-                            style={{
-                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["7days"].trendPoints[0]) * 80))}%`,
-                            }}
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 30-day trend */}
-                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">30 days</span>
-                      {conversionData.trends["30days"].changePercent > 0 ? (
-                        <span className="text-green-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["30days"].changePercent).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-red-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["30days"].changePercent).toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="h-10 mt-1 w-full">
-                      <div className="flex items-end h-full w-full">
-                        {conversionData.trends["30days"].trendPoints.map((point, index) => (
-                          <div
-                            key={index}
-                            className={`flex-1 mx-px ${
-                              index === conversionData.trends["30days"].trendPoints.length - 1
-                                ? "bg-[#18864F]"
-                                : "bg-[#A5D6B7]"
-                            }`}
-                            style={{
-                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["30days"].trendPoints[0]) * 80))}%`,
-                            }}
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 90-day trend */}
-                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">90 days</span>
-                      {conversionData.trends["90days"].changePercent > 0 ? (
-                        <span className="text-green-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["90days"].changePercent).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-red-600 font-medium flex items-center">
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                          </svg>
-                          {Math.abs(conversionData.trends["90days"].changePercent).toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="h-10 mt-1 w-full">
-                      <div className="flex items-end h-full w-full">
-                        {conversionData.trends["90days"].trendPoints.map((point, index) => (
-                          <div
-                            key={index}
-                            className={`flex-1 mx-px ${
-                              index === conversionData.trends["90days"].trendPoints.length - 1
-                                ? "bg-[#18864F]"
-                                : "bg-[#A5D6B7]"
-                            }`}
-                            style={{
-                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["90days"].trendPoints[0]) * 80))}%`,
-                            }}
-                          ></div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <p className="text-sm text-gray-500 mt-4">
-              Data is updated hourly from ExchangeRate-API.
-            </p>
+            {/* ...Historical Trends... */}
           </div>
 
           {/* Popular Currencies Table */}
-          <div className="bg-white p-6 rounded-lg shadow-md mt-6 max-w-2xl mx-auto">
+          <div className="bg-white p-8 rounded-lg shadow-md max-w-5xl mx-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold text-[#18864F]">Popular Currencies</h2>
               {apiCache.popularCurrenciesTimestamp && (
