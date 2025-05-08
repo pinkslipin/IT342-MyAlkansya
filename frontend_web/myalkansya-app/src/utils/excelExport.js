@@ -143,6 +143,35 @@ export async function exportSheets(sheets, fileName, options = {}) {
         });
       }
 
+      // Income/Expenses: currency format on Amount
+      if (name === 'Income' || name === 'Expenses') {
+        const amtCol = columns.findIndex(c=>c.key==='amount') + 1;
+        const curCol = columns.findIndex(c=>c.key==='currency');
+        
+        data.forEach((row, i) => {
+          const r = i+2;
+          const cell = ws.getCell(r, amtCol);
+          if (typeof cell.value === 'number') {
+            // Use currency formatting with the row's currency or default to USD
+            const currencyCode = curCol > 0 && row.currency ? row.currency : "USD";
+            
+            // Create dynamic currency format based on the currency code
+            let currencySymbol;
+            switch(currencyCode) {
+              case 'USD': currencySymbol = '$'; break;
+              case 'EUR': currencySymbol = '€'; break;
+              case 'GBP': currencySymbol = '£'; break;
+              case 'PHP': currencySymbol = '₱'; break;
+              default: currencySymbol = currencyCode + ' ';
+            }
+            
+            // Apply accounting format with proper currency symbol
+            cell.numFmt = `_("${currencySymbol}"* #,##0.00_);_("${currencySymbol}"* (#,##0.00);_("${currencySymbol}"* "-"??_);_(@_)`;
+            cell.alignment = { horizontal:'right' };
+          }
+        });
+      }
+
       // Budget: two‑decimal + colored Remaining
       if (name === 'Budget') {
         const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
@@ -325,3 +354,73 @@ export async function exportSheets(sheets, fileName, options = {}) {
   const buffer = await wb.xlsx.writeBuffer();
   saveAs(new Blob([buffer]), fileName);
 }
+
+// Update the label from "Total Savings" to "Total Balance"
+<div className="bg-white rounded-lg shadow-md p-6">
+  <h2 className="text-xl font-semibold text-[#18864F] mb-2">Total Balance</h2>
+  <p className="text-3xl font-bold text-[#18864F]">
+    {new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(totalSavings)}
+  </p>
+</div>
+
+// Add this state to track expense categories
+const [expensesByCategory, setExpensesByCategory] = useState([]);
+
+// Update the fetchBudgetData function to also get expense breakdown
+const fetchBudgetData = async () => {
+  try {
+    // Existing budget fetch code...
+    
+    // Add code to fetch expenses grouped by category
+    const expenseResponse = await axios.get(`${apiUrl}/getExpensesByCategory`, config);
+    setExpensesByCategory(expenseResponse.data);
+    
+  } catch (error) {
+    // Error handling...
+  }
+};
+
+// Then in the render section, add a new component for category breakdown
+// ...existing code...
+
+{/* Add Expense Breakdown by Category */}
+<div className="mt-8 bg-white p-6 rounded-lg shadow-md">
+  <h2 className="text-xl font-semibold text-[#18864F] mb-4">Expense Breakdown by Category</h2>
+  
+  {expensesByCategory.length === 0 ? (
+    <p className="text-gray-500">No expense data available.</p>
+  ) : (
+    <div>
+      {/* Bar chart or visualization could go here */}
+      <div className="space-y-4">
+        {expensesByCategory.map((category) => (
+          <div key={category.name} className="flex items-center">
+            <div className="w-40 font-medium">{category.name}</div>
+            <div className="flex-1 mx-2">
+              <div className="bg-gray-200 h-6 rounded-full overflow-hidden">
+                <div 
+                  className="bg-[#FFC107] h-full rounded-full"
+                  style={{ width: `${(category.amount / expensesByCategory.reduce((sum, cat) => sum + cat.amount, 0)) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+            <div className="w-24 text-right">
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: "USD",
+              }).format(category.amount)}
+            </div>
+            <div className="w-16 text-right text-sm text-gray-500">
+              {Math.round((category.amount / expensesByCategory.reduce((sum, cat) => sum + cat.amount, 0)) * 100)}%
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+</div>
+
+// ...existing code...
