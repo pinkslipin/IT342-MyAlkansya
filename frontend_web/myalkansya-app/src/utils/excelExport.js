@@ -141,7 +141,8 @@ export async function exportSheets(sheets, fileName, options = {}) {
 
       // Income/Expenses: two‑decimal on Amount
       if (name === 'Income' || name === 'Expenses') {
-        // Make sure we have a "Description" column header for the subject field
+        // For Expenses, check if there's a subject field we need to rename
+        // If not, check if we need to add a description-like field
         const subjectColumn = columns.find(col => col.key === 'subject');
         if (subjectColumn) {
           subjectColumn.header = 'Description';
@@ -149,34 +150,46 @@ export async function exportSheets(sheets, fileName, options = {}) {
         
         // Format amount columns
         const amtCol = columns.findIndex(c => c.key === 'amount') + 1;
-        data.forEach((_, i) => {
-          const cell = ws.getCell(i+2, amtCol);
-          if (typeof cell.value === 'number') {
-            cell.numFmt = '#,##0.00';
-            cell.alignment = { horizontal:'right' };
-          }
-        });
-      }
-
-      // Budget: two‑decimal + colored Remaining
-      if (name === 'Budget') {
-        const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
-        const ts = columns.findIndex(c=>c.key==='totalSpent')   +1;
-        const rm = columns.findIndex(c=>c.key==='remaining')    +1;
-        data.forEach((row,i) => {
-          const r = i+2;
-          [mb,ts,rm].forEach(colNum => {
-            const cell = ws.getCell(r,colNum);
-            if (typeof cell.value==='number') {
+        if (amtCol > 0) {  // Ensure the column exists
+          data.forEach((_, i) => {
+            const cell = ws.getCell(i+2, amtCol);
+            if (typeof cell.value === 'number') {
               cell.numFmt = '#,##0.00';
               cell.alignment = { horizontal:'right' };
             }
           });
-          ws.getCell(r, rm).font = {
-            name:'Calibri', size:11, bold:true,
-            color:{ argb: row.remaining<0 ? 'FFDC3545':'FF18864F' }
-          };
-        });
+        }
+      }
+
+      // Budget: two‑decimal + colored Remaining
+      if (name === 'Budget') {
+        // Change the category column header to "Expense Breakdown" if it exists
+        const categoryColumn = columns.find(col => col.key === 'category');
+        if (categoryColumn) {
+          categoryColumn.header = 'Expense Breakdown';
+        }
+        
+        const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
+        const ts = columns.findIndex(c=>c.key==='totalSpent')+1;
+        const rm = columns.findIndex(c=>c.key==='remaining')+1;
+        
+        // Only proceed if these columns exist
+        if (mb > 0 && ts > 0 && rm > 0) {
+          data.forEach((row,i) => {
+            const r = i+2;
+            [mb,ts,rm].forEach(colNum => {
+              const cell = ws.getCell(r,colNum);
+              if (typeof cell.value === 'number') {
+                cell.numFmt = '#,##0.00';
+                cell.alignment = { horizontal:'right' };
+              }
+            });
+            ws.getCell(r, rm).font = {
+              name:'Calibri', size:11, bold:true,
+              color:{ argb: row.remaining<0 ? 'FFDC3545':'FF18864F' }
+            };
+          });
+        }
       }
 
       // SavingsGoal: amounts, date, and percent

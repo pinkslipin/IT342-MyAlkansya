@@ -428,6 +428,7 @@ const HomePage = () => {
           name: 'Expenses',
           columns: [
             { header: 'Date',     key: 'date'     },
+            { header: 'Subject',  key: 'subject'  },
             { header: 'Category', key: 'category' },
             { header: 'Amount',   key: 'amount'   },
           ],
