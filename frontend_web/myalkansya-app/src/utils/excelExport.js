@@ -161,7 +161,7 @@ export async function exportSheets(sheets, fileName, options = {}) {
         }
       }
 
-      // Budget: two‑decimal + colored Remaining
+      // Budget: two‑decimal + colored Remaining + expense breakdown
       if (name === 'Budget') {
         // Change the category column header to "Expense Breakdown" if it exists
         const categoryColumn = columns.find(col => col.key === 'category');
@@ -173,23 +173,75 @@ export async function exportSheets(sheets, fileName, options = {}) {
         const ts = columns.findIndex(c=>c.key==='totalSpent')+1;
         const rm = columns.findIndex(c=>c.key==='remaining')+1;
         
-        // Only proceed if these columns exist
-        if (mb > 0 && ts > 0 && rm > 0) {
-          data.forEach((row,i) => {
-            const r = i+2;
-            [mb,ts,rm].forEach(colNum => {
-              const cell = ws.getCell(r,colNum);
+        data.forEach((row, i) => {
+          const r = i+2;
+          
+          if (row.isExpenseRow) {
+            // This is an expense detail row - style it differently
+            // Leave the first column empty (indent)
+            const dateCol = columns.findIndex(c=>c.key==='date')+1;
+            const descCol = columns.findIndex(c=>c.key==='description')+1;
+            const amtCol = columns.findIndex(c=>c.key==='amount')+1;
+            const currCol = columns.findIndex(c=>c.key==='currency')+1;
+            
+            if (dateCol > 0) {
+              ws.getCell(r, dateCol).font = { name:'Calibri', size:10, italic: true };
+              ws.getCell(r, dateCol).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            if (descCol > 0) {
+              ws.getCell(r, descCol).font = { name:'Calibri', size:10, italic: true };
+              ws.getCell(r, descCol).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            if (amtCol > 0) {
+              const cell = ws.getCell(r, amtCol);
               if (typeof cell.value === 'number') {
                 cell.numFmt = '#,##0.00';
                 cell.alignment = { horizontal:'right' };
               }
+              cell.font = { name:'Calibri', size:10, italic: true };
+              cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            if (currCol > 0) {
+              ws.getCell(r, currCol).font = { name:'Calibri', size:10, italic: true };
+              ws.getCell(r, currCol).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+          } 
+          else if (row.isEmptyRow) {
+            // Empty spacer row
+            for (let c=1; c<=columns.length; c++) {
+              ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFFFFFF' } };
+            }
+          }
+          else {
+            // This is a main budget row
+            [mb,ts,rm].forEach(colNum => {
+              if (colNum > 0) {
+                const cell = ws.getCell(r, colNum);
+                if (typeof cell.value === 'number') {
+                  cell.numFmt = '#,##0.00';
+                  cell.alignment = { horizontal:'right' };
+                }
+              }
             });
-            ws.getCell(r, rm).font = {
-              name:'Calibri', size:11, bold:true,
-              color:{ argb: row.remaining<0 ? 'FFDC3545':'FF18864F' }
-            };
-          });
-        }
+            
+            if (rm > 0) {
+              const remaining = row.remaining;
+              ws.getCell(r, rm).font = {
+                name:'Calibri', size:11, bold:true,
+                color:{ argb: remaining < 0 ? 'FFDC3545':'FF18864F' }
+              };
+            }
+            
+            // Make the main budget rows stand out with a light background
+            for (let c=1; c<=columns.length; c++) {
+              ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEDF6E9' } };
+              ws.getCell(r, c).font = { bold: true };
+            }
+          }
+        });
       }
 
       // SavingsGoal: amounts, date, and percent
