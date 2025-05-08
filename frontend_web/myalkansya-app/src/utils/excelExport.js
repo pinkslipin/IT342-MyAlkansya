@@ -184,14 +184,27 @@ export async function exportSheets(sheets, fileName, options = {}) {
             const currCol = columns.findIndex(c=>c.key==='currency')+1;
             
             // Only apply styling if these columns exist
-            if (dateCol > 0 && row.date) {
+            if (dateCol > 0) {
               const cell = ws.getCell(r, dateCol);
-              // Ensure date is properly formatted
-              if (row.date instanceof Date || !isNaN(new Date(row.date).getTime())) {
-                cell.value = new Date(row.date);
-                cell.numFmt = 'mm/dd/yyyy';
+              // More robust date handling
+              if (row.date && row.date !== null) {
+                try {
+                  const dateObj = new Date(row.date);
+                  // Check if it's a valid date
+                  if (!isNaN(dateObj.getTime())) {
+                    cell.value = dateObj;
+                    cell.numFmt = 'mm/dd/yyyy';
+                  } else {
+                    // Not a valid date - use empty string
+                    cell.value = '';
+                  }
+                } catch (e) {
+                  // Any error in date parsing - use empty string
+                  cell.value = '';
+                }
               } else {
-                cell.value = row.date?.toString() || '';
+                // No date value - use empty string
+                cell.value = '';
               }
               cell.font = { name:'Calibri', size:10, italic: true };
               cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
@@ -207,7 +220,7 @@ export async function exportSheets(sheets, fileName, options = {}) {
             if (amtCol > 0) {
               const amtCell = ws.getCell(r, amtCol);
               // Make sure amount is a number or set to 0
-              amtCell.value = typeof row.amount === 'number' ? row.amount : 0;
+              amtCell.value = typeof row.amount === 'number' && !isNaN(row.amount) ? row.amount : 0;
               amtCell.numFmt = '#,##0.00';
               amtCell.alignment = { horizontal:'right' };
               amtCell.font = { name:'Calibri', size:10, italic: true };
@@ -222,37 +235,38 @@ export async function exportSheets(sheets, fileName, options = {}) {
             }
           } 
           else if (row.isEmptyRow === true) {
-            // Empty spacer row
+            // Empty spacer row - set all cells to empty string instead of undefined
             for (let c=1; c<=columns.length; c++) {
               ws.getCell(r, c).value = '';
               ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFFFFFF' } };
             }
           }
           else {
-            // This is a main budget row - apply formatting to numeric cells only if they exist
+            // This is a main budget row - apply formatting to numeric cells
             [mb,ts,rm].forEach(colNum => {
               if (colNum > 0) {
                 const cell = ws.getCell(r, colNum);
-                const value = mb === colNum ? row.monthlyBudget : 
-                               ts === colNum ? row.totalSpent : 
-                               rm === colNum ? row.remaining : null;
+                let value = null;
                 
-                // Only set value if it's a number
+                if (mb === colNum) value = row.monthlyBudget;
+                else if (ts === colNum) value = row.totalSpent;
+                else if (rm === colNum) value = row.remaining;
+                
+                // Only set value if it's a valid number
                 if (typeof value === 'number' && !isNaN(value)) {
                   cell.value = value;
-                  cell.numFmt = '#,##0.00';
-                  cell.alignment = { horizontal:'right' };
                 } else {
-                  cell.value = 0; // Default to 0 instead of NaN
-                  cell.numFmt = '#,##0.00';
-                  cell.alignment = { horizontal:'right' };
+                  cell.value = 0; // Default to 0 for any invalid numbers
                 }
+                
+                cell.numFmt = '#,##0.00';
+                cell.alignment = { horizontal:'right' };
               }
             });
             
             // Set the remaining cell color based on value
             if (rm > 0) {
-              const remaining = typeof row.remaining === 'number' ? row.remaining : 0;
+              const remaining = typeof row.remaining === 'number' && !isNaN(row.remaining) ? row.remaining : 0;
               ws.getCell(r, rm).font = {
                 name:'Calibri', size:11, bold:true,
                 color:{ argb: remaining < 0 ? 'FFDC3545':'FF18864F' }
@@ -261,8 +275,8 @@ export async function exportSheets(sheets, fileName, options = {}) {
             
             // Make the main budget rows stand out with a light background
             for (let c=1; c<=columns.length; c++) {
-              if (!ws.getCell(r, c).value) {
-                ws.getCell(r, c).value = ''; // Ensure no undefined values
+              if (ws.getCell(r, c).value === undefined || ws.getCell(r, c).value === null) {
+                ws.getCell(r, c).value = ''; // Ensure no undefined or null values
               }
               ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEDF6E9' } };
               ws.getCell(r, c).font = { bold: true };
