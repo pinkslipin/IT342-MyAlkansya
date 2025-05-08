@@ -324,6 +324,7 @@ const AddBudget = () => {
                       <option value="Healthcare">Healthcare</option>
                       <option value="Education">Education</option>
                       <option value="Shopping">Shopping</option>
+                      <option value="Savings Goal">Savings Goal</option>
                       <option value="Manual">Others</option>
                     </select>
                     {formData.category === "Manual" && (
