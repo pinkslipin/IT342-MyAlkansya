@@ -389,7 +389,7 @@ const HomePage = () => {
 
   // Place this before the return statement, near other handler functions
 
-  const handleExportDashboard = () => {
+  const handleExportDashboard = async () => {
     try {
       // Get month name for the filename
       const monthName = selectedMonth > 0 
@@ -405,7 +405,76 @@ const HomePage = () => {
         { Metric: 'Total Budget',   Value: totalBudget   },
         { Metric: 'Total Savings',  Value: totalSavings  },
       ];
-    
+      
+      // Fetch expense breakdowns for each budget category
+      const budgetData = [];
+      const authToken = localStorage.getItem("authToken");
+      const config = {
+        headers: { Authorization: `Bearer ${authToken}` }
+      };
+      
+      // First add all budget rows
+      for (const budget of filteredBudgets) {
+        // Add the main budget row
+        const remaining = budget.monthlyBudget - budget.totalSpent;
+        budgetData.push({
+          category: budget.category,
+          monthlyBudget: budget.monthlyBudget,
+          totalSpent: budget.totalSpent,
+          remaining: remaining,
+          isExpenseRow: false // Flag to identify this as a main budget row
+        });
+        
+        // Fetch related expenses for this category
+        try {
+          // Fetch expenses for this category
+          const response = await axios.get(
+            `https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpenses`,
+            config
+          );
+          
+          // Filter by category, month, and year
+          const normalize = str => (str || "").trim().toLowerCase();
+          let expenses = response.data.filter(expense => 
+            normalize(expense.category) === normalize(budget.category)
+          );
+          
+          if (selectedMonth > 0 || selectedYear > 0) {
+            expenses = expenses.filter(expense => {
+              const expenseDate = new Date(expense.date);
+              const expenseMonth = expenseDate.getMonth() + 1;
+              const expenseYear = expenseDate.getFullYear();
+              
+              const monthMatches = selectedMonth === 0 || expenseMonth === selectedMonth;
+              const yearMatches = selectedYear === 0 || expenseYear === selectedYear;
+              
+              return monthMatches && yearMatches;
+            });
+          }
+          
+          // Add expense rows with empty category to indicate they belong to the above budget
+          expenses.forEach(expense => {
+            budgetData.push({
+              date: expense.date,
+              description: expense.subject,
+              amount: expense.amount,
+              currency: expense.currency,
+              isExpenseRow: true // Flag to identify this as an expense detail row
+            });
+          });
+          
+          // Add an empty row after expenses for better readability
+          if (expenses.length > 0) {
+            budgetData.push({
+              isEmptyRow: true
+            });
+          }
+          
+        } catch (error) {
+          console.error(`Failed to fetch expenses for ${budget.category}:`, error);
+        }
+      }
+  
       const sheets = [
         {
           name: 'Dashboard',
@@ -428,6 +497,7 @@ const HomePage = () => {
           name: 'Expenses',
           columns: [
             { header: 'Date',     key: 'date'     },
+            { header: 'Subject',  key: 'subject'  },
             { header: 'Category', key: 'category' },
             { header: 'Amount',   key: 'amount'   },
           ],
@@ -436,18 +506,18 @@ const HomePage = () => {
         {
           name: 'Budget',
           columns: [
-            { header: 'Category',       key: 'category'      },
-            { header: 'Monthly Budget', key: 'monthlyBudget' },
-            { header: 'Total Spent',    key: 'totalSpent'    },
-            { header: 'Remaining',      key: 'remaining'     },
+            { header: 'Category',        key: 'category'      },
+            { header: 'Monthly Budget',  key: 'monthlyBudget' },
+            { header: 'Total Spent',     key: 'totalSpent'    },
+            { header: 'Remaining',       key: 'remaining'     },
+            { header: 'Date',            key: 'date'          },
+            { header: 'Description',     key: 'description'   },
+            { header: 'Amount',          key: 'amount'        },
+            { header: 'Currency',        key: 'currency'      },
           ],
-          data: filteredBudgets.map(b => ({
-            category:      b.category,
-            monthlyBudget: b.monthlyBudget,
-            totalSpent:    b.totalSpent,
-            remaining:     b.monthlyBudget - b.totalSpent,
-          })),
+          data: budgetData,
         },
+        // SavingsGoal sheet remains the same
         {
           name: 'SavingsGoal',
           columns: [
@@ -473,8 +543,6 @@ const HomePage = () => {
         `MyAlkansya_Report_${monthName}_${yearText}.xlsx`,
         { user, selectedMonth, selectedYear, months }
       );      
-  
-      
     } catch (error) {
       console.error("Export failed:", error);
       alert("Export failed. Please try again.");
