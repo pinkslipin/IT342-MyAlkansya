@@ -103,34 +103,40 @@ const Budget = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       if (!authToken) return;
-      
+
       setLoadingExpenses(prev => ({ ...prev, [category]: true }));
-      
+
       const config = {
         headers: { Authorization: `Bearer ${authToken}` }
       };
-      
-      // Get expenses filtered by category, month, and year
+
+      // Fetch all expenses for the user
       const response = await axios.get(
-        `https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpensesByCategory/${category}`,
+        `https://myalkansya-sia.as.r.appspot.com/api/expenses/getExpenses`,
         config
       );
-      
-      // Filter by month and year client-side
-      let expenses = response.data;
+
+      // Normalize function
+      const normalize = str => (str || "").trim().toLowerCase();
+
+      // Filter by category (case-insensitive, trimmed), month, and year
+      let expenses = response.data.filter(expense =>
+        normalize(expense.category) === normalize(category)
+      );
+
       if (selectedMonth > 0 || selectedYear > 0) {
         expenses = expenses.filter(expense => {
           const expenseDate = new Date(expense.date);
           const expenseMonth = expenseDate.getMonth() + 1;
           const expenseYear = expenseDate.getFullYear();
-          
+
           const monthMatches = selectedMonth === 0 || expenseMonth === selectedMonth;
           const yearMatches = selectedYear === 0 || expenseYear === selectedYear;
-          
+
           return monthMatches && yearMatches;
         });
       }
-      
+
       setCategoryExpenses(prev => ({ ...prev, [category]: expenses }));
     } catch (error) {
       console.error(`Error fetching expenses for ${category}:`, error);
