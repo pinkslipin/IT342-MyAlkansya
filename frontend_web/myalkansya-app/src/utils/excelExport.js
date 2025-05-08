@@ -172,17 +172,16 @@ export async function exportSheets(sheets, fileName, options = {}) {
         const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
         const ts = columns.findIndex(c=>c.key==='totalSpent')+1;
         const rm = columns.findIndex(c=>c.key==='remaining')+1;
+        const dateCol = columns.findIndex(c=>c.key==='date')+1;
+        const descCol = columns.findIndex(c=>c.key==='description')+1;
+        const amtCol = columns.findIndex(c=>c.key==='amount')+1;
+        const currCol = columns.findIndex(c=>c.key==='currency')+1;
         
         data.forEach((row, i) => {
           const r = i+2;
           
           if (row.isExpenseRow === true) {
             // This is an expense detail row - style it differently
-            const dateCol = columns.findIndex(c=>c.key==='date')+1;
-            const descCol = columns.findIndex(c=>c.key==='description')+1;
-            const amtCol = columns.findIndex(c=>c.key==='amount')+1;
-            const currCol = columns.findIndex(c=>c.key==='currency')+1;
-            
             // Only apply styling if these columns exist
             if (dateCol > 0) {
               const cell = ws.getCell(r, dateCol);
@@ -210,6 +209,7 @@ export async function exportSheets(sheets, fileName, options = {}) {
               cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
             }
             
+            // Process other expense detail columns
             if (descCol > 0) {
               const descCell = ws.getCell(r, descCol);
               descCell.value = row.description || '';
@@ -242,7 +242,15 @@ export async function exportSheets(sheets, fileName, options = {}) {
             }
           }
           else {
-            // This is a main budget row - apply formatting to numeric cells
+            // This is a main budget row - explicitly set non-budget cells to empty string
+            
+            // First, clear date/description/amount/currency columns for main budget row
+            if (dateCol > 0) ws.getCell(r, dateCol).value = '';
+            if (descCol > 0) ws.getCell(r, descCol).value = '';
+            if (amtCol > 0) ws.getCell(r, amtCol).value = '';
+            if (currCol > 0) ws.getCell(r, currCol).value = '';
+            
+            // Then format budget related columns
             [mb,ts,rm].forEach(colNum => {
               if (colNum > 0) {
                 const cell = ws.getCell(r, colNum);
@@ -275,9 +283,6 @@ export async function exportSheets(sheets, fileName, options = {}) {
             
             // Make the main budget rows stand out with a light background
             for (let c=1; c<=columns.length; c++) {
-              if (ws.getCell(r, c).value === undefined || ws.getCell(r, c).value === null) {
-                ws.getCell(r, c).value = ''; // Ensure no undefined or null values
-              }
               ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEDF6E9' } };
               ws.getCell(r, c).font = { bold: true };
             }
