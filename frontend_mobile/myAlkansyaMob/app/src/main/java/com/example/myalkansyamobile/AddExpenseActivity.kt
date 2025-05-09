@@ -14,10 +14,9 @@ import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.api.ExpenseRequest
 import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.SessionManager
-import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.*
 
@@ -32,6 +31,8 @@ class AddExpenseActivity : AppCompatActivity() {
     private lateinit var btnPickDate: ImageView
     private lateinit var tvConversionInfo: TextView
     private lateinit var tvCurrencyWarning: TextView
+    private lateinit var manualCategoryLayout: LinearLayout
+    private lateinit var etManualCategory: EditText
     
     private lateinit var sessionManager: SessionManager
     
@@ -67,6 +68,8 @@ class AddExpenseActivity : AppCompatActivity() {
         btnPickDate = findViewById(R.id.btnPickDate)
         tvConversionInfo = findViewById(R.id.tvConversionInfo)
         tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
+        manualCategoryLayout = findViewById(R.id.manualCategoryLayout)
+        etManualCategory = findViewById(R.id.etManualCategory)
         
         // Set up the header
         findViewById<TextView>(R.id.tvHeader).text = getString(R.string.add_expense)
@@ -77,6 +80,7 @@ class AddExpenseActivity : AppCompatActivity() {
         val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
         spinnerCategory.adapter = categoryAdapter
         
+        setupCategoryListener()
         setupCurrencySpinner()
         setupAmountListener()
         
@@ -97,8 +101,27 @@ class AddExpenseActivity : AppCompatActivity() {
         }
     }
     
+    private fun setupCategoryListener() {
+        spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val selectedCategory = categories[position]
+                // Show manual category input only if "Other" is selected
+                if (selectedCategory == "Other") {
+                    manualCategoryLayout.visibility = View.VISIBLE
+                } else {
+                    manualCategoryLayout.visibility = View.GONE
+                    etManualCategory.text.clear()
+                }
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                manualCategoryLayout.visibility = View.GONE
+            }
+        }
+    }
+    
     private fun setupAmountListener() {
-        etAmount.setOnFocusChangeListener { _, hasFocus ->
+        etAmount.setOnFocusChangeListener { _, hasFocus -> 
             if (!hasFocus) {
                 val amountStr = etAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
@@ -115,7 +138,7 @@ class AddExpenseActivity : AppCompatActivity() {
     
     private fun setupCurrencySpinner() {
         try {
-            val currencyItems = CurrencyUtils.currencyCodes.map { code ->
+            val currencyItems = CurrencyUtils.currencyCodes.map { code -> 
                 val isDefault = code == userDefaultCurrency
                 val displayText = CurrencyUtils.getCurrencyDisplayText(code) + if (isDefault) " (Default)" else ""
                 displayText
@@ -239,7 +262,7 @@ class AddExpenseActivity : AppCompatActivity() {
         val calendar = Calendar.getInstance()
         
         val datePickerDialog = DatePickerDialog(this,
-            { _, year, month, day ->
+            { _, year, month, day -> 
                 selectedDate = LocalDate.of(year, month + 1, day)
                 tvDate.text = selectedDate.toString()
             },
@@ -252,7 +275,8 @@ class AddExpenseActivity : AppCompatActivity() {
     
     private fun addExpense() {
         val subject = etSubject.text.toString().trim()
-        val category = spinnerCategory.selectedItem.toString()
+        val selectedCategoryPosition = spinnerCategory.selectedItemPosition
+        var category = categories[selectedCategoryPosition]
         val amountString = etAmount.text.toString().trim()
         val currency = getSelectedCurrency()
         
@@ -264,6 +288,16 @@ class AddExpenseActivity : AppCompatActivity() {
         if (amountString.isEmpty()) {
             etAmount.error = "Amount cannot be empty"
             return
+        }
+        
+        // Handle manual category if "Other" is selected
+        if (category == "Other") {
+            val manualCategory = etManualCategory.text.toString().trim()
+            if (manualCategory.isEmpty()) {
+                etManualCategory.error = "Please specify the category"
+                return
+            }
+            category = manualCategory
         }
         
         val amount = try {
@@ -364,11 +398,15 @@ class AddExpenseActivity : AppCompatActivity() {
                 Log.d("AddExpenseActivity", "Sending expense with category: ${expense.category}, amount: ${expense.amount}")
                 
                 val expenseRequest = ExpenseRequest.fromExpense(expense)
-                val response = RetrofitClient.expenseApiService.createExpense("Bearer $token", expenseRequest)
+                // Fix the parameter order here - expenseRequest should be the first parameter
+                val response = RetrofitClient.expenseApiService.createExpense(
+                    expenseRequest,    // This should be first
+                    "Bearer $token"    // This should be second
+                )
                 
                 progressDialog.dismiss()
                 
-                if (response.isSuccessful) {
+                if (response.isSuccessful && response.body() != null) {
                     Toast.makeText(this@AddExpenseActivity, "Expense added successfully", Toast.LENGTH_SHORT).show()
                     
                     val intent = Intent()

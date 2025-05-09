@@ -19,7 +19,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.time.LocalDate
-import java.time.Month
 import java.util.*
 
 class ExpenseActivity : AppCompatActivity() {
@@ -46,7 +45,7 @@ class ExpenseActivity : AppCompatActivity() {
     private lateinit var btnNextPage: Button
     private lateinit var tvPagination: TextView
     
-    // Updated categories list matching with backend
+    // Updated categories list matching with backend and web version
     private val categories = arrayOf(
         "All Categories",
         "Food", "Transportation", "Housing", "Utilities", 
@@ -63,13 +62,26 @@ class ExpenseActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
 
         // Initialize UI elements
+        initializeUiElements()
+        
+        // Setup filter spinners
+        setupFilterSpinners()
+
+        // Setup RecyclerView
+        setupRecyclerView()
+
+        // Load expenses
+        loadExpenses()
+
+        // Setup button click listeners
+        setupClickListeners()
+    }
+    
+    private fun initializeUiElements() {
         recyclerView = findViewById(R.id.expenseRecyclerView)
         progressBar = findViewById(R.id.progressBar)
         txtEmptyState = findViewById(R.id.txtEmptyState)
         activeFiltersText = findViewById(R.id.activeFiltersText)
-        
-        val addExpenseButton = findViewById<Button>(R.id.addExpenseButton)
-        val topBar = findViewById<LinearLayout>(R.id.topBar)
         
         // Initialize filter UI elements
         monthSpinner = findViewById(R.id.monthSpinner)
@@ -82,61 +94,6 @@ class ExpenseActivity : AppCompatActivity() {
         btnPrevPage = findViewById(R.id.btnPrevPage)
         btnNextPage = findViewById(R.id.btnNextPage)
         tvPagination = findViewById(R.id.tvPagination)
-
-        // Setup filter spinners
-        setupFilterSpinners()
-
-        // Setup RecyclerView
-        expenseList = mutableListOf()
-        allExpenseList = mutableListOf()
-        expenseAdapter = ExpenseAdapter(expenseList) { expense ->
-            // Handle item click - navigate to detail view
-            val intent = Intent(this, EditExpenseActivity::class.java)
-            intent.putExtra("EXPENSE_ID", expense.id)
-            startActivity(intent)
-        }
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = expenseAdapter
-
-        // Load expenses
-        loadExpenses()
-
-        // Setup button click listeners
-        addExpenseButton.setOnClickListener {
-            val intent = Intent(this, AddExpenseActivity::class.java)
-            startActivityForResult(intent, ADD_EXPENSE_REQUEST_CODE)
-        }
-
-        topBar.setOnClickListener {
-            // Navigate back to home
-            finish()
-        }
-        
-        // Setup filter button click listener
-        filterButton.setOnClickListener {
-            applyFilter()
-        }
-        
-        resetFilterButton.setOnClickListener {
-            resetFilters()
-        }
-        
-        // Setup pagination controls
-        btnPrevPage.setOnClickListener {
-            if (currentPage > 1) {
-                currentPage--
-                updatePageDisplay()
-                displayCurrentPage()
-            }
-        }
-        
-        btnNextPage.setOnClickListener {
-            if (currentPage < totalPages) {
-                currentPage++
-                updatePageDisplay()
-                displayCurrentPage()
-            }
-        }
     }
     
     @RequiresApi(Build.VERSION_CODES.O)
@@ -149,6 +106,10 @@ class ExpenseActivity : AppCompatActivity() {
         val monthAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, months)
         monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         monthSpinner.adapter = monthAdapter
+        
+        // Default to current month
+        val currentMonth = LocalDate.now().monthValue
+        monthSpinner.setSelection(currentMonth)
         
         // Setup year spinner
         val currentYear = LocalDate.now().year
@@ -164,6 +125,51 @@ class ExpenseActivity : AppCompatActivity() {
         val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         categorySpinner.adapter = categoryAdapter
+    }
+    
+    private fun setupRecyclerView() {
+        expenseList = mutableListOf()
+        allExpenseList = mutableListOf()
+        expenseAdapter = ExpenseAdapter(expenseList) { expense ->
+            val intent = Intent(this, EditExpenseActivity::class.java)
+            intent.putExtra("EXPENSE_ID", expense.id)
+            startActivity(intent)
+        }
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = expenseAdapter
+    }
+    
+    private fun setupClickListeners() {
+        findViewById<Button>(R.id.addExpenseButton).setOnClickListener {
+            val intent = Intent(this, AddExpenseActivity::class.java)
+            startActivityForResult(intent, ADD_EXPENSE_REQUEST_CODE)
+        }
+
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
+        
+        filterButton.setOnClickListener {
+            applyFilter()
+        }
+        
+        resetFilterButton.setOnClickListener {
+            resetFilters()
+        }
+        
+        btnPrevPage.setOnClickListener {
+            if (currentPage > 1) {
+                currentPage--
+                updatePageDisplay()
+            }
+        }
+        
+        btnNextPage.setOnClickListener {
+            if (currentPage < totalPages) {
+                currentPage++
+                updatePageDisplay()
+            }
+        }
     }
     
     @RequiresApi(Build.VERSION_CODES.O)
@@ -206,17 +212,9 @@ class ExpenseActivity : AppCompatActivity() {
         currentPage = 1
         calculateTotalPages()
         updatePageDisplay()
-        displayCurrentPage()
         
         // Update UI
-        if (expenseList.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            txtEmptyState.visibility = View.VISIBLE
-            txtEmptyState.text = getString(R.string.no_filtered_income)
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            txtEmptyState.visibility = View.GONE
-        }
+        updateEmptyState()
     }
     
     private fun updateActiveFiltersText(monthPosition: Int, year: String, category: String) {
@@ -259,16 +257,9 @@ class ExpenseActivity : AppCompatActivity() {
         currentPage = 1
         calculateTotalPages()
         updatePageDisplay()
-        displayCurrentPage()
         
         // Update UI
-        if (expenseList.isEmpty()) {
-            recyclerView.visibility = View.GONE
-            txtEmptyState.visibility = View.VISIBLE
-        } else {
-            recyclerView.visibility = View.VISIBLE
-            txtEmptyState.visibility = View.GONE
-        }
+        updateEmptyState()
     }
     
     private fun calculateTotalPages() {
@@ -279,6 +270,9 @@ class ExpenseActivity : AppCompatActivity() {
         tvPagination.text = "$currentPage out of $totalPages"
         btnPrevPage.isEnabled = currentPage > 1
         btnNextPage.isEnabled = currentPage < totalPages
+        
+        // Display the current page of items
+        displayCurrentPage()
     }
     
     private fun displayCurrentPage() {
@@ -293,6 +287,25 @@ class ExpenseActivity : AppCompatActivity() {
         
         // Update adapter with current page items
         expenseAdapter.updateList(currentPageItems)
+    }
+    
+    private fun updateEmptyState() {
+        if (expenseList.isEmpty()) {
+            recyclerView.visibility = View.GONE
+            txtEmptyState.visibility = View.VISIBLE
+            
+            // Set appropriate message based on whether filters are applied
+            if (monthSpinner.selectedItemPosition > 0 || 
+                yearSpinner.selectedItem.toString() != "All Years" ||
+                categorySpinner.selectedItem.toString() != "All Categories") {
+                txtEmptyState.text = getString(R.string.no_filtered_expense)
+            } else {
+                txtEmptyState.text = getString(R.string.no_expense_records)
+            }
+        } else {
+            recyclerView.visibility = View.VISIBLE
+            txtEmptyState.visibility = View.GONE
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -324,13 +337,17 @@ class ExpenseActivity : AppCompatActivity() {
                         category = response.category,
                         date = LocalDate.parse(response.date),
                         amount = response.amount,
-                        currency = response.currency
+                        currency = response.currency ?: "PHP",
+                        savingsGoalId = response.savingsGoalId
                     )
                 }
                 
+                // Sort by date (most recent first)
+                val sortedExpenses = expenses.sortedByDescending { it.date }
+                
                 // Update lists
-                allExpenseList = expenses.toMutableList()
-                expenseList = expenses.toMutableList()
+                allExpenseList = sortedExpenses.toMutableList()
+                expenseList = sortedExpenses.toMutableList()
                 
                 // Setup pagination
                 currentPage = 1
@@ -341,55 +358,62 @@ class ExpenseActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
                 
                 // Update UI based on results
-                if (expenseList.isEmpty()) {
-                    recyclerView.visibility = View.GONE
-                    txtEmptyState.visibility = View.VISIBLE
-                } else {
-                    recyclerView.visibility = View.VISIBLE
-                    txtEmptyState.visibility = View.GONE
-                    displayCurrentPage()
-                }
+                updateEmptyState()
                 
             } catch (e: HttpException) {
-                // Hide loading indicator
-                progressBar.visibility = View.GONE
-                recyclerView.visibility = View.GONE
-                txtEmptyState.visibility = View.VISIBLE
-                txtEmptyState.text = "Error loading expenses"
-                
-                if (e.code() == 401) {
-                    Toast.makeText(this@ExpenseActivity, "Session expired. Please login again.", Toast.LENGTH_SHORT).show()
-                    sessionManager.clearSession()
-                    val intent = Intent(this@ExpenseActivity, SignInActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(this@ExpenseActivity, "Failed to load expenses: ${e.message()}", Toast.LENGTH_SHORT).show()
-                }
+                // Handle HTTP errors
+                handleHttpException(e)
             } catch (e: Exception) {
-                // Hide loading indicator
-                progressBar.visibility = View.GONE
-                recyclerView.visibility = View.GONE
-                txtEmptyState.visibility = View.VISIBLE
-                txtEmptyState.text = "Error loading expenses"
-                
-                Toast.makeText(this@ExpenseActivity, "Error loading expenses: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Handle generic errors
+                handleGenericException(e)
             }
         }
     }
+    
+    private fun handleHttpException(e: HttpException) {
+        progressBar.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+        txtEmptyState.visibility = View.VISIBLE
+        txtEmptyState.text = "Error loading expenses"
+        
+        if (e.code() == 401) {
+            Toast.makeText(this@ExpenseActivity, "Session expired. Please login again.", Toast.LENGTH_SHORT).show()
+            sessionManager.clearSession()
+            val intent = Intent(this@ExpenseActivity, SignInActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+        } else {
+            Toast.makeText(this@ExpenseActivity, "Failed to load expenses: ${e.message()}", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    private fun handleGenericException(e: Exception) {
+        progressBar.visibility = View.GONE
+        recyclerView.visibility = View.GONE
+        txtEmptyState.visibility = View.VISIBLE
+        txtEmptyState.text = "Error loading expenses"
+        
+        Toast.makeText(this@ExpenseActivity, "Error loading expenses: ${e.message}", Toast.LENGTH_SHORT).show()
+        e.printStackTrace()
+    }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onResume() {
         super.onResume()
         // Refresh the expense list when coming back to this activity
         loadExpenses()
     }
     
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         
         if (requestCode == ADD_EXPENSE_REQUEST_CODE && resultCode == RESULT_OK) {
             // Reload expenses after adding a new one
             loadExpenses()
+            
+            // Show success message
+            Toast.makeText(this, "Expense added successfully", Toast.LENGTH_SHORT).show()
         }
     }
     
