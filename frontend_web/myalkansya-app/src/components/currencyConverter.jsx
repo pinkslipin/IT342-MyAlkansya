@@ -507,8 +507,139 @@ const handleSwapCurrencies = () => {
               </p>
             )}
             {/* ...Historical Trends... */}
-          </div>
 
+            {/* Historical Trends */}
+            {conversionData && conversionData.trends && (
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold text-[#18864F] mb-2">Historical Trends</h3>
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  {/* 7-day trend */}
+                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">7 days</span>
+                      {conversionData.trends["7days"].changePercent > 0 ? (
+                        <span className="text-green-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["7days"].changePercent).toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-red-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["7days"].changePercent).toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-10 mt-1 w-full">
+                      {/* Simple chart visualization using trend points */}
+                      <div className="flex items-end h-full w-full">
+                        {conversionData.trends["7days"].trendPoints.map((point, index) => (
+                          <div
+                            key={index}
+                            className={`flex-1 mx-px ${
+                              index === conversionData.trends["7days"].trendPoints.length - 1
+                                ? "bg-[#18864F]"
+                                : "bg-[#A5D6B7]"
+                            }`}
+                            style={{
+                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["7days"].trendPoints[0]) * 80))}%`,
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 30-day trend */}
+                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">30 days</span>
+                      {conversionData.trends["30days"].changePercent > 0 ? (
+                        <span className="text-green-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["30days"].changePercent).toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-red-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["30days"].changePercent).toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-10 mt-1 w-full">
+                      <div className="flex items-end h-full w-full">
+                        {conversionData.trends["30days"].trendPoints.map((point, index) => (
+                          <div
+                            key={index}
+                            className={`flex-1 mx-px ${
+                              index === conversionData.trends["30days"].trendPoints.length - 1
+                                ? "bg-[#18864F]"
+                                : "bg-[#A5D6B7]"
+                            }`}
+                            style={{
+                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["30days"].trendPoints[0]) * 80))}%`,
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 90-day trend */}
+                  <div className="bg-[#FEF6EA] p-3 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">90 days</span>
+                      {conversionData.trends["90days"].changePercent > 0 ? (
+                        <span className="text-green-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["90days"].changePercent).toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-red-600 font-medium flex items-center">
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                          </svg>
+                          {Math.abs(conversionData.trends["90days"].changePercent).toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                    <div className="h-10 mt-1 w-full">
+                      <div className="flex items-end h-full w-full">
+                        {conversionData.trends["90days"].trendPoints.map((point, index) => (
+                          <div
+                            key={index}
+                            className={`flex-1 mx-px ${
+                              index === conversionData.trends["90days"].trendPoints.length - 1
+                                ? "bg-[#18864F]"
+                                : "bg-[#A5D6B7]"
+                            }`}
+                            style={{
+                              height: `${Math.max(20, Math.min(100, (point / conversionData.trends["90days"].trendPoints[0]) * 80))}%`,
+                            }}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <p className="text-sm text-gray-500 mt-4">
+              Data is updated hourly from ExchangeRate-API.
+            </p>
+            
+          </div>
+          
           {/* Popular Currencies Table */}
           <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-4">
