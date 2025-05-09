@@ -57,7 +57,10 @@ data class ExpenseResponse(
     val amount: Double,
     val category: String,
     val description: String?,
-    val date: String
+    val date: String,
+    val currency: String = "PHP",
+    val subject: String = "",
+    val savingsGoalId: Int? = null  // Added field
 )
 
 data class BudgetResponse(

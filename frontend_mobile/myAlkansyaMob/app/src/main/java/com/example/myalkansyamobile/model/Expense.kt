@@ -12,15 +12,24 @@ data class Expense(
     val category: String,
     val date: LocalDate,
     val amount: Double,
-    val currency: String,
+    val currency: String = "PHP",
     
     // Add these fields to support preferred currency conversion
     @SerializedName("originalAmount")
     val originalAmount: Double? = null,
     
     @SerializedName("originalCurrency")
-    val originalCurrency: String? = null
+    val originalCurrency: String? = null,
+    
+    // Make savingsGoalId optional and not a primary constructor parameter
+    @SerializedName("savingsGoalId")
+    val savingsGoalId: Int? = null
 ) : Serializable {
+    // Helper method to check if this is a savings goal expense
+    fun isLinkedToSavingsGoal(): Boolean {
+        return category == "Savings Goal" || savingsGoalId != null
+    }
+
     // For API serialization
     fun getDateAsString(): String {
         return date.toString()
@@ -35,7 +44,8 @@ data class Expense(
                 category = response.category,
                 date = LocalDate.parse(response.date),
                 amount = response.amount,
-                currency = response.currency
+                currency = response.currency,
+                savingsGoalId = response.savingsGoalId
             )
         }
     }

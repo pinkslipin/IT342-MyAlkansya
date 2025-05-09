@@ -10,23 +10,26 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.myalkansyamobile.adapters.BudgetAdapter
+import com.example.myalkansyamobile.adapters.ExpandableBudgetAdapter
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.databinding.ActivityBudgetListBinding
 import com.example.myalkansyamobile.model.Budget
+import com.example.myalkansyamobile.model.Expense
 import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.SessionManager
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.util.*
 
 class BudgetActivity : AppCompatActivity() {
     private lateinit var binding: ActivityBudgetListBinding
-    private lateinit var adapter: BudgetAdapter
+    private lateinit var adapter: ExpandableBudgetAdapter
     private lateinit var sessionManager: SessionManager
     private var userDefaultCurrency = "PHP"
     
     private val budgetList = mutableListOf<Budget>()
     private val displayBudgetList = mutableListOf<Budget>()
+    private val allExpenses = mutableListOf<Expense>()
     
     private val months = arrayOf(
         "All Months", "January", "February", "March", "April", "May", "June",
@@ -55,6 +58,7 @@ class BudgetActivity : AppCompatActivity() {
         setupUI()
         setupRecyclerView()
         fetchBudgets()
+        fetchExpenses() // New: fetch expenses for each category
     }
     
     private fun setupUI() {
@@ -72,6 +76,9 @@ class BudgetActivity : AppCompatActivity() {
             startActivity(Intent(this, AddBudgetActivity::class.java))
         }
         
+        // Hide the header layout since we're using expandable items with their own headers
+        binding.layoutHeaders.visibility = View.GONE
+
         // Set up month spinner
         val monthAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, months)
         monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -144,14 +151,20 @@ class BudgetActivity : AppCompatActivity() {
     }
     
     private fun setupRecyclerView() {
-        adapter = BudgetAdapter(
+        // Use the new expandable adapter
+        adapter = ExpandableBudgetAdapter(
             displayBudgetList,
-            { budget -> // Click listener for edit
+            { budget -> // Click listener for budget
                 val intent = Intent(this, EditBudgetActivity::class.java)
                 intent.putExtra("BUDGET_ID", budget.id)
                 startActivity(intent)
             },
-            userDefaultCurrency
+            userDefaultCurrency,
+            { expense -> // Click listener for expense
+                val intent = Intent(this, ExpenseActivity::class.java)
+                intent.putExtra("EXPENSE_ID", expense.id)
+                startActivity(intent)
+            }
         )
         
         binding.recyclerBudgets.layoutManager = LinearLayoutManager(this)
@@ -170,8 +183,57 @@ class BudgetActivity : AppCompatActivity() {
             // Re-fetch budgets with new currency
             fetchBudgets()
         } else {
-            // Just refresh the budget list when returning to this activity
+            // Just refresh the budget list and expenses when returning
             fetchBudgets()
+            fetchExpenses()
+        }
+    }
+    
+    private fun fetchExpenses() {
+        val token = sessionManager.fetchAuthToken()
+        if (token.isNullOrEmpty()) {
+            Toast.makeText(this, "Please login again", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, SignInActivity::class.java))
+            finish()
+            return
+        }
+        
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.expenseApiService.getExpenses("Bearer $token")
+                
+                allExpenses.clear()
+                // Convert the API response to Expense model
+                response.forEach { expenseResponse ->
+                    val expense = Expense(
+                        id = expenseResponse.id,
+                        subject = expenseResponse.subject,
+                        category = expenseResponse.category,
+                        date = LocalDate.parse(expenseResponse.date),
+                        amount = expenseResponse.amount,
+                        currency = expenseResponse.currency ?: userDefaultCurrency
+                    )
+                    allExpenses.add(expense)
+                }
+                
+                // Filter expenses based on current filters
+                val filteredExpenses = if (filterMonth == 0 && filterYear == 0) {
+                    allExpenses
+                } else {
+                    allExpenses.filter { expense ->
+                        val monthMatches = filterMonth == 0 || expense.date.monthValue == filterMonth
+                        val yearMatches = filterYear == 0 || expense.date.year == filterYear
+                        monthMatches && yearMatches
+                    }
+                }
+                
+                // Update the adapter with all filtered expenses
+                adapter.updateAllExpenses(filteredExpenses)
+                
+            } catch (e: Exception) {
+                Log.e("BudgetActivity", "Error fetching expenses: ${e.message}", e)
+                Toast.makeText(this@BudgetActivity, "Failed to load expense details", Toast.LENGTH_SHORT).show()
+            }
         }
     }
     
@@ -270,8 +332,6 @@ class BudgetActivity : AppCompatActivity() {
                 displayBudgetList.add(displayBudget)
             }
             
-            // Update UI
-            adapter.notifyDataSetChanged()
         } catch (e: Exception) {
             Toast.makeText(this@BudgetActivity, "Error processing budgets: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -291,6 +351,9 @@ class BudgetActivity : AppCompatActivity() {
         }
         
         adapter.updateData(filteredList)
+        
+        // Also update expenses based on the same filters
+        fetchExpenses()
         
         // Show empty state if needed
         if (filteredList.isEmpty()) {

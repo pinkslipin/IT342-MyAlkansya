@@ -307,4 +307,14 @@ object CurrencyUtils {
         val formatter = DecimalFormat("#,##0.00")
         return "$currencyCode ${formatter.format(amount)}"
     }
+
+    /**
+     * Format amount with currency symbol
+     * A simplified method that displays the currency symbol followed by the formatted amount
+     */
+    fun formatWithCurrencySymbol(amount: Double, currencyCode: String): String {
+        val symbol = getCurrencySymbol(currencyCode)
+        val formatter = DecimalFormat("#,##0.00")
+        return "$symbol${formatter.format(amount)}"
+    }
 }

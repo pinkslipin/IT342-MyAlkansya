@@ -523,18 +523,29 @@ class EditSavingsGoalActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
-                withContext(Dispatchers.IO) {
+                val response = withContext(Dispatchers.IO) {
                     RetrofitClient.savingsGoalApiService
                         .deleteSavingsGoal(goalId, bearerToken)
                 }
 
-                Toast.makeText(
-                    this@EditSavingsGoalActivity,
-                    "Savings goal deleted successfully",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
-
+                // Check if the response was successful
+                if (response.isSuccessful) {
+                    // Get the message body as string
+                    val successMessage = response.body()?.string() ?: "Savings goal deleted successfully"
+                    
+                    Toast.makeText(
+                        this@EditSavingsGoalActivity,
+                        successMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    
+                    finish()
+                } else {
+                    // Handle errors
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error occurred"
+                    binding.progressLoading.visibility = View.GONE
+                    showError("Error deleting savings goal: $errorMsg")
+                }
             } catch (e: Exception) {
                 binding.progressLoading.visibility = View.GONE
                 showError("Error deleting savings goal: ${e.message}")

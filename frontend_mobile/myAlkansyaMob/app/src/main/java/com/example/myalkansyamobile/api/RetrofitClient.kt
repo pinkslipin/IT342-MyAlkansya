@@ -16,7 +16,12 @@ import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.Query
 import java.lang.reflect.Type
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 data class MonthlySummaryResponse(
     val month: String = "", // Default value to avoid errors

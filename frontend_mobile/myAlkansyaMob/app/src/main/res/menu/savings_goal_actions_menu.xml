@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_add_payment"
+        android:title="Add Payment"
+        android:icon="@drawable/ic_add_money"/>
+    
+    <item
+        android:id="@+id/action_view_history"
+        android:title="View History"
+        android:icon="@drawable/ic_history"/>
+    
+    <item
+        android:id="@+id/action_edit_goal"
+        android:title="Edit Goal"
+        android:icon="@drawable/ic_edit"/>
+</menu>
