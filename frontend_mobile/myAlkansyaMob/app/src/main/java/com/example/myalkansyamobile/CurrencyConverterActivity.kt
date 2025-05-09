@@ -7,7 +7,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.cardview.widget.CardView
 import com.example.myalkansyamobile.adapters.PopularCurrencyAdapter
 import com.example.myalkansyamobile.api.RetrofitClient
 import com.example.myalkansyamobile.model.CurrencyConversionRequest
@@ -33,6 +35,12 @@ class CurrencyConverterActivity : AppCompatActivity() {
     private lateinit var errorTextView: TextView
     private lateinit var backToHomeButton: Button
     private lateinit var swapCurrenciesButton: ImageButton
+    
+    // New UI elements for trends
+    private lateinit var trendsSection: LinearLayout
+    private lateinit var trend7daysCard: CardView
+    private lateinit var trend30daysCard: CardView
+    private lateinit var trend90daysCard: CardView
     
     // Currency data
     private val currencyCodes = arrayOf(
@@ -92,6 +100,12 @@ class CurrencyConverterActivity : AppCompatActivity() {
             errorTextView = findViewById(R.id.tvError)
             backToHomeButton = findViewById(R.id.btnBackToHome)
             swapCurrenciesButton = findViewById(R.id.btnSwapCurrencies)
+            
+            // Initialize trend UI elements
+            trendsSection = findViewById(R.id.trendsSection)
+            trend7daysCard = findViewById(R.id.trend7days)
+            trend30daysCard = findViewById(R.id.trend30days)
+            trend90daysCard = findViewById(R.id.trend90days)
             
             // Setup currency spinners
             setupCurrencySpinners()
@@ -198,6 +212,7 @@ class CurrencyConverterActivity : AppCompatActivity() {
         errorTextView.visibility = View.GONE
         resultTextView.visibility = View.GONE
         rateTextView.visibility = View.GONE
+        trendsSection.visibility = View.GONE
         
         val amountStr = amountEditText.text.toString()
         if (amountStr.isEmpty()) {
@@ -277,6 +292,13 @@ class CurrencyConverterActivity : AppCompatActivity() {
                         
                         resultTextView.visibility = View.VISIBLE
                         rateTextView.visibility = View.VISIBLE
+                        
+                        // Process trends data if available
+                        if (result.containsKey("trends")) {
+                            @Suppress("UNCHECKED_CAST")
+                            val trends = result["trends"] as Map<String, Any>
+                            displayTrends(trends)
+                        }
                     } else {
                         // Old format (direct values)
                         showError("Unexpected response format")
@@ -423,6 +445,107 @@ class CurrencyConverterActivity : AppCompatActivity() {
         }
         
         return 0.0 // Can't estimate
+    }
+    
+    // New method to display trends
+    private fun displayTrends(trends: Map<String, Any>) {
+        try {
+            // Check if we have all three trend periods
+            val periods = listOf("7days", "30days", "90days")
+            val allPeriodsExist = periods.all { trends.containsKey(it) }
+            
+            if (!allPeriodsExist) {
+                Log.d("CurrencyConverter", "Incomplete trend data")
+                return
+            }
+            
+            // Process 7 days trend
+            @Suppress("UNCHECKED_CAST")
+            val trend7days = trends["7days"] as Map<String, Any>
+            setupTrendCard(trend7daysCard, "7 days", trend7days)
+            
+            // Process 30 days trend
+            @Suppress("UNCHECKED_CAST")
+            val trend30days = trends["30days"] as Map<String, Any>
+            setupTrendCard(trend30daysCard, "30 days", trend30days)
+            
+            // Process 90 days trend
+            @Suppress("UNCHECKED_CAST")
+            val trend90days = trends["90days"] as Map<String, Any>
+            setupTrendCard(trend90daysCard, "90 days", trend90days)
+            
+            // Make the trends section visible
+            trendsSection.visibility = View.VISIBLE
+            
+        } catch (e: Exception) {
+            Log.e("CurrencyConverter", "Error displaying trends: ${e.message}", e)
+            // Don't show an error to the user, just log it
+        }
+    }
+    
+    private fun setupTrendCard(cardView: CardView, periodText: String, trendData: Map<String, Any>) {
+        val periodTextView = cardView.findViewById<TextView>(R.id.tvPeriod)
+        val changePercentTextView = cardView.findViewById<TextView>(R.id.tvChangePercent)
+        val chartContainer = cardView.findViewById<LinearLayout>(R.id.chartContainer)
+        
+        // Set period text
+        periodTextView.text = periodText
+        
+        // Set change percent with appropriate color and arrow
+        val changePercent = (trendData["changePercent"] as Number).toDouble()
+        val formattedPercent = String.format("%.2f%%", Math.abs(changePercent))
+        
+        if (changePercent > 0) {
+            changePercentTextView.setTextColor(ContextCompat.getColor(this, R.color.green_700))
+            changePercentTextView.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.ic_arrow_up, 0, 0, 0)
+            changePercentTextView.text = formattedPercent
+        } else {
+            changePercentTextView.setTextColor(ContextCompat.getColor(this, R.color.red_700))
+            changePercentTextView.setCompoundDrawablesWithIntrinsicBounds(
+                R.drawable.ic_arrow_down, 0, 0, 0)
+            changePercentTextView.text = formattedPercent
+        }
+        
+        // Draw the chart
+        @Suppress("UNCHECKED_CAST")
+        val trendPoints = trendData["trendPoints"] as List<Double>
+        drawTrendChart(chartContainer, trendPoints)
+    }
+    
+    private fun drawTrendChart(container: LinearLayout, trendPoints: List<Double>) {
+        // Clear previous chart bars
+        container.removeAllViews()
+        
+        if (trendPoints.isEmpty()) return
+        
+        val maxPoint = trendPoints.maxOrNull() ?: 1.0
+        val minPoint = trendPoints.minOrNull() ?: 0.0
+        val range = maxPoint - minPoint
+        
+        // Ensure we don't divide by zero
+        val safeRange = if (range < 0.0001) 0.0001 else range
+        
+        for (i in trendPoints.indices) {
+            val point = trendPoints[i]
+            val barView = layoutInflater.inflate(R.layout.view_trend_bar, container, false)
+            
+            // Calculate height percentage (20% minimum height, 100% maximum)
+            val heightPercentage = 20 + ((point - minPoint) / safeRange * 80)
+            
+            // Set bar height
+            val layoutParams = barView.layoutParams
+            layoutParams.height = (heightPercentage * container.height / 100).toInt()
+            
+            // Last bar should be highlighted
+            if (i == trendPoints.lastIndex) {
+                barView.setBackgroundColor(ContextCompat.getColor(this, R.color.green_700))
+            } else {
+                barView.setBackgroundColor(ContextCompat.getColor(this, R.color.light_green_300))
+            }
+            
+            container.addView(barView)
+        }
     }
     
     // Extension function to format double

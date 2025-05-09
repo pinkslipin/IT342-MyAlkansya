@@ -171,6 +171,63 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
         
+        <!-- Add this before the Popular Currencies section -->
+
+        <LinearLayout
+            android:id="@+id/trendsSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Historical Trends"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#18864F"
+                android:layout_marginBottom="8dp" />
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                
+                <include 
+                    android:id="@+id/trend7days"
+                    layout="@layout/layout_currency_trend_card"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content" />
+                    
+                <include 
+                    android:id="@+id/trend30days"
+                    layout="@layout/layout_currency_trend_card"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content" />
+                    
+                <include 
+                    android:id="@+id/trend90days"
+                    layout="@layout/layout_currency_trend_card"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content" />
+                    
+            </LinearLayout>
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Data is updated hourly from ExchangeRate-API."
+                android:textSize="12sp"
+                android:textColor="#888888"
+                android:layout_marginTop="8dp" />
+                
+        </LinearLayout>
+        
         <TextView
             android:id="@+id/tvPopularCurrenciesHeader"
             android:layout_width="match_parent"
