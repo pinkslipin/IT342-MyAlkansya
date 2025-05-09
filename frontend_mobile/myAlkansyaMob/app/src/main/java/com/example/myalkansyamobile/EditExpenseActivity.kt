@@ -64,6 +64,7 @@ class EditExpenseActivity : AppCompatActivity() {
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
 
         initializeUI()
+        setupClickListeners()
 
         expenseId = intent.getIntExtra("EXPENSE_ID", 0)
         if (expenseId == 0) {
@@ -72,34 +73,14 @@ class EditExpenseActivity : AppCompatActivity() {
             return
         }
 
-        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
-        spinnerCategory.adapter = categoryAdapter
-
         setupCurrencySpinner()
         setupAmountListener()
         setupCategoryListener()
-
-        btnPickDate.setOnClickListener {
-            showDatePicker()
-        }
+        
+        // Set title
+        findViewById<TextView>(R.id.tvHeader).text = getString(R.string.edit_expense)
 
         loadExpenseDetails()
-
-        btnSaveChanges.setOnClickListener {
-            updateExpense()
-        }
-
-        btnCancel.setOnClickListener {
-            finish()
-        }
-
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
-            finish()
-        }
-
-        btnDeleteExpense.setOnClickListener {
-            showDeleteConfirmation()
-        }
     }
 
     private fun initializeUI() {
@@ -121,10 +102,36 @@ class EditExpenseActivity : AppCompatActivity() {
             manualCategoryLayout = findViewById(R.id.manualCategoryLayoutEdit)
             etManualCategory = findViewById(R.id.etManualCategoryEdit)
 
+            // Set up category adapter
+            val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+            spinnerCategory.adapter = categoryAdapter
+
         } catch (e: Exception) {
             Log.e("EditExpenseActivity", "Error finding views: ${e.message}")
             Toast.makeText(this, "Failed to initialize UI: ${e.message}", Toast.LENGTH_LONG).show()
             finish()
+        }
+    }
+    
+    private fun setupClickListeners() {
+        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+            finish()
+        }
+        
+        btnPickDate.setOnClickListener {
+            showDatePicker()
+        }
+        
+        btnSaveChanges.setOnClickListener {
+            updateExpense()
+        }
+        
+        btnCancel.setOnClickListener {
+            finish()
+        }
+        
+        btnDeleteExpense.setOnClickListener {
+            showDeleteConfirmation()
         }
     }
 
@@ -222,21 +229,19 @@ class EditExpenseActivity : AppCompatActivity() {
     }
 
     private fun updateConversionNotification(selectedCurrency: String) {
-        if (tvCurrencyWarning != null) {
-            if (selectedCurrency != userDefaultCurrency) {
-                tvCurrencyWarning.text =
-                    "Note: This expense will be automatically converted to $userDefaultCurrency when saved."
-                tvCurrencyWarning.visibility = View.VISIBLE
-            } else {
-                tvCurrencyWarning.visibility = View.GONE
-            }
+        if (selectedCurrency != userDefaultCurrency) {
+            tvCurrencyWarning.text =
+                "Note: This expense will be automatically converted to $userDefaultCurrency when saved."
+            tvCurrencyWarning.visibility = View.VISIBLE
+        } else {
+            tvCurrencyWarning.visibility = View.GONE
         }
     }
 
     private fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String) {
         conversionJob?.cancel()
 
-        progressBar.visibility = View.VISIBLE
+        progressBarConversion.visibility = View.VISIBLE
         tvConversionInfo.text = "Converting..."
         tvConversionInfo.visibility = View.VISIBLE
 
@@ -245,7 +250,7 @@ class EditExpenseActivity : AppCompatActivity() {
                 val authToken = sessionManager.getToken()
                 if (authToken.isNullOrEmpty()) {
                     tvConversionInfo.text = "Error: Not logged in"
-                    progressBar.visibility = View.GONE
+                    progressBarConversion.visibility = View.GONE
                     return@launch
                 }
 
@@ -268,7 +273,7 @@ class EditExpenseActivity : AppCompatActivity() {
                 tvConversionInfo.text = "Error: ${e.message}"
                 tvConversionInfo.visibility = View.VISIBLE
             } finally {
-                progressBar.visibility = View.GONE
+                progressBarConversion.visibility = View.GONE
             }
         }
     }
@@ -409,12 +414,11 @@ class EditExpenseActivity : AppCompatActivity() {
         }
 
         progressBar.visibility = View.VISIBLE
+        tvError.visibility = View.GONE
 
         if (currency != userDefaultCurrency) {
-            if (tvCurrencyWarning != null) {
-                tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
-                tvCurrencyWarning.visibility = View.VISIBLE
-            }
+            tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
+            tvCurrencyWarning.visibility = View.VISIBLE
 
             lifecycleScope.launch {
                 try {
@@ -457,7 +461,7 @@ class EditExpenseActivity : AppCompatActivity() {
                     }
                 } catch (e: Exception) {
                     progressBar.visibility = View.GONE
-                    Toast.makeText(this@EditExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    showError("Error: ${e.message}")
                 }
             }
         } else {
@@ -503,11 +507,11 @@ class EditExpenseActivity : AppCompatActivity() {
                     finish()
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                    Toast.makeText(this@EditExpenseActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                    showError("Error: $errorMsg")
                 }
             } catch (e: Exception) {
                 progressBar.visibility = View.GONE
-                Toast.makeText(this@EditExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                showError("Error: ${e.message}")
             }
         }
     }
@@ -525,7 +529,7 @@ class EditExpenseActivity : AppCompatActivity() {
 
     private fun deleteExpense() {
         progressBar.visibility = View.VISIBLE
-        tvError.visibility = View.GONE  // Hide any previous errors
+        tvError.visibility = View.GONE
 
         lifecycleScope.launch {
             try {
@@ -544,7 +548,6 @@ class EditExpenseActivity : AppCompatActivity() {
                 progressBar.visibility = View.GONE
 
                 if (response.isSuccessful) {
-                    // The deletion was successful
                     Toast.makeText(this@EditExpenseActivity, "Expense deleted successfully", Toast.LENGTH_SHORT).show()
                     setResult(RESULT_OK)
                     finish()

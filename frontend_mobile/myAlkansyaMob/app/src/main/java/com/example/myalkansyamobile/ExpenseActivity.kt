@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -130,13 +131,67 @@ class ExpenseActivity : AppCompatActivity() {
     private fun setupRecyclerView() {
         expenseList = mutableListOf()
         allExpenseList = mutableListOf()
-        expenseAdapter = ExpenseAdapter(expenseList) { expense ->
-            val intent = Intent(this, EditExpenseActivity::class.java)
-            intent.putExtra("EXPENSE_ID", expense.id)
-            startActivity(intent)
-        }
+        
+        // Update the adapter with edit and delete callbacks
+        expenseAdapter = ExpenseAdapter(
+            expenses = expenseList,
+            onEditClick = { expense -> navigateToEditExpense(expense) },
+            onDeleteClick = { expense -> showDeleteConfirmation(expense) }
+        )
+        
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = expenseAdapter
+    }
+    
+    private fun navigateToEditExpense(expense: Expense) {
+        val intent = Intent(this, EditExpenseActivity::class.java)
+        intent.putExtra("EXPENSE_ID", expense.id)
+        startActivity(intent)
+    }
+    
+    private fun showDeleteConfirmation(expense: Expense) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.delete_expense))
+            .setMessage("Are you sure you want to delete this expense: ${expense.subject}? This action cannot be undone.")
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                deleteExpense(expense.id)
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+    
+    private fun deleteExpense(expenseId: Int) {
+        progressBar.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            try {
+                val token = sessionManager.getToken()
+                if (token == null) {
+                    Toast.makeText(this@ExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                    return@launch
+                }
+
+                val response = RetrofitClient.expenseApiService.deleteExpense(
+                    expenseId, 
+                    "Bearer $token"
+                )
+
+                progressBar.visibility = View.GONE
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@ExpenseActivity, "Expense deleted successfully", Toast.LENGTH_SHORT).show()
+                    // Reload expenses after deletion
+                    loadExpenses()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Toast.makeText(this@ExpenseActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                progressBar.visibility = View.GONE
+                Toast.makeText(this@ExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     
     private fun setupClickListeners() {
@@ -145,7 +200,7 @@ class ExpenseActivity : AppCompatActivity() {
             startActivityForResult(intent, ADD_EXPENSE_REQUEST_CODE)
         }
 
-        findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
+        findViewById<ImageView>(R.id.btnBack).setOnClickListener {
             finish()
         }
         

@@ -1,7 +1,6 @@
 package com.example.myalkansyamobile
 
 import android.app.DatePickerDialog
-import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -16,7 +15,6 @@ import com.example.myalkansyamobile.utils.CurrencyUtils
 import com.example.myalkansyamobile.utils.SessionManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.*
 
@@ -31,8 +29,10 @@ class AddExpenseActivity : AppCompatActivity() {
     private lateinit var btnPickDate: ImageView
     private lateinit var tvConversionInfo: TextView
     private lateinit var tvCurrencyWarning: TextView
+    private lateinit var tvError: TextView
     private lateinit var manualCategoryLayout: LinearLayout
     private lateinit var etManualCategory: EditText
+    private lateinit var progressBar: ProgressBar
     
     private lateinit var sessionManager: SessionManager
     
@@ -47,8 +47,6 @@ class AddExpenseActivity : AppCompatActivity() {
         "Entertainment", "Healthcare", "Education", "Shopping", 
         "Personal Care", "Debt Payment", "Savings", "Other"
     )
-    
-    private val currencies = CurrencyUtils.currencyCodes.toTypedArray()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,33 +55,45 @@ class AddExpenseActivity : AppCompatActivity() {
         sessionManager = SessionManager(this)
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
         
-        // Initialize UI components
-        etSubject = findViewById(R.id.etSubject)
-        tvDate = findViewById(R.id.tvDate)
-        spinnerCategory = findViewById(R.id.spinnerCategory)
-        etAmount = findViewById(R.id.etAmount)
-        spinnerCurrency = findViewById(R.id.spinnerCurrency)
-        btnAddExpense = findViewById(R.id.btnAddExpense)
-        btnCancel = findViewById(R.id.btnCancel)
-        btnPickDate = findViewById(R.id.btnPickDate)
-        tvConversionInfo = findViewById(R.id.tvConversionInfo)
-        tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
-        manualCategoryLayout = findViewById(R.id.manualCategoryLayout)
-        etManualCategory = findViewById(R.id.etManualCategory)
-        
-        // Set up the header
-        findViewById<TextView>(R.id.tvHeader).text = getString(R.string.add_expense)
-        
-        // Set initial date
-        tvDate.text = selectedDate.toString()
-        
-        val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
-        spinnerCategory.adapter = categoryAdapter
-        
+        initializeUI()
         setupCategoryListener()
         setupCurrencySpinner()
         setupAmountListener()
+        setupClickListeners()
         
+        // Set initial date
+        tvDate.text = selectedDate.toString()
+    }
+    
+    private fun initializeUI() {
+        try {
+            etSubject = findViewById(R.id.etSubject)
+            tvDate = findViewById(R.id.tvDate)
+            spinnerCategory = findViewById(R.id.spinnerCategory)
+            etAmount = findViewById(R.id.etAmount)
+            spinnerCurrency = findViewById(R.id.spinnerCurrency)
+            btnAddExpense = findViewById(R.id.btnAddExpense)
+            btnCancel = findViewById(R.id.btnCancel)
+            btnPickDate = findViewById(R.id.btnPickDate)
+            tvConversionInfo = findViewById(R.id.tvConversionInfo)
+            tvCurrencyWarning = findViewById(R.id.tvCurrencyWarning)
+            tvError = findViewById(R.id.tvError)
+            manualCategoryLayout = findViewById(R.id.manualCategoryLayout)
+            etManualCategory = findViewById(R.id.etManualCategory)
+            progressBar = findViewById(R.id.progressBar)
+            
+            // Set up category adapter
+            val categoryAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+            spinnerCategory.adapter = categoryAdapter
+            
+        } catch (e: Exception) {
+            Log.e("AddExpenseActivity", "Error finding views: ${e.message}")
+            Toast.makeText(this, "Failed to initialize UI: ${e.message}", Toast.LENGTH_LONG).show()
+            finish()
+        }
+    }
+    
+    private fun setupClickListeners() {
         findViewById<ImageButton>(R.id.btnBack).setOnClickListener {
             finish()
         }
@@ -104,9 +114,7 @@ class AddExpenseActivity : AppCompatActivity() {
     private fun setupCategoryListener() {
         spinnerCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val selectedCategory = categories[position]
-                // Show manual category input only if "Other" is selected
-                if (selectedCategory == "Other") {
+                if (categories[position] == "Other") {
                     manualCategoryLayout.visibility = View.VISIBLE
                 } else {
                     manualCategoryLayout.visibility = View.GONE
@@ -116,22 +124,6 @@ class AddExpenseActivity : AppCompatActivity() {
             
             override fun onNothingSelected(parent: AdapterView<*>?) {
                 manualCategoryLayout.visibility = View.GONE
-            }
-        }
-    }
-    
-    private fun setupAmountListener() {
-        etAmount.setOnFocusChangeListener { _, hasFocus -> 
-            if (!hasFocus) {
-                val amountStr = etAmount.text.toString()
-                if (amountStr.isNotEmpty()) {
-                    try {
-                        val amount = amountStr.toDouble()
-                        etAmount.setText(String.format("%.2f", amount))
-                    } catch (e: Exception) {
-                        etAmount.error = "Invalid amount"
-                    }
-                }
             }
         }
     }
@@ -166,6 +158,22 @@ class AddExpenseActivity : AppCompatActivity() {
         }
     }
     
+    private fun setupAmountListener() {
+        etAmount.setOnFocusChangeListener { _, hasFocus -> 
+            if (!hasFocus) {
+                val amountStr = etAmount.text.toString()
+                if (amountStr.isNotEmpty()) {
+                    try {
+                        val amount = amountStr.toDouble()
+                        etAmount.setText(String.format("%.2f", amount))
+                    } catch (e: Exception) {
+                        etAmount.error = "Invalid amount"
+                    }
+                }
+            }
+        }
+    }
+    
     private fun getSelectedCurrency(): String {
         val position = spinnerCurrency.selectedItemPosition
         return CurrencyUtils.currencyCodes[position]
@@ -187,9 +195,7 @@ class AddExpenseActivity : AppCompatActivity() {
                 
                 if (selectedCurrency == originalCurrency) {
                     etAmount.setText(String.format("%.2f", originalAmount))
-                    if (tvConversionInfo != null) {
-                        tvConversionInfo.visibility = View.GONE
-                    }
+                    tvConversionInfo.visibility = View.GONE
                 } else {
                     convertAmount(currentAmount, currentCurrency, selectedCurrency)
                 }
@@ -200,22 +206,19 @@ class AddExpenseActivity : AppCompatActivity() {
     }
     
     private fun updateConversionNotification(selectedCurrency: String) {
-        if (tvCurrencyWarning != null) {
-            if (selectedCurrency != userDefaultCurrency) {
-                tvCurrencyWarning.text = 
-                    "Note: This expense will be automatically converted to $userDefaultCurrency when saved."
-                tvCurrencyWarning.visibility = View.VISIBLE
-            } else {
-                tvCurrencyWarning.visibility = View.GONE
-            }
+        if (selectedCurrency != userDefaultCurrency) {
+            tvCurrencyWarning.text = 
+                "Note: This expense will be automatically converted to $userDefaultCurrency when saved."
+            tvCurrencyWarning.visibility = View.VISIBLE
+        } else {
+            tvCurrencyWarning.visibility = View.GONE
         }
     }
     
     private fun convertAmount(amount: Double, fromCurrency: String, toCurrency: String) {
-        val progressDialog = ProgressDialog(this)
-        progressDialog.setMessage("Converting currency...")
-        progressDialog.setCancelable(false)
-        progressDialog.show()
+        progressBar.visibility = View.VISIBLE
+        tvConversionInfo.text = "Converting..."
+        tvConversionInfo.visibility = View.VISIBLE
         
         conversionJob?.cancel()
         
@@ -223,8 +226,8 @@ class AddExpenseActivity : AppCompatActivity() {
             try {
                 val authToken = sessionManager.getToken()
                 if (authToken.isNullOrEmpty()) {
-                    progressDialog.dismiss()
-                    Toast.makeText(this@AddExpenseActivity, "Error: Not logged in", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                    tvConversionInfo.text = "Error: Not logged in"
                     return@launch
                 }
                 
@@ -235,25 +238,20 @@ class AddExpenseActivity : AppCompatActivity() {
                     authToken
                 )
                 
-                progressDialog.dismiss()
+                progressBar.visibility = View.GONE
                 
                 if (convertedAmount != null) {
                     etAmount.setText(String.format("%.2f", convertedAmount))
-                    Toast.makeText(
-                        this@AddExpenseActivity,
-                        "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    tvConversionInfo.text = "Converted ${CurrencyUtils.formatAmount(amount)} $fromCurrency to ${CurrencyUtils.formatAmount(convertedAmount)} $toCurrency"
+                    tvConversionInfo.visibility = View.VISIBLE
                 } else {
-                    Toast.makeText(
-                        this@AddExpenseActivity,
-                        "Conversion failed. Please enter amount manually.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    tvConversionInfo.text = "Conversion failed. Please enter amount manually."
+                    tvConversionInfo.visibility = View.VISIBLE
                 }
             } catch (e: Exception) {
-                progressDialog.dismiss()
-                Toast.makeText(this@AddExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
+                tvConversionInfo.text = "Error: ${e.message}"
+                tvConversionInfo.visibility = View.VISIBLE
             }
         }
     }
@@ -281,12 +279,12 @@ class AddExpenseActivity : AppCompatActivity() {
         val currency = getSelectedCurrency()
         
         if (subject.isEmpty()) {
-            etSubject.error = "Subject cannot be empty"
+            showError("Subject cannot be empty")
             return
         }
         
         if (amountString.isEmpty()) {
-            etAmount.error = "Amount cannot be empty"
+            showError("Amount cannot be empty")
             return
         }
         
@@ -294,7 +292,7 @@ class AddExpenseActivity : AppCompatActivity() {
         if (category == "Other") {
             val manualCategory = etManualCategory.text.toString().trim()
             if (manualCategory.isEmpty()) {
-                etManualCategory.error = "Please specify the category"
+                showError("Please specify the category")
                 return
             }
             category = manualCategory
@@ -303,27 +301,28 @@ class AddExpenseActivity : AppCompatActivity() {
         val amount = try {
             amountString.toDouble()
         } catch (e: NumberFormatException) {
-            etAmount.error = "Invalid amount format"
+            showError("Invalid amount format")
             return
         }
         
         if (amount <= 0) {
-            etAmount.error = "Amount must be greater than zero"
+            showError("Amount must be greater than zero")
             return
         }
         
-        val progressDialog = ProgressDialog(this)
-        progressDialog.setMessage("Adding expense...")
-        progressDialog.setCancelable(false)
-        progressDialog.show()
+        progressBar.visibility = View.VISIBLE
+        tvError.visibility = View.GONE
         
         if (currency != userDefaultCurrency) {
+            tvCurrencyWarning.text = "Converting to $userDefaultCurrency before saving..."
+            tvCurrencyWarning.visibility = View.VISIBLE
+
             lifecycleScope.launch {
                 try {
                     val token = sessionManager.getToken()
                     if (token == null) {
-                        progressDialog.dismiss()
-                        Toast.makeText(this@AddExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                        progressBar.visibility = View.GONE
+                        showError("Authentication required")
                         return@launch
                     }
                     
@@ -346,14 +345,10 @@ class AddExpenseActivity : AppCompatActivity() {
                             originalCurrency = currency
                         )
                         
-                        submitExpense(expense, progressDialog)
+                        submitExpense(expense)
                     } else {
-                        progressDialog.dismiss()
-                        Toast.makeText(
-                            this@AddExpenseActivity,
-                            "Currency conversion failed. Using original values.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        progressBar.visibility = View.GONE
+                        showError("Currency conversion failed. Using original values.")
                         
                         val expense = Expense(
                             id = 0,
@@ -364,11 +359,11 @@ class AddExpenseActivity : AppCompatActivity() {
                             currency = currency
                         )
                         
-                        submitExpense(expense, progressDialog)
+                        submitExpense(expense)
                     }
                 } catch (e: Exception) {
-                    progressDialog.dismiss()
-                    Toast.makeText(this@AddExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                    showError("Error: ${e.message}")
                 }
             }
         } else {
@@ -381,30 +376,34 @@ class AddExpenseActivity : AppCompatActivity() {
                 currency = currency
             )
             
-            submitExpense(expense, progressDialog)
+            submitExpense(expense)
         }
     }
     
-    private fun submitExpense(expense: Expense, progressDialog: ProgressDialog) {
+    private fun showError(message: String) {
+        tvError.text = message
+        tvError.visibility = View.VISIBLE
+    }
+    
+    private fun submitExpense(expense: Expense) {
         lifecycleScope.launch {
             try {
                 val token = sessionManager.getToken()
                 if (token == null) {
-                    progressDialog.dismiss()
-                    Toast.makeText(this@AddExpenseActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                    showError("Authentication required")
                     return@launch
                 }
                 
                 Log.d("AddExpenseActivity", "Sending expense with category: ${expense.category}, amount: ${expense.amount}")
                 
                 val expenseRequest = ExpenseRequest.fromExpense(expense)
-                // Fix the parameter order here - expenseRequest should be the first parameter
                 val response = RetrofitClient.expenseApiService.createExpense(
-                    expenseRequest,    // This should be first
-                    "Bearer $token"    // This should be second
+                    expenseRequest,
+                    "Bearer $token"
                 )
                 
-                progressDialog.dismiss()
+                progressBar.visibility = View.GONE
                 
                 if (response.isSuccessful && response.body() != null) {
                     Toast.makeText(this@AddExpenseActivity, "Expense added successfully", Toast.LENGTH_SHORT).show()
@@ -418,12 +417,12 @@ class AddExpenseActivity : AppCompatActivity() {
                     finish()
                 } else {
                     val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                    Toast.makeText(this@AddExpenseActivity, "Server error: $errorMsg", Toast.LENGTH_LONG).show()
+                    showError("Server error: $errorMsg")
                     Log.e("AddExpenseActivity", "Server error: $errorMsg")
                 }
             } catch (e: Exception) {
-                progressDialog.dismiss()
-                Toast.makeText(this@AddExpenseActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
+                showError("Error: ${e.message}")
                 Log.e("AddExpenseActivity", "Exception during API call", e)
             }
         }
