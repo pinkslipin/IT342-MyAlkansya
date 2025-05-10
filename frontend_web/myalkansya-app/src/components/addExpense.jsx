@@ -274,7 +274,7 @@ const AddExpense = () => {
               ) : (
                 <form onSubmit={handleAddExpense}>
                   <div className="mb-4">
-                    <label className="block text-[#18864F] font-bold mb-2">Subject</label>
+                    <label className="block text-[#18864F] font-bold mb-2">Description</label>
                     <input
                       type="text"
                       name="subject"
@@ -306,7 +306,7 @@ const AddExpense = () => {
                       <option value="Healthcare">Healthcare</option>
                       <option value="Education">Education</option>
                       <option value="Shopping">Shopping</option>
-                      <option value="Manual">Manual Input</option>
+                      <option value="Manual">Others</option>
                     </select>
                     {formData.category === "Manual" && (
                       <input

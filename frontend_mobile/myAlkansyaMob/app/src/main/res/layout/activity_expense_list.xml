@@ -28,14 +28,13 @@
             app:layout_constraintEnd_toEndOf="parent">
 
             <ImageView
-                android:id="@+id/menuButton"
+                android:id="@+id/btnBack"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:src="@drawable/ic_arrow_back"
                 app:tint="#18864F" />
 
             <TextView
-                android:id="@+id/appTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="MyAlkansya"
@@ -59,7 +58,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Expense Management"
+                android:text="@string/expense_management"
                 android:textColor="#18864F"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -95,7 +94,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/filter_income"
+                    android:text="@string/filters"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#18864F"
@@ -154,23 +153,25 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <!-- Category filter -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:layout_marginTop="12dp">
+                    android:layout_marginTop="8dp">
                     
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Category:"
+                        android:text="@string/category"
                         android:textColor="#18864F"
                         android:layout_marginEnd="4dp"
                         android:layout_gravity="center_vertical" />
                         
                     <Spinner
                         android:id="@+id/categorySpinner"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:background="@drawable/spinner_background"
                         android:padding="8dp" />
@@ -199,14 +200,14 @@
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_weight="1"
-                        android:text="@string/reset_filters"
+                        android:text="@string/reset"
                         android:textAllCaps="false"
                         android:textSize="14sp"
                         android:textColor="#18864F"
                         android:backgroundTint="#FFC107" />
                 </LinearLayout>
 
-                <!-- Active filters indicator (initially hidden) -->
+                <!-- Active filters indicator -->
                 <TextView
                     android:id="@+id/activeFiltersText"
                     android:layout_width="wrap_content"
@@ -215,10 +216,11 @@
                     android:background="#EDFBE9"
                     android:paddingHorizontal="8dp"
                     android:paddingVertical="4dp"
-                    android:text="@string/active_filters"
                     android:textColor="#18864F"
                     android:textSize="12sp"
-                    android:visibility="gone" />
+                    android:visibility="gone"
+                    tools:text="Active filters: Month: January, Year: 2023"
+                    tools:visibility="visible" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -231,9 +233,10 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:visibility="visible" />
 
-        <!-- Expense List Header -->
+        <!-- Expenses List Header -->
         <LinearLayout
             android:id="@+id/listHeader"
             android:layout_width="match_parent"
@@ -248,7 +251,7 @@
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="0.5"
                 android:text="@string/date"
                 android:textStyle="bold"
                 android:textColor="#18864F" />
@@ -257,14 +260,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/expense_subject"
+                android:text="@string/description"
                 android:textStyle="bold"
                 android:textColor="#18864F" />
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
+                android:layout_weight="0.5"
                 android:text="@string/amount"
                 android:gravity="end"
                 android:textStyle="bold"
@@ -273,7 +276,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Actions"
+                android:text="@string/actions"
                 android:layout_marginStart="8dp"
                 android:textStyle="bold"
                 android:textColor="#18864F" />
@@ -281,7 +284,7 @@
 
         <!-- Expense List Container (Card) -->
         <androidx.cardview.widget.CardView
-            android:id="@+id/expenseListCard"
+            android:id="@+id/expensesListCard"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:minHeight="200dp"
@@ -290,24 +293,28 @@
             app:layout_constraintTop_toBottomOf="@+id/listHeader"
             app:layout_constraintBottom_toTopOf="@+id/paginationControls">
 
-            <!-- RecyclerView for Expense List -->
+            <!-- RecyclerView for Expenses List -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/expenseRecyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:visibility="visible" />
+                android:visibility="visible"
+                tools:listitem="@layout/item_expense" />
 
             <!-- Empty State Message -->
             <TextView
                 android:id="@+id/txtEmptyState"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:text="@string/no_income_records"
-                android:textColor="#757575"
-                android:textSize="16sp"
+                android:orientation="vertical"
                 android:gravity="center"
-                android:padding="24dp"
-                android:visibility="gone" />
+                android:padding="32dp"
+                android:text="@string/no_expense_records"
+                android:textAlignment="center"
+                android:textSize="16sp"
+                android:textColor="#757575"
+                android:visibility="gone"
+                tools:visibility="visible" />
         </androidx.cardview.widget.CardView>
 
         <!-- Pagination Controls -->

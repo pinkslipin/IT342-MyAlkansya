@@ -83,6 +83,8 @@ const SavingsGoal = () => {
     try {
       const authToken = localStorage.getItem("authToken");
       const config = { headers: { Authorization: `Bearer ${authToken}` } };
+
+      // 1. Post the expense
       await axios.post(
         "https://myalkansya-sia.as.r.appspot.com/api/expenses/postExpense",
         {
@@ -94,9 +96,20 @@ const SavingsGoal = () => {
         },
         config
       );
+
+      // 2. Update the savings goal's currentAmount
+      const updatedCurrentAmount = parseFloat(goal.currentAmount) + parseFloat(addAmountValue);
+      await axios.put(
+        `https://myalkansya-sia.as.r.appspot.com/api/savings-goals/putSavingsGoal/${goal.id}`,
+        {
+          ...goal,
+          currentAmount: updatedCurrentAmount,
+        },
+        config
+      );
+
       setShowAddAmount(null);
       setAddAmountValue("");
-      // Optionally, refresh savings goals and expenses
       fetchSavingsGoals();
       fetchGoalExpenses(goal);
     } catch (err) {
@@ -240,30 +253,50 @@ const SavingsGoal = () => {
                             : "Goal achieved! 🎉"}
                         </div>
                       </div>
-                      <div className="text-center">
+                      <div className="text-center flex justify-center items-center gap-2">
+                        {/* Add Amount Icon */}
                         <button
                           onClick={() => setShowAddAmount(goal.id)}
-                          className="bg-[#18864F] text-white font-bold py-1 px-3 rounded hover:bg-green-700 mr-2"
+                          className="hover:opacity-80"
+                          title="Add Amount"
+                          style={{ padding: 0, background: "none", border: "none" }}
                         >
-                          Add Amount
+                          <img
+                            src="/assets/addmoney.png"
+                            alt="Add Amount"
+                            className="h-6 w-6"
+                            style={{ display: "inline-block" }}
+                          />
                         </button>
+                        {/* History Icon */}
                         <button
                           onClick={() => {
                             setExpandedGoal(expandedGoal === goal.id ? null : goal.id);
                             if (expandedGoal !== goal.id) fetchGoalExpenses(goal);
                           }}
-                          className="bg-[#FFC107] text-[#18864F] font-bold py-1 px-3 rounded hover:bg-yellow-500"
+                          className="hover:opacity-80"
+                          title="History"
+                          style={{ padding: 0, background: "none", border: "none" }}
                         >
-                          {expandedGoal === goal.id ? "Hide" : "Show"} History
+                          <img
+                            src="/assets/history.png"
+                            alt="History"
+                            className="h-6 w-6"
+                            style={{ display: "inline-block" }}
+                          />
                         </button>
+                        {/* Edit Icon */}
                         <button
                           onClick={() => navigate(`/editsavingsgoal/${goal.id}`)}
-                          className="hover:opacity-80 ml-2"
+                          className="hover:opacity-80"
+                          title="Edit"
+                          style={{ padding: 0, background: "none", border: "none" }}
                         >
                           <img
                             src={editIcon}
                             alt="Edit"
-                            className="h-5 w-5 inline-block"
+                            className="h-6 w-6"
+                            style={{ display: "inline-block" }}
                           />
                         </button>
                       </div>
@@ -307,7 +340,7 @@ const SavingsGoal = () => {
                           <div>
                             <div className="grid grid-cols-4 text-sm font-medium text-gray-600 mb-1 px-2">
                               <div>Date</div>
-                              <div>Subject</div>
+                              <div>Description</div>
                               <div className="text-right">Amount</div>
                               <div className="text-right">Currency</div>
                             </div>

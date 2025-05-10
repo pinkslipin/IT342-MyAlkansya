@@ -27,7 +27,15 @@ export async function exportSheets(sheets, fileName, options = {}) {
     const { name, columns, data } = sheet;
     const ws = wb.addWorksheet(name);
 
+    // Rename "Total Savings" to "Total Balance" in Dashboard sheet
     if (name === 'Dashboard') {
+      // Find and rename the Total Savings row if it exists
+      const savingsRow = data.find(row => row.Metric === 'Total Savings');
+      if (savingsRow) {
+        savingsRow.Metric = 'Total Balance';
+      }
+      
+      // Rest of Dashboard formatting remains the same
       // — USER INFO —
       ws.getCell('A1').value = 'Name:';
       ws.getCell('B1').value = `${user?.firstname || ''} ${user?.lastname || ''}`.trim();
@@ -133,34 +141,152 @@ export async function exportSheets(sheets, fileName, options = {}) {
 
       // Income/Expenses: two‑decimal on Amount
       if (name === 'Income' || name === 'Expenses') {
-        const amtCol = columns.length;
-        data.forEach((_, i) => {
-          const cell = ws.getCell(i+2, amtCol);
-          if (typeof cell.value === 'number') {
-            cell.numFmt = '#,##0.00';
-            cell.alignment = { horizontal:'right' };
-          }
-        });
-      }
-
-      // Budget: two‑decimal + colored Remaining
-      if (name === 'Budget') {
-        const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
-        const ts = columns.findIndex(c=>c.key==='totalSpent')   +1;
-        const rm = columns.findIndex(c=>c.key==='remaining')    +1;
-        data.forEach((row,i) => {
-          const r = i+2;
-          [mb,ts,rm].forEach(colNum => {
-            const cell = ws.getCell(r,colNum);
-            if (typeof cell.value==='number') {
+        // For Expenses, check if there's a subject field we need to rename
+        // If not, check if we need to add a description-like field
+        const subjectColumn = columns.find(col => col.key === 'subject');
+        if (subjectColumn) {
+          subjectColumn.header = 'Description';
+        }
+        
+        // Format amount columns
+        const amtCol = columns.findIndex(c => c.key === 'amount') + 1;
+        if (amtCol > 0) {  // Ensure the column exists
+          data.forEach((_, i) => {
+            const cell = ws.getCell(i+2, amtCol);
+            if (typeof cell.value === 'number') {
               cell.numFmt = '#,##0.00';
               cell.alignment = { horizontal:'right' };
             }
           });
-          ws.getCell(r, rm).font = {
-            name:'Calibri', size:11, bold:true,
-            color:{ argb: row.remaining<0 ? 'FFDC3545':'FF18864F' }
-          };
+        }
+      }
+
+      // Budget: two‑decimal + colored Remaining + expense breakdown
+      if (name === 'Budget') {
+        // Change the category column header to "Expense Breakdown" if it exists
+        const categoryColumn = columns.find(col => col.key === 'category');
+        if (categoryColumn) {
+          categoryColumn.header = 'Expense Breakdown';
+        }
+        
+        const mb = columns.findIndex(c=>c.key==='monthlyBudget')+1;
+        const ts = columns.findIndex(c=>c.key==='totalSpent')+1;
+        const rm = columns.findIndex(c=>c.key==='remaining')+1;
+        const dateCol = columns.findIndex(c=>c.key==='date')+1;
+        const descCol = columns.findIndex(c=>c.key==='description')+1;
+        const amtCol = columns.findIndex(c=>c.key==='amount')+1;
+        const currCol = columns.findIndex(c=>c.key==='currency')+1;
+        
+        data.forEach((row, i) => {
+          const r = i+2;
+          
+          if (row.isExpenseRow === true) {
+            // This is an expense detail row - style it differently
+            // Only apply styling if these columns exist
+            if (dateCol > 0) {
+              const cell = ws.getCell(r, dateCol);
+              // More robust date handling
+              if (row.date && row.date !== null) {
+                try {
+                  const dateObj = new Date(row.date);
+                  // Check if it's a valid date
+                  if (!isNaN(dateObj.getTime())) {
+                    cell.value = dateObj;
+                    cell.numFmt = 'mm/dd/yyyy';
+                  } else {
+                    // Not a valid date - use empty string
+                    cell.value = '';
+                  }
+                } catch (e) {
+                  // Any error in date parsing - use empty string
+                  cell.value = '';
+                }
+              } else {
+                // No date value - use empty string
+                cell.value = '';
+              }
+              cell.font = { name:'Calibri', size:10, italic: true };
+              cell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            // Process other expense detail columns
+            if (descCol > 0) {
+              const descCell = ws.getCell(r, descCol);
+              descCell.value = row.description || '';
+              descCell.font = { name:'Calibri', size:10, italic: true };
+              descCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            if (amtCol > 0) {
+              const amtCell = ws.getCell(r, amtCol);
+              // Make sure amount is a number or set to 0
+              amtCell.value = typeof row.amount === 'number' && !isNaN(row.amount) ? row.amount : 0;
+              amtCell.numFmt = '#,##0.00';
+              amtCell.alignment = { horizontal:'right' };
+              amtCell.font = { name:'Calibri', size:10, italic: true };
+              amtCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+            
+            if (currCol > 0) {
+              const currCell = ws.getCell(r, currCol);
+              currCell.value = row.currency || '';
+              currCell.font = { name:'Calibri', size:10, italic: true };
+              currCell.fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8F8F8' } };
+            }
+          } 
+          else if (row.isEmptyRow === true) {
+            // Empty spacer row - set all cells to empty string instead of undefined
+            for (let c=1; c<=columns.length; c++) {
+              ws.getCell(r, c).value = '';
+              ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFFFFFF' } };
+            }
+          }
+          else {
+            // This is a main budget row - explicitly set non-budget cells to empty string
+            
+            // First, clear date/description/amount/currency columns for main budget row
+            if (dateCol > 0) ws.getCell(r, dateCol).value = '';
+            if (descCol > 0) ws.getCell(r, descCol).value = '';
+            if (amtCol > 0) ws.getCell(r, amtCol).value = '';
+            if (currCol > 0) ws.getCell(r, currCol).value = '';
+            
+            // Then format budget related columns
+            [mb,ts,rm].forEach(colNum => {
+              if (colNum > 0) {
+                const cell = ws.getCell(r, colNum);
+                let value = null;
+                
+                if (mb === colNum) value = row.monthlyBudget;
+                else if (ts === colNum) value = row.totalSpent;
+                else if (rm === colNum) value = row.remaining;
+                
+                // Only set value if it's a valid number
+                if (typeof value === 'number' && !isNaN(value)) {
+                  cell.value = value;
+                } else {
+                  cell.value = 0; // Default to 0 for any invalid numbers
+                }
+                
+                cell.numFmt = '#,##0.00';
+                cell.alignment = { horizontal:'right' };
+              }
+            });
+            
+            // Set the remaining cell color based on value
+            if (rm > 0) {
+              const remaining = typeof row.remaining === 'number' && !isNaN(row.remaining) ? row.remaining : 0;
+              ws.getCell(r, rm).font = {
+                name:'Calibri', size:11, bold:true,
+                color:{ argb: remaining < 0 ? 'FFDC3545':'FF18864F' }
+              };
+            }
+            
+            // Make the main budget rows stand out with a light background
+            for (let c=1; c<=columns.length; c++) {
+              ws.getCell(r, c).fill = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFEDF6E9' } };
+              ws.getCell(r, c).font = { bold: true };
+            }
+          }
         });
       }
 

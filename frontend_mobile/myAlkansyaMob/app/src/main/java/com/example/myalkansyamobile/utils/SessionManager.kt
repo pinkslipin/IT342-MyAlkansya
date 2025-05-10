@@ -29,6 +29,7 @@ class SessionManager(context: Context) {
         const val HAS_ANALYTICS_ACCESS = "has_analytics_access"
         const val TOKEN_EXPIRY = "token_expiry"
         const val KEY_EMAIL = "email"
+        const val KEY_AUTH_SESSION = "authenticated_this_session"
     }
 
     // Create full login session
@@ -376,10 +377,21 @@ class SessionManager(context: Context) {
         return prefs.getBoolean(IS_LOGGED_IN, false)
     }
 
+    // Check if user has authenticated in the current session
+    fun isAuthenticatedThisSession(): Boolean {
+        return prefs.getBoolean(KEY_AUTH_SESSION, false)
+    }
+
+    // Set authentication state for the current session
+    fun setAuthenticatedThisSession(authenticated: Boolean) {
+        editor.putBoolean(KEY_AUTH_SESSION, authenticated).apply()
+    }
+
     // Clear session data
     fun clearSession() {
         editor.clear()
         editor.apply()
+        editor.putBoolean(KEY_AUTH_SESSION, false).apply()
     }
 
     /**

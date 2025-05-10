@@ -55,4 +55,46 @@
     <string name="add_expense_details_description">Record your expenses to track your spending and stay within budget.</string>
     <string name="edit_expense_details_description">Edit your expense details. Any changes will be reflected in your financial summary and budget tracking.</string>
     <string name="note_expense_category_change">Note: Changing the category or date may affect which budget this expense is tracked against.</string>
+
+    <!-- Add these missing strings for expense activities -->
+    <string name="select_date">Select Date</string>
+    <string name="subject">Subject</string>
+
+    <!-- Expense management strings -->
+    <string name="expense_management">Expense Management</string>
+    <string name="filters">Filters</string>
+    <string name="category">Category</string>
+    <string name="reset">Reset</string>
+    <string name="description">Description</string>
+    <string name="actions">Actions</string>
+    <string name="no_expense_records">No expense records found</string>
+    <string name="no_filtered_expense">No expenses match your filter criteria</string>
+    <string name="link_to_savings_goal">Link to savings goal</string>
+    <string name="select_savings_goal">Select savings goal</string>
+    <string name="expense_savings_goal_note">*This expense will be counted toward your savings goal progress</string>
+    <string name="linked_savings_goal">Linked Savings Goal</string>
+    <string name="no_linked_savings_goal">This expense is not linked to any savings goal</string>
+    <string name="unlink_goal">Unlink Goal</string>
+    <string name="savings_goal">Savings Goal</string>
+    
+    <!-- Add these new strings for manual category -->
+    <string name="specify_category">Specify Category</string>
+    <string name="manual_category_hint">Enter custom category name</string>
+    <string name="manual_category_required">Please specify a custom category</string>
+
+    <!-- Savings Goal Strings -->
+    <string name="add_savings_goal">Add Savings Goal</string>
+    <string name="edit_savings_goal">Edit Savings Goal</string>
+    <string name="add_payment">Add Payment</string>
+    <string name="payment_history">Payment History</string>
+    <string name="no_payment_history">No payment history found</string>
+    <string name="savings_goal_details">Savings Goal Details</string>
+    <string name="target_amount">Target Amount</string>
+    <string name="current_amount">Current Amount</string>
+    <string name="target_date">Target Date</string>
+    <string name="goal_name">Goal Name</string>
+    <string name="payment_added_successfully">Payment added successfully</string>
+    <string name="error_adding_payment">Error adding payment</string>
+    <string name="confirm">Confirm</string>
+    <string name="amount_to_add">Amount to add</string>
 </resources>

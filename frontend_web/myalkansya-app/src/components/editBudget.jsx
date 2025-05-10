@@ -106,15 +106,18 @@ const EditBudget = () => {
         },
       };
 
-      // Convert string amounts to numbers for submission
-      const submissionData = {
-        ...formData,
-        monthlyBudget: parseFloat(formData.monthlyBudget),
-        totalSpent: parseFloat(formData.totalSpent || 0)
-      };
+      // Use manualCategory if category is "Manual"
+      const submissionData = { ...formData };
+      if (submissionData.category === "Manual") {
+        submissionData.category = submissionData.manualCategory || "Other";
+        delete submissionData.manualCategory;
+      }
+
+      submissionData.monthlyBudget = parseFloat(submissionData.monthlyBudget);
+      submissionData.totalSpent = parseFloat(submissionData.totalSpent || 0);
 
       await axios.put(`https://myalkansya-sia.as.r.appspot.com/api/budgets/update/${budgetId}`, submissionData, config);
-      navigate("/budget"); // Redirect to the Budget page after successful update
+      navigate("/budget");
     } catch (err) {
       console.error("Error editing budget:", err);
       if (err.response && err.response.data) {
@@ -244,8 +247,22 @@ const EditBudget = () => {
                       <option value="Healthcare">Healthcare</option>
                       <option value="Education">Education</option>
                       <option value="Shopping">Shopping</option>
-                      <option value="Other">Other</option>
+                      <option value="Savings Goal">Savings Goal</option>
+                      <option value="Manual">Others</option>
                     </select>
+                    {formData.category === "Manual" && (
+                      <input
+                        type="text"
+                        name="manualCategory"
+                        value={formData.manualCategory || ""}
+                        onChange={e =>
+                          setFormData({ ...formData, manualCategory: e.target.value })
+                        }
+                        className="mt-2 w-full max-w-lg p-3 border rounded-md bg-[#FFF8E1] text-[#18864F] font-bold focus:outline-none focus:ring-2 focus:ring-[#18864F]"
+                        placeholder="Enter custom category"
+                        required
+                      />
+                    )}
                   </div>
 
                   {/* Month and Year Selection */}

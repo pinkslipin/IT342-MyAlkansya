@@ -56,45 +56,75 @@
                         android:textColor="#000000"/>
                 </LinearLayout>
                 
-                <LinearLayout
+                <!-- Currency Conversion Area with From/To Layout -->
+                <RelativeLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="8dp">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="From:"
-                        android:textColor="#18864F"
-                        android:layout_marginEnd="8dp"/>
-                    
-                    <Spinner
-                        android:id="@+id/spinnerFromCurrency"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:backgroundTint="#FFC107"/>
-                </LinearLayout>
-                
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:layout_marginBottom="16dp">
                     
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="To:     "
-                        android:textColor="#18864F"
-                        android:layout_marginEnd="8dp"/>
-                    
-                    <Spinner
-                        android:id="@+id/spinnerToCurrency"
+                    <!-- Currency Container -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:backgroundTint="#FFC107"/>
-                </LinearLayout>
+                        android:orientation="vertical"
+                        android:layout_toStartOf="@+id/btnSwapCurrencies"
+                        android:layout_marginEnd="8dp">
+                        
+                        <!-- From Currency -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="12dp">
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="From:"
+                                android:textColor="#18864F"
+                                android:layout_marginEnd="8dp"/>
+                            
+                            <Spinner
+                                android:id="@+id/spinnerFromCurrency"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="#FFC107"/>
+                        </LinearLayout>
+                        
+                        <!-- To Currency -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+                            
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="To:     "
+                                android:textColor="#18864F"
+                                android:layout_marginEnd="8dp"/>
+                            
+                            <Spinner
+                                android:id="@+id/spinnerToCurrency"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:backgroundTint="#FFC107"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    
+                    <!-- Swap Button - Positioned to the right of currency inputs -->
+                    <ImageButton
+                        android:id="@+id/btnSwapCurrencies"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/circle_button_background"
+                        android:contentDescription="Swap currencies"
+                        android:src="@android:drawable/ic_popup_sync"
+                        android:padding="4dp"
+                        android:tint="#18864F" />
+                </RelativeLayout>
                 
                 <Button
                     android:id="@+id/btnConvert"

@@ -139,7 +139,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
     }
 
     private fun setupAmountListeners() {
-        binding.editTextTargetAmount.setOnFocusChangeListener { _, hasFocus ->
+        binding.editTextTargetAmount.setOnFocusChangeListener { _, hasFocus -> 
             if (!hasFocus) {
                 val amountStr = binding.editTextTargetAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
@@ -153,7 +153,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
             }
         }
         
-        binding.editTextCurrentAmount.setOnFocusChangeListener { _, hasFocus ->
+        binding.editTextCurrentAmount.setOnFocusChangeListener { _, hasFocus -> 
             if (!hasFocus) {
                 val amountStr = binding.editTextCurrentAmount.text.toString()
                 if (amountStr.isNotEmpty()) {
@@ -240,6 +240,10 @@ class EditSavingsGoalActivity : AppCompatActivity() {
         binding.btnDeleteGoal.setOnClickListener {
             showDeleteConfirmationDialog()
         }
+        
+        binding.btnPickDate?.setOnClickListener {
+            showDatePickerDialog()
+        }
     }
 
     private fun setupDatePicker() {
@@ -255,7 +259,7 @@ class EditSavingsGoalActivity : AppCompatActivity() {
 
         val datePickerDialog = DatePickerDialog(
             this,
-            { _, selectedYear, selectedMonth, selectedDay ->
+            { _, selectedYear, selectedMonth, selectedDay -> 
                 calendar.set(selectedYear, selectedMonth, selectedDay)
                 val formattedDate = displayDateFormat.format(calendar.time)
                 binding.editTextTargetDate.setText(formattedDate)
@@ -496,11 +500,11 @@ class EditSavingsGoalActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Delete Savings Goal")
             .setMessage("Are you sure you want to delete this savings goal?")
-            .setPositiveButton("Delete") { dialog, _ ->
+            .setPositiveButton("Delete") { dialog, _ -> 
                 deleteGoal()
                 dialog.dismiss()
             }
-            .setNegativeButton("Cancel") { dialog, _ ->
+            .setNegativeButton("Cancel") { dialog, _ -> 
                 dialog.dismiss()
             }
             .show()
@@ -519,18 +523,29 @@ class EditSavingsGoalActivity : AppCompatActivity() {
                 }
 
                 val bearerToken = "Bearer $token"
-                withContext(Dispatchers.IO) {
+                val response = withContext(Dispatchers.IO) {
                     RetrofitClient.savingsGoalApiService
                         .deleteSavingsGoal(goalId, bearerToken)
                 }
 
-                Toast.makeText(
-                    this@EditSavingsGoalActivity,
-                    "Savings goal deleted successfully",
-                    Toast.LENGTH_SHORT
-                ).show()
-                finish()
-
+                // Check if the response was successful
+                if (response.isSuccessful) {
+                    // Get the message body as string
+                    val successMessage = response.body()?.string() ?: "Savings goal deleted successfully"
+                    
+                    Toast.makeText(
+                        this@EditSavingsGoalActivity,
+                        successMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    
+                    finish()
+                } else {
+                    // Handle errors
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error occurred"
+                    binding.progressLoading.visibility = View.GONE
+                    showError("Error deleting savings goal: $errorMsg")
+                }
             } catch (e: Exception) {
                 binding.progressLoading.visibility = View.GONE
                 showError("Error deleting savings goal: ${e.message}")

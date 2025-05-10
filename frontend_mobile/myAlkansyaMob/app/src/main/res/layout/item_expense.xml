@@ -1,66 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="8dp"
-    android:paddingHorizontal="16dp"
+    android:orientation="vertical"
     android:background="?attr/selectableItemBackground">
-
-    <TextView
-        android:id="@+id/tvDate"
-        android:layout_width="0dp"
+    
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Jan 01, 2023"
-        android:textColor="#333333"
-        android:layout_weight="1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintWidth_percent="0.25"/>
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="12dp"
+        android:paddingBottom="4dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
 
-    <TextView
-        android:id="@+id/tvSubject"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Groceries"
-        android:textColor="#333333"
-        android:layout_weight="1"
-        app:layout_constraintStart_toEndOf="@id/tvDate"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintWidth_percent="0.35"/>
+        <!-- Date Column -->
+        <TextView
+            android:id="@+id/tvDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:textSize="14sp"
+            android:textColor="#18864F"
+            tools:text="May 09, 2025" />
 
-    <TextView
-        android:id="@+id/tvAmount"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="PHP 1000.00"
-        android:gravity="end"
-        android:textColor="#333333"
-        android:layout_weight="1"
-        app:layout_constraintStart_toEndOf="@id/tvSubject"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btnEdit"
-        android:layout_marginEnd="8dp"/>
+        <!-- Description Column (Subject and Category) -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.3"
+            android:orientation="vertical">
 
-    <ImageButton
-        android:id="@+id/btnEdit"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:src="@drawable/ic_edit"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        app:tint="#18864F"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:contentDescription="Edit expense"/>
+            <TextView
+                android:id="@+id/tvSubject"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="#18864F"
+                android:maxLines="1"
+                android:ellipsize="end"
+                tools:text="Nmax" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/tvSavingsGoalIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Savings Goal"
+                    android:textSize="10sp"
+                    android:textColor="#FFC107"
+                    android:background="@drawable/savings_goal_indicator_bg"
+                    android:paddingHorizontal="4dp"
+                    android:paddingVertical="2dp"
+                    android:layout_marginEnd="4dp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tvCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="12sp"
+                    android:textColor="#757575"
+                    tools:text="Transportation" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Amount Column -->
+        <TextView
+            android:id="@+id/tvAmount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.7"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:gravity="end"
+            android:textColor="#18864F"
+            tools:text="₱400.00" />
+
+        <!-- Actions Column - Menu Button instead of direct buttons -->
+        <ImageButton
+            android:id="@+id/btnActions"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_more_vert"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_marginStart="8dp"
+            android:contentDescription="Actions menu" />
+    </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#E0E0E0"
-        app:layout_constraintBottom_toBottomOf="parent"/>
+        android:background="#EEEEEE" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

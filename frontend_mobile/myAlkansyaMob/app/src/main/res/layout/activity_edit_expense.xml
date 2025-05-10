@@ -19,7 +19,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Go back"
+            android:contentDescription="@string/back"
             android:src="@android:drawable/ic_menu_close_clear_cancel"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -30,7 +30,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Edit Expense"
+            android:text="@string/edit_expense"
             android:textColor="@color/green"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -40,7 +40,7 @@
 
         <!-- Loading Indicator -->
         <ProgressBar
-            android:id="@+id/progressBar"
+            android:id="@+id/progressLoading"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminateTint="@color/green"
@@ -49,6 +49,20 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Error Message -->
+        <TextView
+            android:id="@+id/tvError"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/error_background"
+            android:padding="12dp"
+            android:textColor="@color/error_text"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvHeader" />
 
         <!-- Form Container -->
         <androidx.cardview.widget.CardView
@@ -60,7 +74,7 @@
             app:cardElevation="4dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/tvHeader">
+            app:layout_constraintTop_toBottomOf="@+id/tvError">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -72,7 +86,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Subject"
+                    android:text="@string/expense_subject"
                     android:textColor="@color/green"
                     android:textStyle="bold" />
 
@@ -83,7 +97,6 @@
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="16dp"
                     android:background="@color/yellow"
-                    android:hint="Enter expense subject"
                     android:padding="12dp"
                     android:inputType="text" />
 
@@ -91,25 +104,52 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Category"
+                    android:text="@string/expense_category"
                     android:textColor="@color/green"
                     android:textStyle="bold" />
 
                 <Spinner
                     android:id="@+id/spinnerCategoryEdit"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="16dp"
                     android:background="@color/yellow"
                     android:padding="12dp"
                     android:popupBackground="@android:color/white" />
 
-                <!-- Date Field -->
+                <!-- Manual Category Input (shown only when "Other" is selected) -->
+                <LinearLayout
+                    android:id="@+id/manualCategoryLayoutEdit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/specify_category"
+                        android:textColor="@color/green"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etManualCategoryEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@color/yellow"
+                        android:hint="@string/manual_category_hint"
+                        android:padding="12dp"
+                        android:inputType="text" />
+                </LinearLayout>
+
+                <!-- Date -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Date"
+                    android:text="@string/date"
                     android:textColor="@color/green"
                     android:textStyle="bold" />
 
@@ -125,24 +165,25 @@
                     <TextView
                         android:id="@+id/tvDateEdit"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
-                        android:text="Select Date"
-                        android:textColor="@color/black" />
+                        android:layout_weight="1"
+                        android:background="@null"
+                        android:textColor="@color/black" 
+                        tools:text="2023-01-01" />
 
                     <ImageView
                         android:id="@+id/btnPickDateEdit"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_calendar"
-                        android:contentDescription="Pick Date"/>
+                        android:contentDescription="@string/select_date"/>
                 </LinearLayout>
 
                 <!-- Amount and Currency -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Amount"
+                    android:text="@string/amount"
                     android:textColor="@color/green"
                     android:textStyle="bold" />
 
@@ -159,7 +200,6 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="3"
                         android:background="@color/yellow"
-                        android:hint="Enter amount"
                         android:inputType="numberDecimal"
                         android:padding="12dp"
                         android:textColor="@color/black" />
@@ -174,41 +214,39 @@
                 </LinearLayout>
 
                 <!-- Conversion Info -->
-                <ProgressBar
-                    android:id="@+id/progressBarConversion"
-                    style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/tvConversionInfo"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:textColor="@color/green_700"
-                    android:textSize="14sp"
-                    android:visibility="gone" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ProgressBar
+                        android:id="@+id/progressBarConversion"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:indeterminateTint="@color/green"
+                        android:visibility="gone" />
+                    
+                    <TextView
+                        android:id="@+id/tvConversionInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textColor="@color/teal_700"
+                        android:textStyle="italic"
+                        android:visibility="gone" />
+                </LinearLayout>
 
                 <!-- Currency Warning -->
                 <TextView
                     android:id="@+id/tvCurrencyWarning"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp"
                     android:textColor="@color/warning_color"
                     android:textStyle="italic"
                     android:textSize="12sp"
-                    android:visibility="gone" />
-
-                <!-- Error Message -->
-                <TextView
-                    android:id="@+id/tvError"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="16dp"
-                    android:textColor="@color/error_text"
                     android:visibility="gone" />
 
                 <!-- Buttons -->
@@ -224,7 +262,7 @@
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:backgroundTint="@color/green"
-                        android:text="Save Changes"
+                        android:text="@string/save_changes"
                         android:textColor="@android:color/white" />
 
                     <Button
@@ -234,13 +272,13 @@
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:backgroundTint="@color/light_beige"
-                        android:text="Cancel"
+                        android:text="@string/cancel"
                         android:textColor="@color/green"
                         app:strokeColor="@color/green"
                         app:strokeWidth="1dp" />
                 </LinearLayout>
 
-                <!-- Delete Button (Added) -->
+                <!-- Delete Button -->
                 <Button
                     android:id="@+id/btnDeleteExpense"
                     android:layout_width="match_parent"
@@ -253,8 +291,9 @@
                     android:textColor="@android:color/white"
                     android:gravity="center" />
 
-                <!-- Expense Details Info Section -->
+                <!-- Info Section -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/cvExpenseInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
@@ -272,7 +311,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:gravity="center"
-                            android:text="Expense Details"
+                            android:text="@string/expense_details"
                             android:textColor="@color/green"
                             android:textSize="18sp"
                             android:textStyle="bold" />
@@ -282,18 +321,29 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:gravity="center"
-                            android:text="Edit your expense details. Any changes will be reflected in your financial summary and budget tracking." />
+                            android:text="@string/edit_expense_details_description" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
                             android:gravity="center"
-                            android:text="Note: Changing the category or date may affect which budget this expense is tracked against."
+                            android:text="@string/note_expense_category_change"
                             android:textSize="12sp"
-                            android:textStyle="italic" />
+                            android:textStyle="italic"
+                            android:textColor="@color/warning_color" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
+
+                <!-- Progress bar for API calls -->
+                <ProgressBar
+                    android:id="@+id/progressBar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:indeterminateTint="@color/green"
+                    android:visibility="gone" />
 
             </LinearLayout>
         </androidx.cardview.widget.CardView>

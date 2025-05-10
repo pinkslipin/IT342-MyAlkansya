@@ -185,7 +185,7 @@ const EditExpense = () => {
 
               <form onSubmit={handleEditExpense}>
                 <div className="mb-4">
-                  <label className="block text-[#18864F] font-bold mb-2">Subject</label>
+                  <label className="block text-[#18864F] font-bold mb-2">Description</label>
                   <input
                     type="text"
                     name="subject"

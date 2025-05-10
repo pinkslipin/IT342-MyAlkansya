@@ -85,14 +85,41 @@
                 <Spinner
                     android:id="@+id/spinnerCategory"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="48dp"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="16dp"
                     android:background="@color/yellow"
                     android:padding="12dp"
                     android:popupBackground="@android:color/white" />
 
-                <!-- Date Field -->
+                <!-- Manual Category Input (shown only when "Other" is selected) -->
+                <LinearLayout
+                    android:id="@+id/manualCategoryLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/specify_category"
+                        android:textColor="@color/green"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/etManualCategory"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@color/yellow"
+                        android:hint="@string/manual_category_hint"
+                        android:padding="12dp"
+                        android:inputType="text" />
+                </LinearLayout>
+
+                <!-- Date -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -112,8 +139,9 @@
                     <TextView
                         android:id="@+id/tvDate"
                         android:layout_width="0dp"
-                        android:layout_weight="1"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:background="@null"
                         android:text="Select Date"
                         android:textColor="@color/black" />
 
@@ -122,14 +150,14 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_calendar"
-                        android:contentDescription="Pick Date"/>
+                        android:contentDescription="@string/select_date"/>
                 </LinearLayout>
 
                 <!-- Amount and Currency -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/expense_amount"
+                    android:text="@string/amount"
                     android:textColor="@color/green"
                     android:textStyle="bold" />
 
@@ -146,11 +174,10 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="3"
                         android:background="@color/yellow"
-                        android:hint="Enter amount"
+                        android:hint="0.00"
                         android:inputType="numberDecimal"
                         android:padding="12dp"
-                        android:textColor="@color/green"
-                        android:textColorHint="#80186131" />
+                        android:textColor="@color/black" />
 
                     <Spinner
                         android:id="@+id/spinnerCurrency"
@@ -166,36 +193,11 @@
                     android:id="@+id/tvCurrencyWarning"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginBottom="16dp"
                     android:textColor="@color/warning_color"
                     android:textStyle="italic"
                     android:textSize="12sp"
                     android:visibility="gone" />
-
-                <!-- Conversion Info -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginBottom="16dp">
-
-                    <ProgressBar
-                        android:id="@+id/progressBarConversion"
-                        style="?android:attr/progressBarStyleSmall"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
-                        android:visibility="gone" />
-
-                    <TextView
-                        android:id="@+id/tvConversionInfo"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:textColor="@color/green_700"
-                        android:textSize="14sp"
-                        android:visibility="gone" />
-                </LinearLayout>
 
                 <!-- Error Message -->
                 <TextView
@@ -204,6 +206,16 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
                     android:textColor="@color/error_text"
+                    android:visibility="gone" />
+
+                <!-- Conversion Info -->
+                <TextView
+                    android:id="@+id/tvConversionInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="@color/teal_700"
+                    android:textStyle="italic"
                     android:visibility="gone" />
 
                 <!-- Buttons -->
@@ -219,7 +231,7 @@
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:backgroundTint="@color/green"
-                        android:text="Add Expense"
+                        android:text="@string/add_expense"
                         android:textColor="@android:color/white" />
 
                     <Button
@@ -235,8 +247,9 @@
                         app:strokeWidth="1dp" />
                 </LinearLayout>
 
-                <!-- Expense Info Section -->
+                <!-- Info Section -->
                 <androidx.cardview.widget.CardView
+                    android:id="@+id/cvExpenseInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
@@ -264,16 +277,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:gravity="center"
-                            android:text="Record your expenses to track your spending and stay within budget." />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:gravity="center"
-                            android:text="@string/note_expense_category_change"
-                            android:textSize="12sp"
-                            android:textStyle="italic" />
+                            android:text="@string/add_expense_details_description" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
