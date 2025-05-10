@@ -5,7 +5,6 @@ import Sidebar from "./sidebar";
 import TopBar from "./topbar";
 import editIcon from "/assets/edit.png"; // Import the edit icon
 
-
 const SavingsGoal = () => {
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [error, setError] = useState("");

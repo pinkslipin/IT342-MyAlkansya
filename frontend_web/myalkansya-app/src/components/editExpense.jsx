@@ -300,9 +300,31 @@ const EditExpense = () => {
               </form>
             </div>
 
-            {/* Right Section: Empty for Future Use */}
-            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-4 flex items-center justify-center">
-              <p className="text-gray-500">Future content goes here</p>
+            {/* Right Section: Useful Info */}
+            <div className="w-1/3 bg-[#F9F9F9] rounded-lg p-6 flex flex-col justify-center">
+              <div className="bg-[#18864F] text-white p-4 rounded-lg mb-4">
+                <h3 className="text-lg font-semibold">Expense Editing Tips</h3>
+                <ul className="list-disc ml-4 mt-2 text-sm">
+                  <li>Keep your expense categories consistent for accurate budget tracking.</li>
+                  <li>Editing the date or category may affect which budget this expense is tracked against.</li>
+                  <li>Use manual categories for custom tracking (case-insensitive matching).</li>
+                </ul>
+              </div>
+              <div className="bg-amber-50 border-l-4 border-amber-500 p-4 my-4">
+                <h3 className="font-medium text-amber-800">Need to add a new expense?</h3>
+                <button
+                  onClick={() => navigate("/addexpense")}
+                  className="mt-2 bg-[#FFC107] text-[#18864F] font-bold py-1 px-3 rounded hover:bg-yellow-500 transition"
+                >
+                  Add Expense
+                </button>
+              </div>
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                <h3 className="font-medium text-blue-800">Tip</h3>
+                <p className="text-sm text-blue-700 mt-2">
+                  Categorizing your expenses helps you create accurate budgets and track spending patterns.
+                </p>
+              </div>
             </div>
           </div>
         </div>
