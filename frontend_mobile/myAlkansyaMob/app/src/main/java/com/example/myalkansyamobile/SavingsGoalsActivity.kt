@@ -198,11 +198,39 @@ class SavingsGoalsActivity : AppCompatActivity() {
         
         filterAndDisplayGoals()
     }
-    
+
     private fun filterAndDisplayGoals() {
         filteredGoalsList.clear()
-        filteredGoalsList.addAll(displayGoalsList)
-        
+
+        // Always start with the complete list of savings goals from the original data
+        val completeGoalsList = mutableListOf<SavingsGoal>()
+
+        // Process all API goals into our app model
+i        for (apiGoal in originalGoalsList) {
+            // Create SavingsGoal object with the data from API
+            val targetDate = try {
+                // Return the Date object directly instead of its milliseconds
+                dateFormat.parse(apiGoal.targetDate) ?: Date()
+            } catch (e: Exception) {
+                Date() // Create a new Date for current time
+            }
+
+            val savingsGoal = SavingsGoal(
+                id = apiGoal.id,
+                goal = apiGoal.goal,
+                targetAmount = apiGoal.targetAmount,
+                currentAmount = apiGoal.currentAmount,
+                currency = apiGoal.currency,
+                targetDate = targetDate // Now correctly passing a Date object
+            )
+
+            completeGoalsList.add(savingsGoal)
+        }
+
+        // Now add all goals to the filtered list
+        filteredGoalsList.addAll(completeGoalsList)
+
+        // Apply status filter if selected
         if (selectedStatus != null && selectedStatus != "All") {
             val statusEnum = when (selectedStatus) {
                 "In Progress" -> SavingsGoal.GoalStatus.IN_PROGRESS
@@ -210,27 +238,32 @@ class SavingsGoalsActivity : AppCompatActivity() {
                 "Overdue" -> SavingsGoal.GoalStatus.OVERDUE
                 else -> null
             }
-            
+
             if (statusEnum != null) {
                 filteredGoalsList.removeAll { it.getComputedStatus() != statusEnum }
             }
         }
-        
+
+        // Apply sorting
         when (selectedSortBy) {
             "Name" -> filteredGoalsList.sortBy { it.goal }
             "Target Date" -> filteredGoalsList.sortBy { it.targetDate }
-            "Progress" -> filteredGoalsList.sortBy { it.getProgressPercentage() }
-            "Amount" -> filteredGoalsList.sortBy { it.targetAmount }
+            "Progress" -> filteredGoalsList.sortByDescending { it.getProgressPercentage() }
+            "Amount" -> filteredGoalsList.sortByDescending { it.targetAmount }
         }
-        
+
+        // Update pagination info
         totalPages = Math.ceil(filteredGoalsList.size.toDouble() / itemsPerPage).toInt()
         if (totalPages == 0) totalPages = 1
-        
+
+        // Make sure current page is valid
+        if (currentPage > totalPages) {
+            currentPage = totalPages
+        }
+
         updatePaginationControls()
-        
         updatePageDisplay()
     }
-    
     private fun updatePageDisplay() {
         displayGoalsList.clear()
         
