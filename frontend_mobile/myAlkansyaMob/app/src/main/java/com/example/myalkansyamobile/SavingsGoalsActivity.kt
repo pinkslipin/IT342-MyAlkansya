@@ -206,7 +206,7 @@ class SavingsGoalsActivity : AppCompatActivity() {
         val completeGoalsList = mutableListOf<SavingsGoal>()
 
         // Process all API goals into our app model
-i        for (apiGoal in originalGoalsList) {
+        for (apiGoal in originalGoalsList) {
             // Create SavingsGoal object with the data from API
             val targetDate = try {
                 // Return the Date object directly instead of its milliseconds
