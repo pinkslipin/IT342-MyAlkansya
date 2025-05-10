@@ -7,6 +7,7 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -52,6 +53,11 @@ class IncomeActivity : AppCompatActivity() {
     
     private var filterMonth = 0 // 0 means all months
     private var filterYear = 0 // 0 means all years
+    
+    // Pagination variables
+    private var currentPage = 1
+    private var totalPages = 1
+    private var itemsPerPage = 10
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,7 +69,8 @@ class IncomeActivity : AppCompatActivity() {
         userDefaultCurrency = sessionManager.getCurrency() ?: "PHP"
 
         setupRecyclerView()
-        setupFilterSpinners() // Add filter spinners setup
+        setupFilterSpinners()
+        setupPagination()
         fetchIncomes()
 
         binding.btnAddIncome.setOnClickListener {
@@ -105,14 +112,11 @@ class IncomeActivity : AppCompatActivity() {
     }
 
     private fun setupRecyclerView() {
-        // Pass displayIncomeList instead of incomeList
+        // Initialize with mutableList
         incomeAdapter = IncomeAdapter(
-            displayIncomeList, 
-            { income ->
-                val intent = Intent(this, EditIncomeActivity::class.java)
-                intent.putExtra("incomeId", income.id)
-                startActivity(intent)
-            },
+            displayIncomeList.toMutableList(), // Pass as mutableList 
+            { income -> navigateToEditIncome(income) },
+            { income -> showDeleteConfirmation(income) },
             userDefaultCurrency
         )
         binding.recyclerViewIncome.apply {
@@ -157,6 +161,115 @@ class IncomeActivity : AppCompatActivity() {
         }
     }
     
+    private fun setupPagination() {
+        binding.btnPrevPage.setOnClickListener {
+            if (currentPage > 1) {
+                currentPage--
+                updatePageDisplay()
+            }
+        }
+        
+        binding.btnNextPage.setOnClickListener {
+            if (currentPage < totalPages) {
+                currentPage++
+                updatePageDisplay()
+            }
+        }
+        
+        updatePageDisplay()
+    }
+    
+    private fun calculateTotalPages() {
+        totalPages = if (displayIncomeList.isEmpty()) 1 else (displayIncomeList.size + itemsPerPage - 1) / itemsPerPage
+    }
+    
+    private fun updatePageDisplay() {
+        binding.tvPagination.text = "$currentPage out of $totalPages"
+        binding.btnPrevPage.isEnabled = currentPage > 1
+        binding.btnNextPage.isEnabled = currentPage < totalPages
+        
+        // Display current page content
+        displayCurrentPage()
+    }
+    
+    private fun displayCurrentPage() {
+        try {
+            val start = (currentPage - 1) * itemsPerPage
+            val end = minOf(start + itemsPerPage, displayIncomeList.size)
+            
+            if (displayIncomeList.isEmpty()) {
+                Log.d("IncomeActivity", "No incomes to display")
+                incomeAdapter.updateList(emptyList())
+                return
+            }
+            
+            if (start >= displayIncomeList.size) {
+                Log.e("IncomeActivity", "Pagination error: start index ($start) >= list size (${displayIncomeList.size})")
+                incomeAdapter.updateList(emptyList())
+                return
+            }
+            
+            val currentPageItems = displayIncomeList.subList(start, end)
+            Log.d("IncomeActivity", "Displaying page $currentPage with ${currentPageItems.size} items")
+            
+            incomeAdapter.updateList(currentPageItems)
+        } catch (e: Exception) {
+            Log.e("IncomeActivity", "Error displaying current page: ${e.message}", e)
+            incomeAdapter.updateList(emptyList())
+        }
+    }
+    
+    private fun navigateToEditIncome(income: Income) {
+        val intent = Intent(this, EditIncomeActivity::class.java)
+        intent.putExtra("incomeId", income.id)
+        startActivity(intent)
+    }
+    
+    private fun showDeleteConfirmation(income: Income) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.delete_income))
+            .setMessage("Are you sure you want to delete this income: ${income.source}? This action cannot be undone.")
+            .setPositiveButton(getString(R.string.delete)) { _, _ ->
+                deleteIncome(income.id)
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+    
+    private fun deleteIncome(incomeId: Int) {
+        binding.progressBar.visibility = View.VISIBLE
+        
+        lifecycleScope.launch {
+            try {
+                val token = sessionManager.fetchAuthToken()
+                if (token.isNullOrEmpty()) {
+                    Toast.makeText(this@IncomeActivity, "Authentication required", Toast.LENGTH_SHORT).show()
+                    binding.progressBar.visibility = View.GONE
+                    return@launch
+                }
+
+                // Call the API to delete the income
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.incomeApiService.deleteIncome(incomeId, "Bearer $token")
+                }
+
+                binding.progressBar.visibility = View.GONE
+
+                if (response.isSuccessful) {
+                    Toast.makeText(this@IncomeActivity, "Income deleted successfully", Toast.LENGTH_SHORT).show()
+                    // Refresh the income list
+                    fetchIncomes()
+                } else {
+                    val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                    Toast.makeText(this@IncomeActivity, "Error: $errorMsg", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                binding.progressBar.visibility = View.GONE
+                Toast.makeText(this@IncomeActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    
     private fun applyFilters() {
         val filteredList = incomeList.filter { income ->
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
@@ -183,13 +296,18 @@ class IncomeActivity : AppCompatActivity() {
         // Update the display list
         displayIncomeList.clear()
         displayIncomeList.addAll(filteredList)
-        incomeAdapter.notifyDataSetChanged()
+        
+        // Reset pagination
+        currentPage = 1
+        calculateTotalPages()
+        updatePageDisplay()
         
         // Update active filters text
         updateActiveFiltersText()
         
         // Show empty state if needed
         binding.txtEmptyState.visibility = if (filteredList.isEmpty()) View.VISIBLE else View.GONE
+        binding.recyclerViewIncome.visibility = if (filteredList.isEmpty()) View.GONE else View.VISIBLE
         binding.txtEmptyState.text = getString(R.string.no_filtered_income)
     }
     
@@ -202,13 +320,18 @@ class IncomeActivity : AppCompatActivity() {
         // Reset to show all incomes
         displayIncomeList.clear()
         displayIncomeList.addAll(incomeList)
-        incomeAdapter.notifyDataSetChanged()
+        
+        // Reset pagination
+        currentPage = 1
+        calculateTotalPages()
+        updatePageDisplay()
         
         // Hide active filters text
         binding.activeFiltersText.visibility = View.GONE
         
         // Update empty state visibility
         binding.txtEmptyState.visibility = if (incomeList.isEmpty()) View.VISIBLE else View.GONE
+        binding.recyclerViewIncome.visibility = if (incomeList.isEmpty()) View.GONE else View.VISIBLE
         binding.txtEmptyState.text = getString(R.string.no_income_records)
     }
     
@@ -242,27 +365,43 @@ class IncomeActivity : AppCompatActivity() {
         }
 
         binding.progressBar.visibility = View.VISIBLE
+        binding.recyclerViewIncome.visibility = View.GONE // Hide recycler while loading
+        
         lifecycleScope.launch {
-            when (val result = incomeRepository.getIncomes(token)) {
-                is Resource.Success -> {
-                    // Store original list
-                    incomeList.clear()
-                    incomeList.addAll(result.data)
-                    
-                    // Process incomes for display with correct currency
-                    processIncomesForDisplay(token)
-                    
-                    binding.txtEmptyState.visibility = if (incomeList.isEmpty()) View.VISIBLE else View.GONE
+            try {
+                when (val result = incomeRepository.getIncomes(token)) {
+                    is Resource.Success -> {
+                        Log.d("IncomeActivity", "Success: Received ${result.data.size} income records")
+                        
+                        // Store original list
+                        incomeList.clear()
+                        incomeList.addAll(result.data)
+                        
+                        // Process incomes for display with correct currency
+                        processIncomesForDisplay(token)
+                        
+                        // Update UI visibility
+                        binding.txtEmptyState.visibility = if (incomeList.isEmpty()) View.VISIBLE else View.GONE
+                        binding.recyclerViewIncome.visibility = if (incomeList.isEmpty()) View.GONE else View.VISIBLE
+                    }
+                    is Resource.Error -> {
+                        Log.e("IncomeActivity", "Error: ${result.message}")
+                        binding.progressBar.visibility = View.GONE
+                        Toast.makeText(this@IncomeActivity, "Error: ${result.message}", Toast.LENGTH_SHORT).show()
+                        binding.txtEmptyState.visibility = View.VISIBLE
+                        binding.recyclerViewIncome.visibility = View.GONE
+                    }
+                    is Resource.Loading -> {
+                        // Keep progress bar visible during loading
+                        binding.progressBar.visibility = View.VISIBLE
+                    }
                 }
-                is Resource.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    Toast.makeText(this@IncomeActivity, "Error: ${result.message}", Toast.LENGTH_SHORT).show()
-                    binding.txtEmptyState.visibility = View.VISIBLE
-                }
-                is Resource.Loading -> {
-                    // Keep progress bar visible during loading
-                    binding.progressBar.visibility = View.VISIBLE
-                }
+            } catch (e: Exception) {
+                Log.e("IncomeActivity", "Exception during fetchIncomes: ${e.message}", e)
+                binding.progressBar.visibility = View.GONE
+                binding.txtEmptyState.visibility = View.VISIBLE
+                binding.recyclerViewIncome.visibility = View.GONE
+                Toast.makeText(this@IncomeActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -318,18 +457,39 @@ class IncomeActivity : AppCompatActivity() {
                         }
                     }
                     
-                    displayIncomeList.add(displayIncome)
+                    displayIncomeList.add(displayIncome) // Make sure income is actually added
                 }
+                
+                Log.d("IncomeActivity", "Processed ${displayIncomeList.size} incomes for display")
             }
+            
+            // Sort incomes by date (most recent first)
+            displayIncomeList.sortByDescending { it.date }
+            
+            // Update pagination
+            calculateTotalPages()
             
             // Update the UI on main thread
             withContext(Dispatchers.Main) {
-                incomeAdapter.notifyDataSetChanged()
+                Log.d("IncomeActivity", "Updating UI with ${displayIncomeList.size} incomes")
+                
+                if (displayIncomeList.isEmpty()) {
+                    binding.txtEmptyState.visibility = View.VISIBLE
+                    binding.recyclerViewIncome.visibility = View.GONE
+                } else {
+                    binding.txtEmptyState.visibility = View.GONE
+                    binding.recyclerViewIncome.visibility = View.VISIBLE
+                    updatePageDisplay()
+                }
+                
                 binding.progressBar.visibility = View.GONE
             }
         } catch (e: Exception) {
+            Log.e("IncomeActivity", "Error processing incomes: ${e.message}", e)
             withContext(Dispatchers.Main) {
                 binding.progressBar.visibility = View.GONE
+                binding.txtEmptyState.visibility = View.VISIBLE
+                binding.recyclerViewIncome.visibility = View.GONE
                 Toast.makeText(this@IncomeActivity, "Error processing incomes: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }

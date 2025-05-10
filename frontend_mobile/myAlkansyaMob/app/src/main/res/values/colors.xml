@@ -7,7 +7,7 @@
 
     <!-- App theme colors -->
     <color name="green_secondary">#4CAF50</color>
-    <color name="bg_primary">#FEF6EA</color>
+    <color name="bg_primary">#FAFAFA</color>
 
     <color name="facebook_light_blue">#276BFF</color>
     <color name="primary_green">#2E8B57</color>
@@ -22,7 +22,6 @@
     <color name="error_color">#DC3545</color>
     <color name="info_background">#E3F2FD</color>
     <color name="primary_dark">#106b3e</color>
-    <color name="green_700">#388E3C</color>
     <color name="background_light">#FEF6EA</color>
     
     <!-- Add these missing text colors -->
@@ -35,12 +34,13 @@
     <color name="teal_200">#03DAC5</color>
     <color name="teal_700">#018786</color>
 
-        <!-- MyAlkansya Colors (matching web frontend) -->
+    <!-- MyAlkansya Colors (matching web frontend) -->
     <color name="green_primary">#18864F</color>
+    <color name="green_300">#4CAF50</color>
     <color name="yellow_primary">#FFC107</color>
     <color name="background_cream">#FEF6EA</color>
     <color name="light_green">#EDFBE9</color>
-    <color name="red">#FF5252</color>
+    <color name="red">#DC3545</color>
     <color name="grey">#757575</color>
 
     <!-- Added new colors -->
@@ -49,4 +49,17 @@
     <color name="warning_color">#FFA000</color>
     <color name="delete_red">#B71C1C</color>
     <color name="grey_300">#E0E0E0</color>
+
+    <!-- Add these colors to your existing colors.xml file -->
+    <color name="green_700">#18864F</color>
+    <color name="light_green_300">#A5D6B7</color>
+    <color name="red_700">#E53935</color>
+
+    <!-- Chart Colors -->
+    <color name="chart_green_1">#18864F</color>
+    <color name="chart_green_2">#4CAF50</color>
+    <color name="chart_green_3">#A5D6B7</color>
+    <color name="chart_yellow">#FFC107</color>
+    <color name="chart_orange">#FF9800</color>
+    <color name="chart_red">#F44336</color>
 </resources>
