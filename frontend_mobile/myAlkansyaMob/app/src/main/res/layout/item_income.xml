@@ -71,4 +71,13 @@
     </LinearLayout>
 
     <!-- Edit Button -->
+    <ImageButton
+        android:id="@+id/btnActions"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Actions"
+        android:padding="6dp"
+        android:src="@drawable/ic_more_vert"
+        app:tint="@color/grey" />
 </LinearLayout>

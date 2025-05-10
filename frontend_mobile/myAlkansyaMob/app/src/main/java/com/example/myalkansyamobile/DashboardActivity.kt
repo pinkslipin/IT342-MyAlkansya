@@ -6,6 +6,9 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
@@ -36,6 +39,7 @@ import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.PercentFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import kotlinx.coroutines.Dispatchers
@@ -592,14 +596,33 @@ class DashboardActivity : AppCompatActivity() {
         val pieChart = binding.pieChartExpenses
         pieChart.description.isEnabled = false
         pieChart.setDrawEntryLabels(false)
-        pieChart.legend.isEnabled = true
-        pieChart.legend.horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
-        pieChart.legend.orientation = Legend.LegendOrientation.VERTICAL
+        
+        // Enhanced legend configuration with better spacing
+        pieChart.legend.apply {
+            isEnabled = true
+            horizontalAlignment = Legend.LegendHorizontalAlignment.CENTER
+            verticalAlignment = Legend.LegendVerticalAlignment.BOTTOM
+            orientation = Legend.LegendOrientation.HORIZONTAL
+            setDrawInside(false)
+            textSize = 12f
+            xEntrySpace = 16f  // Increased spacing between legend entries
+            yEntrySpace = 8f
+            formSize = 12f
+            formToTextSpace = 8f
+            setWordWrapEnabled(true)
+            maxSizePercent = 0.6f
+        }
+        
         pieChart.setUsePercentValues(true)
-        pieChart.setCenterText("Expense\nDistribution")
-        pieChart.setHoleRadius(40f)
-        pieChart.setTransparentCircleRadius(45f)
-
+        
+        // REMOVE center text entirely
+        pieChart.setDrawCenterText(false)
+        
+        // Still keep the hole in the middle, but don't display any text
+        pieChart.holeRadius = 40f
+        pieChart.transparentCircleRadius = 45f
+        pieChart.setExtraOffsets(24f, 24f, 24f, 24f)
+        
         if (data.isEmpty()) {
             pieChart.setNoDataText("No expense categories found")
             pieChart.setNoDataTextColor(Color.GRAY)
@@ -607,22 +630,39 @@ class DashboardActivity : AppCompatActivity() {
             return
         }
 
-        val entries = data.map {
-            PieEntry(it.amount.toFloat(), it.category)
+        // Limit number of categories for better visibility on mobile
+        val maxCategories = 6
+        val sortedData = data.sortedByDescending { it.amount }
+        
+        val entries = if (sortedData.size > maxCategories) {
+            // Display top categories and group the rest as "Others"
+            val topCategories = sortedData.take(maxCategories - 1)
+            val otherCategories = sortedData.drop(maxCategories - 1)
+            val otherSum = otherCategories.sumOf { it.amount }
+            
+            topCategories.map { PieEntry(it.amount.toFloat(), it.category) } +
+                    PieEntry(otherSum.toFloat(), "Others")
+        } else {
+            sortedData.map { PieEntry(it.amount.toFloat(), it.category) }
         }
 
         val dataSet = PieDataSet(entries, "")
         dataSet.colors = getChartColors()
-        dataSet.sliceSpace = 3f
+        dataSet.sliceSpace = 5f  // Increased distance between slices
         dataSet.selectionShift = 5f
+        dataSet.valueLinePart1OffsetPercentage = 80f
+        dataSet.valueLinePart1Length = 0.4f
+        dataSet.valueLinePart2Length = 0.5f
+        dataSet.yValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
 
         val pieData = PieData(dataSet)
         pieData.setValueFormatter(PercentFormatter(pieChart))
-        pieData.setValueTextSize(11f)
-        pieData.setValueTextColor(Color.WHITE)
+        pieData.setValueTextSize(14f)  // Larger percentage text
+        pieData.setValueTextColor(Color.BLACK)
 
         pieChart.data = pieData
         pieChart.highlightValues(null)
+        pieChart.animateY(1000)
         pieChart.invalidate()
     }
 
@@ -634,6 +674,9 @@ class DashboardActivity : AppCompatActivity() {
         horizontalBarChart.setDrawValueAboveBar(true)
         horizontalBarChart.setPinchZoom(false)
         horizontalBarChart.isDoubleTapToZoomEnabled = false
+        
+        // Add extra offset for better spacing
+        horizontalBarChart.setExtraOffsets(10f, 10f, 30f, 10f)
 
         if (data.isEmpty()) {
             binding.tvNoSavingsGoals.visibility = View.VISIBLE
@@ -645,10 +688,11 @@ class DashboardActivity : AppCompatActivity() {
             horizontalBarChart.visibility = View.VISIBLE
         }
 
+        // Sort goals by progress to show the most complete ones first
         val sortedGoals = data
-            .filter { it.progress < 100 }
+            .filter { it.progress < 100 }  // Filter out completed goals
             .sortedByDescending { it.progress }
-            .take(5)
+            .take(5)  // Show only top 5 goals for better visibility on mobile
 
         val xAxis = horizontalBarChart.xAxis
         xAxis.position = XAxis.XAxisPosition.BOTTOM
@@ -657,15 +701,19 @@ class DashboardActivity : AppCompatActivity() {
         xAxis.axisMinimum = 0f
         xAxis.axisMaximum = 100f
         xAxis.labelCount = 5
+        xAxis.textSize = 11f
 
         val leftAxis = horizontalBarChart.axisLeft
         leftAxis.setDrawGridLines(false)
         leftAxis.setDrawAxisLine(true)
         leftAxis.granularity = 1f
+        leftAxis.textSize = 12f
+        leftAxis.xOffset = 10f
 
+        // Truncate goal names for better display on mobile
         val goalNames = sortedGoals.map {
-            if (it.goal.length > 15) {
-                "${it.goal.substring(0, 12)}..."
+            if (it.goal.length > 12) {
+                "${it.goal.substring(0, 10)}..."
             } else {
                 it.goal
             }
@@ -679,9 +727,9 @@ class DashboardActivity : AppCompatActivity() {
         val dataSet = BarDataSet(entries, "Progress (%)")
         dataSet.colors = sortedGoals.map { goal ->
             when {
-                goal.progress > 90 -> Color.parseColor("#28A745")
-                goal.progress > 50 -> Color.parseColor("#FFC107")
-                else -> Color.parseColor("#DC3545")
+                goal.progress > 90 -> Color.parseColor("#28A745")  // Green
+                goal.progress > 50 -> Color.parseColor("#FFC107")  // Yellow
+                else -> Color.parseColor("#A5D6B7")  // Light green
             }
         }
 
@@ -693,11 +741,20 @@ class DashboardActivity : AppCompatActivity() {
         horizontalBarChart.setFitBars(true)
         horizontalBarChart.animateY(1000)
 
-        horizontalBarChart.setDrawValueAboveBar(false)
+        // Show values on bars
+        horizontalBarChart.setDrawValueAboveBar(true)
+        dataSet.setDrawValues(true)
+        dataSet.valueFormatter = object : ValueFormatter() {
+            override fun getFormattedValue(value: Float): String {
+                return "${value.toInt()}%"
+            }
+        }
+        
         horizontalBarChart.legend.isEnabled = false
         horizontalBarChart.axisRight.isEnabled = false
         leftAxis.setLabelCount(sortedGoals.size, true)
 
+        // Enable touch for more information
         horizontalBarChart.setTouchEnabled(true)
         horizontalBarChart.setOnChartValueSelectedListener(object : OnChartValueSelectedListener {
             override fun onValueSelected(e: Entry?, h: Highlight?) {
@@ -706,19 +763,19 @@ class DashboardActivity : AppCompatActivity() {
                     if (index in sortedGoals.indices) {
                         val goal = sortedGoals[index]
                         val percentFormatted = String.format("%.1f", goal.progress)
-
+                        
                         val currencyFormat = NumberFormat.getCurrencyInstance()
-                        currencyFormat.currency = try {
-                            Currency.getInstance(goal.goal.split(" ").lastOrNull() ?: "USD")
+                        try {
+                            currencyFormat.currency = Currency.getInstance(sessionManager.getCurrency() ?: "USD")
                         } catch (ex: Exception) {
-                            Currency.getInstance("USD")
+                            currencyFormat.currency = Currency.getInstance("USD")
                         }
 
-                        val message = "${goal.goal}: " +
+                        val message = "${goal.goal}\n" +
                                 "${currencyFormat.format(goal.currentAmount)} of " +
                                 "${currencyFormat.format(goal.targetAmount)} " +
                                 "($percentFormatted%)"
-                        Toast.makeText(this@DashboardActivity, message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@DashboardActivity, message, Toast.LENGTH_LONG).show()
                     }
                 }
             }

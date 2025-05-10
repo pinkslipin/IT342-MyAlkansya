@@ -1,5 +1,6 @@
 package com.example.myalkansyamobile.adapters
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,13 +15,15 @@ class PaymentHistoryAdapter(
     private var payments: List<Expense>
 ) : RecyclerView.Adapter<PaymentHistoryAdapter.PaymentViewHolder>() {
 
+    private val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
+
     class PaymentViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val dateText: TextView = view.findViewById(R.id.tvDate)
-        val descriptionText: TextView = view.findViewById(R.id.tvDescription)
-        val amountText: TextView = view.findViewById(R.id.tvAmount)
+        val tvDate: TextView = view.findViewById(R.id.tvDate)
+        val tvAmount: TextView = view.findViewById(R.id.tvAmount)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PaymentViewHolder {
+        Log.d("PaymentAdapter", "Creating view holder")
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_payment_history, parent, false)
         return PaymentViewHolder(view)
@@ -28,25 +31,23 @@ class PaymentHistoryAdapter(
 
     override fun onBindViewHolder(holder: PaymentViewHolder, position: Int) {
         val payment = payments[position]
+        Log.d("PaymentAdapter", "Binding payment at position $position: ${payment.date} - ${payment.amount}")
         
         // Format date
-        val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy")
-        holder.dateText.text = payment.date.format(formatter)
+        holder.tvDate.text = payment.date.format(dateFormatter)
         
-        // Set description
-        holder.descriptionText.text = payment.subject
-        
-        // Format amount with currency using the correct method
-        holder.amountText.text = CurrencyUtils.formatWithCurrencySymbol(
-            payment.amount,
-            payment.currency
-        )
+        // Format amount with currency
+        holder.tvAmount.text = CurrencyUtils.formatWithProperCurrency(payment.amount, payment.currency)
     }
 
-    override fun getItemCount(): Int = payments.size
+    override fun getItemCount(): Int {
+        Log.d("PaymentAdapter", "Payment count: ${payments.size}")
+        return payments.size
+    }
 
     fun updatePayments(newPayments: List<Expense>) {
-        payments = newPayments
+        Log.d("PaymentAdapter", "Updating payments: count=${newPayments.size}")
+        this.payments = newPayments
         notifyDataSetChanged()
     }
 }

@@ -30,7 +30,7 @@
     <string name="apply_filters">Apply Filters</string>
     <string name="reset_filters">Reset</string>
     <string name="no_income_records">No income records found.</string>
-    <string name="no_filtered_income">No incomes found for the selected filter</string>
+    <string name="no_filtered_income">No income records match your filters.</string>
     <string name="active_filters">Active filters: %1$s</string>
 
     <!-- Budget filter strings -->

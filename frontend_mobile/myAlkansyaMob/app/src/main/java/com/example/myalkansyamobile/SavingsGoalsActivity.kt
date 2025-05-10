@@ -2,9 +2,12 @@ package com.example.myalkansyamobile
 
 import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -396,28 +399,80 @@ class SavingsGoalsActivity : AppCompatActivity() {
     
     private fun showPaymentHistoryDialog(goal: SavingsGoal) {
         val dialogBinding = DialogPaymentHistoryBinding.inflate(layoutInflater)
-        val dialog = Dialog(this)
+        val dialog = Dialog(this, R.style.DialogTheme)
         dialog.setContentView(dialogBinding.root)
         
+        // Set dialog width to match parent with margins
+        val window = dialog.window
+        window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        
+        // Set goal name in the header
         dialogBinding.tvGoalName.text = "Goal: ${goal.goal}"
+        
+        // Default state - show loading
         dialogBinding.progressBar.visibility = View.VISIBLE
         dialogBinding.rvPaymentHistory.visibility = View.GONE
         dialogBinding.tvEmptyHistory.visibility = View.GONE
+        dialogBinding.tvHistoryTitle.visibility = View.GONE
+        dialogBinding.historyHeaderLayout.visibility = View.GONE
         
-        val historyAdapter = PaymentHistoryAdapter(emptyList())
-        dialogBinding.rvPaymentHistory.layoutManager = LinearLayoutManager(this)
+        // Get existing payments for this goal (don't wait for fetch to complete)
+        val existingPayments = expensesForGoals[goal.id] ?: emptyList()
+        
+        Log.d("PaymentHistory", "Initial payment count for goal ${goal.id}: ${existingPayments.size}")
+        
+        // Setup RecyclerView
+        val layoutManager = LinearLayoutManager(this)
+        dialogBinding.rvPaymentHistory.layoutManager = layoutManager
+        
+        // Create adapter with existing payments
+        val historyAdapter = PaymentHistoryAdapter(existingPayments)
         dialogBinding.rvPaymentHistory.adapter = historyAdapter
         
+        // Show UI if we already have payments
+        if (existingPayments.isNotEmpty()) {
+            dialogBinding.progressBar.visibility = View.GONE
+            dialogBinding.tvHistoryTitle.visibility = View.VISIBLE
+            dialogBinding.historyHeaderLayout.visibility = View.VISIBLE
+            dialogBinding.rvPaymentHistory.visibility = View.VISIBLE
+        }
+        
+        // Show the dialog immediately
+        dialog.show()
+        
+        // Fetch fresh data in background
         lifecycleScope.launch {
             try {
+                // Fetch latest expenses to make sure we have the most recent data
+                fetchExpensesForSavingsGoals()
+                
+                // Get payments for this specific goal
                 val goalExpenses = expensesForGoals[goal.id] ?: emptyList()
                 
+                // Debug logs
+                Log.d("PaymentHistory", "Found ${goalExpenses.size} expenses for goal ID: ${goal.id}")
+                if (goalExpenses.isNotEmpty()) {
+                    Log.d("PaymentHistory", "First payment: ${goalExpenses[0].date} - ${goalExpenses[0].amount}")
+                }
+                
+                // Hide progress indicator
                 dialogBinding.progressBar.visibility = View.GONE
                 
                 if (goalExpenses.isEmpty()) {
+                    // No payments - show empty state
                     dialogBinding.tvEmptyHistory.visibility = View.VISIBLE
+                    dialogBinding.tvHistoryTitle.visibility = View.GONE
+                    dialogBinding.historyHeaderLayout.visibility = View.GONE
+                    dialogBinding.rvPaymentHistory.visibility = View.GONE
                 } else {
+                    // Show transaction history
+                    dialogBinding.tvEmptyHistory.visibility = View.GONE
+                    dialogBinding.tvHistoryTitle.visibility = View.VISIBLE
+                    dialogBinding.historyHeaderLayout.visibility = View.VISIBLE
                     dialogBinding.rvPaymentHistory.visibility = View.VISIBLE
+                    
+                    // Update adapter with fresh data
                     historyAdapter.updatePayments(goalExpenses)
                 }
                 
@@ -432,8 +487,6 @@ class SavingsGoalsActivity : AppCompatActivity() {
         dialogBinding.btnClose.setOnClickListener {
             dialog.dismiss()
         }
-        
-        dialog.show()
     }
     
     private fun fetchExpensesForSavingsGoals() {
@@ -446,10 +499,32 @@ class SavingsGoalsActivity : AppCompatActivity() {
             try {
                 val response = RetrofitClient.expenseApiService.getExpenses("Bearer $token")
                 
+                // Clear the existing map
                 expensesForGoals.clear()
+                
+                // Process all expenses
                 response.forEach { expenseResponse ->
-                    if (expenseResponse.category == "Savings Goal") {
-                        val matchingGoal = displayGoalsList.find { it.goal == expenseResponse.subject }
+                    if (expenseResponse.savingsGoalId != null && expenseResponse.savingsGoalId > 0) {
+                        // Use the actual savingsGoalId field if available
+                        val goalId = expenseResponse.savingsGoalId
+                        
+                        val expense = Expense(
+                            id = expenseResponse.id,
+                            subject = expenseResponse.subject,
+                            category = expenseResponse.category,
+                            date = LocalDate.parse(expenseResponse.date),
+                            amount = expenseResponse.amount,
+                            currency = expenseResponse.currency ?: userDefaultCurrency,
+                            savingsGoalId = goalId
+                        )
+                        
+                        val existingList = expensesForGoals[goalId] ?: emptyList()
+                        expensesForGoals[goalId] = existingList + expense
+                    }
+                    else if (expenseResponse.category == "Savings Goal") {
+                        // For backward compatibility with older data that might not have savingsGoalId
+                        // Find matching goal by name
+                        val matchingGoal = originalGoalsList.find { it.goal == expenseResponse.subject }
                         
                         if (matchingGoal != null) {
                             val expense = Expense(
@@ -467,6 +542,9 @@ class SavingsGoalsActivity : AppCompatActivity() {
                         }
                     }
                 }
+                
+                // Debug log
+                Log.d("SavingsGoalsActivity", "Fetched expenses for ${expensesForGoals.size} goals")
                 
                 if (::adapter.isInitialized) {
                     adapter.updateExpensesForGoals(expensesForGoals)
@@ -604,11 +682,11 @@ class SavingsGoalsActivity : AppCompatActivity() {
     
     private fun updateEmptyState() {
         if (displayGoalsList.isEmpty()) {
-            binding.emptyStateLayout.visibility = View.VISIBLE
             binding.recyclerSavingsGoals.visibility = View.GONE
+            binding.emptyStateLayout.visibility = View.VISIBLE
         } else {
-            binding.emptyStateLayout.visibility = View.GONE
             binding.recyclerSavingsGoals.visibility = View.VISIBLE
+            binding.emptyStateLayout.visibility = View.GONE
         }
     }
 }
